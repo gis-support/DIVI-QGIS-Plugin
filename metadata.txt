@@ -30,7 +30,7 @@ tags=network, web, webservice,divi
 
 homepage=
 category=Web
-icon=icon.png
+icon=images/icon.png
 # experimental flag
 experimental=True
 

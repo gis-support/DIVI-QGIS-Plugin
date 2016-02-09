@@ -26,7 +26,7 @@ from PyQt4.QtGui import QAction, QIcon
 import resources
 
 # Import the code for the DockWidget
-from divi_plugin_dockwidget import DiviPluginDockWidget
+from dialogs.dockwidget import DiviPluginDockWidget
 import os.path
 
 
@@ -167,7 +167,7 @@ class DiviPlugin:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/DiviPlugin/icon.png'
+        icon_path = ':/plugins/DiviPlugin/images/icon.png'
         self.add_action(
             icon_path,
             text=self.tr(u'DIVI'),
