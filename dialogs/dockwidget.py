@@ -24,7 +24,9 @@
 import os
 
 from PyQt4 import QtGui, uic
-from PyQt4.QtCore import pyqtSignal
+from PyQt4.QtCore import pyqtSignal, QSettings
+from ..utils.connector import DiviConnector
+from qgis.core import QgsMessageLog
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'dockwidget.ui'))
@@ -34,7 +36,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, iface, parent=None):
         """Constructor."""
         super(DiviPluginDockWidget, self).__init__(parent)
         # Set up the user interface from Designer.
@@ -42,9 +44,20 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         # self.<objectname>, and you can use autoconnect slots - see
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
+        self.iface = iface
+        self.token = QSettings().value('divi/token', None)
         self.setupUi(self)
-
+        self.connector = DiviConnector()
+        #Signals
+        self.btnConnect.clicked.connect(self.diviConnect)
+        self.connector.tokenSetted.connect(self.setToken)
+    
     def closeEvent(self, event):
         self.closingPlugin.emit()
         event.accept()
-
+    
+    def diviConnect(self, checked):
+        self.connector.diviFeatchData()
+    
+    def setToken(self, token):
+        self.token = token
