@@ -25,8 +25,9 @@ import os
 
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import pyqtSignal, QSettings
-from ..utils.connector import DiviConnector
 from qgis.core import QgsMessageLog
+from ..utils.connector import DiviConnector
+from ..utils.model import AccountItem, DiviModel
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'dockwidget.ui'))
@@ -47,6 +48,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.iface = iface
         self.token = QSettings().value('divi/token', None)
         self.setupUi(self)
+        self.tvData.setModel( DiviModel() )
         self.connector = DiviConnector()
         #Signals
         self.btnConnect.clicked.connect(self.diviConnect)
@@ -57,7 +59,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         event.accept()
     
     def diviConnect(self, checked):
-        self.connector.diviFeatchData()
+        accounts, projects, layers = self.connector.diviFeatchData()
+        self.tvData.model().addData(accounts, projects, layers)
     
     def setToken(self, token):
         self.token = token

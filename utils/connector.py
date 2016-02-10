@@ -30,8 +30,8 @@ import json
 class DiviConnector(QObject):
     tokenSetted = pyqtSignal(str)
     
-    #DIVI_HOST = 'https://divi.io'
-    DIVI_HOST = 'http://0.0.0.0:5034'
+    DIVI_HOST = 'https://divi.io'
+    #DIVI_HOST = 'http://0.0.0.0:5034'
     
     def __init__(self):
         QObject.__init__(self)
@@ -41,6 +41,7 @@ class DiviConnector(QObject):
     
     def sendRequest(self, url, method, data=None, headers={}):
         manager = QNetworkAccessManager()
+        manager.sslErrors.connect(self._sslError)
         request = QNetworkRequest(url)
         for key, value in headers.iteritems():
             request.setRawHeader(key, value)
@@ -81,7 +82,6 @@ class DiviConnector(QObject):
                 'email': email,
                 'password' : password
             })
-            #self.loginSuccess)
         data = json.loads(content)
         self.token = data['token']
         settings.setValue('divi/email', email)
@@ -98,12 +98,18 @@ class DiviConnector(QObject):
             QgsMessageLog.logMessage('login: '+result, 'DIVI')
             if not result:
                 return
-        return self.sendGetRequest('/accounts', {'token':self.token})#, self.getSuccess)
+        accounts = json.loads(self.sendGetRequest('/accounts', {'token':self.token}))
+        projects = json.loads(self.sendGetRequest('/projects', {'token':self.token}))
+        layers = json.loads(self.sendGetRequest('/layers', {'token':self.token}))
+        return accounts['data'], projects['data'], layers['data']
     
     #Helpers
     
     def _error(self, error):
         QgsMessageLog.logMessage(str(error), 'DIVI', QgsMessageLog.CRITICAL)
+    
+    def _sslError(self, reply, errors):
+        reply.ignoreSslErrors()
     
     def formatUrl(self, endpoint, params={}):
         url = QUrl(self.DIVI_HOST + endpoint)

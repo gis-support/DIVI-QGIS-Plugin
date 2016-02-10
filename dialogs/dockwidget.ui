@@ -40,7 +40,11 @@
      </layout>
     </item>
     <item>
-     <widget class="QTreeView" name="tvData"/>
+     <widget class="QTreeView" name="tvData">
+      <attribute name="headerVisible">
+       <bool>false</bool>
+      </attribute>
+     </widget>
     </item>
    </layout>
   </widget>
