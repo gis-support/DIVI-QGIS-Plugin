@@ -88,6 +88,17 @@ class LayerItem(TreeItem):
         
         self.icon = QIcon(':/plugins/DiviPlugin/images/layer.png')
 
+class TableItem(TreeItem):
+    
+    def __init__(self, data, parent=None):
+        super(TableItem, self).__init__(self, parent)
+        self.name = data.get('name')
+        self.id = data.get('id')
+        self.id_accounts = data.get('id_accounts')
+        self.id_projects = data.get('id_projects')
+        
+        self.icon = QIcon(':/plugins/DiviPlugin/images/table.png')
+
 class DiviModel(QAbstractItemModel):
     
     def __init__(self, parent=None):
@@ -116,11 +127,12 @@ class DiviModel(QAbstractItemModel):
             return self.tr('Dane')
         return None
     
-    def addData(self, accounts, projects, layers):
+    def addData(self, accounts, projects, layers, tables):
         self.beginInsertRows(QModelIndex(), 0, len(accounts)-1)
         self.addAccounts(accounts)
         self.addProjects(projects)
         self.addLayers(layers)
+        self.addTables(tables)
         #QgsMessageLog.logMessage(str(accounts_map), 'DIVI')
         self.endInsertRows()
     
@@ -137,6 +149,10 @@ class DiviModel(QAbstractItemModel):
     def addLayers(self, layers):
         for layer in sorted(layers, key=lambda x:x['name']):
             item = LayerItem(layer, self.projects_map[layer['id_projects']] )
+    
+    def addTables(self, tables):
+        for table in sorted(tables, key=lambda x:x['name']):
+            item = TableItem(table, self.projects_map[table['id_projects']] )
     
     def index(self, row, column, parent):
         if not self.hasIndex(row, column, parent):

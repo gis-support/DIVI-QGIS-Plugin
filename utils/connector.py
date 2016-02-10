@@ -30,8 +30,8 @@ import json
 class DiviConnector(QObject):
     tokenSetted = pyqtSignal(str)
     
-    DIVI_HOST = 'https://divi.io'
-    #DIVI_HOST = 'http://0.0.0.0:5034'
+    #DIVI_HOST = 'https://divi.io'
+    DIVI_HOST = 'http://0.0.0.0:5034'
     
     def __init__(self):
         QObject.__init__(self)
@@ -101,7 +101,8 @@ class DiviConnector(QObject):
         accounts = json.loads(self.sendGetRequest('/accounts', {'token':self.token}))
         projects = json.loads(self.sendGetRequest('/projects', {'token':self.token}))
         layers = json.loads(self.sendGetRequest('/layers', {'token':self.token}))
-        return accounts['data'], projects['data'], layers['data']
+        tables = json.loads(self.sendGetRequest('/tables', {'token':self.token}))
+        return accounts['data'], projects['data'], layers['data'], tables['data']
     
     #Helpers
     

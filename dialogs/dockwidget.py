@@ -59,8 +59,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         event.accept()
     
     def diviConnect(self, checked):
-        accounts, projects, layers = self.connector.diviFeatchData()
-        self.tvData.model().addData(accounts, projects, layers)
+        self.tvData.model().addData( *self.connector.diviFeatchData() )
     
     def setToken(self, token):
         self.token = token

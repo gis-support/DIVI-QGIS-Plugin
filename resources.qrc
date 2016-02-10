@@ -5,4 +5,7 @@
     <qresource prefix="/plugins/DiviPlugin" >
         <file>images/layer.png</file>
     </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/table.png</file>
+    </qresource>
 </RCC>
