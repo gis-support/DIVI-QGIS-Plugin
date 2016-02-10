@@ -22,6 +22,7 @@
 """
 
 from PyQt4.QtCore import QObject, QAbstractItemModel, Qt, QModelIndex
+from PyQt4.QtGui import QIcon
 from qgis.core import QgsMessageLog
 
 class TreeItem(QObject):
@@ -84,6 +85,8 @@ class LayerItem(TreeItem):
         self.id = data.get('id')
         self.id_accounts = data.get('id_accounts')
         self.id_projects = data.get('id_projects')
+        
+        self.icon = QIcon(':/plugins/DiviPlugin/images/layer.png')
 
 class DiviModel(QAbstractItemModel):
     
@@ -105,6 +108,8 @@ class DiviModel(QAbstractItemModel):
         item = index.internalPointer()
         if role == Qt.DisplayRole:
             return item.name
+        elif role == Qt.DecorationRole and hasattr(item, 'icon'):
+            return item.icon
     
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole and section == 0:
