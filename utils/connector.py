@@ -40,8 +40,12 @@ class DiviConnector(QObject):
     
     #Sending requests to DIVI
     
-    def sendRequest(self, url, method, data=None, headers={}):
-        def send():
+    def sendRequest(self, endpoint, params, method, data=None, headers={}):
+        def send(params):
+            url = self.formatUrl(endpoint, params)
+            request = QNetworkRequest(url)
+            for key, value in headers.iteritems():
+                request.setRawHeader(key, value)
             if not data:
                 reply = getattr(manager, method)(request)
             else:
@@ -54,28 +58,28 @@ class DiviConnector(QObject):
             return reply
         manager = QNetworkAccessManager()
         manager.sslErrors.connect(self._sslError)
-        request = QNetworkRequest(url)
-        for key, value in headers.iteritems():
-            request.setRawHeader(key, value)
-        reply = send()
+        reply = send(params)
         content = unicode(reply.readAll())
         if reply.attribute(QNetworkRequest.HttpStatusCodeAttribute) == 403:
-            #QgsMessageLog.logMessage('DATA: '+data, 'DIVI')
-            self.diviLogin()
-            reply = send()
+            #Invalid token, try to login and fetch data again
+            result = self.diviLogin()
+            if not result:
+                return
+            #Set new token
+            params['token'] = result
+            reply = send(params)
             content = unicode(reply.readAll())
         return content
     
-    def sendPostRequest(self, endpoint, data):
-        return self.sendRequest( self.formatUrl(endpoint),
+    def sendPostRequest(self, endpoint, data, params={}):
+        return self.sendRequest( endpoint, params,
                 'post',
                 json.dumps(data),
                 {"Content-Type":"application/json", "User-Agent":"Divi QGIS Plugin"},
             )
     
     def sendGetRequest(self, endpoint, data):
-        url = self.formatUrl(endpoint, data)
-        return self.sendRequest(url, 'get',
+        return self.sendRequest(endpoint, data, 'get',
                 headers={"User-Agent":"Divi QGIS Plugin"}
             )
     
@@ -102,20 +106,24 @@ class DiviConnector(QObject):
     #Fetching data from server
     
     def diviFeatchData(self):
+        def getJson(data):
+            if data:
+                return json.loads(data)['data']
+            return []
         QgsMessageLog.logMessage('Fecthing data', 'DIVI')
         if not self.token:
             result = self.diviLogin()
-            QgsMessageLog.logMessage('login: '+result, 'DIVI')
             if not result:
                 return
-        accounts = json.loads(self.sendGetRequest('/accounts', {'token':self.token}))
-        projects = json.loads(self.sendGetRequest('/projects', {'token':self.token}))
-        layers = json.loads(self.sendGetRequest('/layers', {'token':self.token}))
-        tables = json.loads(self.sendGetRequest('/tables', {'token':self.token}))
-        return accounts['data'], projects['data'], layers['data'], tables['data']
+        accounts = getJson(self.sendGetRequest('/accounts', {'token':self.token}))
+        if not accounts:
+            return [], [], [], []
+        projects = getJson(self.sendGetRequest('/projects', {'token':self.token}))
+        layers = getJson(self.sendGetRequest('/layers', {'token':self.token}))
+        tables = getJson(self.sendGetRequest('/tables', {'token':self.token}))
+        return accounts, projects, layers, tables
     
     #Helpers
-    
     
     def _sslError(self, reply, errors):
         reply.ignoreSslErrors()
