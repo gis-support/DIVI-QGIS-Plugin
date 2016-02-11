@@ -69,3 +69,5 @@ def addLayer(features, layer):
     if polygons_list:
         polygons_pr.addFeatures(polygons_list)
         QgsMapLayerRegistry.instance().addMapLayer(polygons)
+    if points_list or lines_list or polygons_list:
+        layer.loaded = True

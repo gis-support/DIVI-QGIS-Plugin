@@ -26,9 +26,10 @@ import os
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import pyqtSignal, QSettings
 from qgis.core import QgsMessageLog
+from qgis.gui import QgsMessageBar
 from ..utils.connector import DiviConnector
 from ..utils.data import addLayer
-from ..utils.model import DiviModel, LayerItem
+from ..utils.model import DiviModel, LayerItem, TableItem
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'dockwidget.ui'))
@@ -74,3 +75,9 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             data = self.connector.diviGetLayerFeatures(item.id)
             if data:
                 addLayer(data['features'], item)
+        elif isinstance(item, TableItem):
+            self.iface.messageBar().pushMessage('DIVI',
+                self.trUtf8(u'Aby dodać tabelę musisz posiadać QGIS w wersji 2.14 lub nowszej.'),
+                QgsMessageBar.CRITICAL,
+                duration = 3
+            )
