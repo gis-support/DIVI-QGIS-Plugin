@@ -21,7 +21,7 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import QObject, QAbstractItemModel, Qt, QModelIndex
+from PyQt4.QtCore import QObject, QAbstractItemModel, Qt, QModelIndex, SIGNAL
 from PyQt4.QtGui import QIcon
 from qgis.core import QgsMessageLog
 
@@ -51,6 +51,12 @@ class TreeItem(QObject):
     def columnCount(self):
         return 1
     
+    def childRemoved(self, child):
+        self.itemChanged()
+
+    def itemChanged(self):
+        self.emit( SIGNAL("itemChanged"), self )
+    
     def data(self, column):
         return "" if column == 0 else None
 
@@ -61,6 +67,12 @@ class TreeItem(QObject):
         if self.parentItem:
             return self.parentItem.childItems.index(self)
         return 0
+    
+    def removeChild(self, row):
+        if row >= 0 and row < len(self.childItems):
+            self.childItems[row].itemData.deleteLater()
+            self.disconnect(self.childItems[row], SIGNAL("itemRemoved"), self.childRemoved)
+            del self.childItems[row]
 
 class AccountItem(TreeItem):
     
@@ -128,12 +140,12 @@ class DiviModel(QAbstractItemModel):
         return None
     
     def addData(self, accounts, projects, layers, tables):
+        self.removeAll()
         self.beginInsertRows(QModelIndex(), 0, len(accounts)-1)
         self.addAccounts(accounts)
         self.addProjects(projects)
         self.addLayers(layers)
         self.addTables(tables)
-        #QgsMessageLog.logMessage(str(accounts_map), 'DIVI')
         self.endInsertRows()
     
     def addAccounts(self, accounts):
@@ -154,7 +166,27 @@ class DiviModel(QAbstractItemModel):
         for table in sorted(tables, key=lambda x:x['name']):
             item = TableItem(table, self.projects_map[table['id_projects']] )
     
-    def index(self, row, column, parent):
+    def removeAll(self):
+        rows_count = self.rootItem.childCount()
+        if not rows_count:
+            return
+        for row in reversed(range(rows_count)):
+            #Remove child items
+            index = self.index(row,0)
+            item = index.internalPointer()
+            self.removeRows(0,item.childCount(),index)
+            #Remove root element (account)
+            item.itemData.deleteLater()
+            del self.rootItem.childItems[row]
+    
+    def removeRows(self, row, count, parent):
+        self.beginRemoveRows(parent, row, count+row-1)
+        item = parent.internalPointer()
+        for i in range(row, count+row):
+            item.removeChild(row)
+        self.endRemoveRows()
+    
+    def index(self, row, column, parent=QModelIndex()):
         if not self.hasIndex(row, column, parent):
             return QModelIndex()
 
