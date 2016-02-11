@@ -23,7 +23,7 @@
 
 from PyQt4.QtCore import QUrl, QObject, QEventLoop, pyqtSignal, QSettings
 from PyQt4.QtNetwork import QNetworkRequest, QNetworkAccessManager, \
-    QHttpMultiPart, QHttpPart
+    QHttpMultiPart, QHttpPart, QNetworkReply
 from qgis.core import QgsMessageLog, QgsCredentials
 import json
 
@@ -33,28 +33,38 @@ class DiviConnector(QObject):
     #DIVI_HOST = 'https://divi.io'
     DIVI_HOST = 'http://0.0.0.0:5034'
     
-    def __init__(self):
+    def __init__(self, iface):
         QObject.__init__(self)
+        self.iface = iface
         self.token = QSettings().value('divi/token', None)
     
     #Sending requests to DIVI
     
     def sendRequest(self, url, method, data=None, headers={}):
+        def send():
+            if not data:
+                reply = getattr(manager, method)(request)
+            else:
+                reply = getattr(manager, method)(request, data)
+            loop = QEventLoop()
+            #reply.downloadProgress.connect(self.progressCB)
+            #reply.error.connect(self._error)
+            reply.finished.connect(loop.exit)
+            loop.exec_()
+            return reply
         manager = QNetworkAccessManager()
         manager.sslErrors.connect(self._sslError)
         request = QNetworkRequest(url)
         for key, value in headers.iteritems():
             request.setRawHeader(key, value)
-        if not data:
-            reply = getattr(manager, method)(request)
-        else:
-            reply = getattr(manager, method)(request, data)
-        loop = QEventLoop()
-        #reply.downloadProgress.connect(self.progressCB)
-        reply.error.connect(self._error)
-        reply.finished.connect(loop.exit)
-        loop.exec_()
-        return unicode(reply.readAll())
+        reply = send()
+        content = unicode(reply.readAll())
+        if reply.attribute(QNetworkRequest.HttpStatusCodeAttribute) == 403:
+            #QgsMessageLog.logMessage('DATA: '+data, 'DIVI')
+            self.diviLogin()
+            reply = send()
+            content = unicode(reply.readAll())
+        return content
     
     def sendPostRequest(self, endpoint, data):
         return self.sendRequest( self.formatUrl(endpoint),
@@ -71,7 +81,7 @@ class DiviConnector(QObject):
     
     #Login
     
-    def diviLogin(self, ):
+    def diviLogin(self):
         QgsMessageLog.logMessage('Fetching token', 'DIVI')
         settings = QSettings()
         (success, email, password) = QgsCredentials.instance().get( 
@@ -106,8 +116,6 @@ class DiviConnector(QObject):
     
     #Helpers
     
-    def _error(self, error):
-        QgsMessageLog.logMessage(str(error), 'DIVI', QgsMessageLog.CRITICAL)
     
     def _sslError(self, reply, errors):
         reply.ignoreSslErrors()

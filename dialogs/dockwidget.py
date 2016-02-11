@@ -49,7 +49,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.token = QSettings().value('divi/token', None)
         self.setupUi(self)
         self.tvData.setModel( DiviModel() )
-        self.connector = DiviConnector()
+        self.connector = DiviConnector(iface)
         #Signals
         self.btnConnect.clicked.connect(self.diviConnect)
         self.connector.tokenSetted.connect(self.setToken)
