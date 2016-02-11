@@ -80,6 +80,7 @@ class AccountItem(TreeItem):
         super(AccountItem, self).__init__(self, parent)
         self.name = data.get('name')
         self.id = data.get('id')
+        self.abstract = data.get('description')
 
 class ProjectItem(TreeItem):
     
@@ -88,6 +89,7 @@ class ProjectItem(TreeItem):
         self.name = data.get('name')
         self.id = data.get('id')
         self.id_accounts = data.get('id_accounts')
+        self.abstract = data.get('description')
 
 class LayerItem(TreeItem):
     
@@ -97,6 +99,8 @@ class LayerItem(TreeItem):
         self.id = data.get('id')
         self.id_accounts = data.get('id_accounts')
         self.id_projects = data.get('id_projects')
+        self.abstract = data.get('abstract')
+        self.fields = data.get('fields')
         
         self.icon = QIcon(':/plugins/DiviPlugin/images/layer.png')
 
@@ -108,6 +112,7 @@ class TableItem(TreeItem):
         self.id = data.get('id')
         self.id_accounts = data.get('id_accounts')
         self.id_projects = data.get('id_projects')
+        self.abstract = data.get('abstract')
         
         self.icon = QIcon(':/plugins/DiviPlugin/images/table.png')
 
@@ -133,6 +138,8 @@ class DiviModel(QAbstractItemModel):
             return item.name
         elif role == Qt.DecorationRole and hasattr(item, 'icon'):
             return item.icon
+        elif role == Qt.ToolTipRole:
+            return item.abstract
     
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole and section == 0:

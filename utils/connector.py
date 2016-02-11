@@ -106,22 +106,19 @@ class DiviConnector(QObject):
     #Fetching data from server
     
     def diviFeatchData(self):
-        def getJson(data):
-            if data:
-                return json.loads(data)['data']
-            return []
         QgsMessageLog.logMessage('Fecthing data', 'DIVI')
-        if not self.token:
-            result = self.diviLogin()
-            if not result:
-                return
-        accounts = getJson(self.sendGetRequest('/accounts', {'token':self.token}))
+        accounts = self.getJson(self.sendGetRequest('/accounts', {'token':self.token}))
         if not accounts:
             return [], [], [], []
-        projects = getJson(self.sendGetRequest('/projects', {'token':self.token}))
-        layers = getJson(self.sendGetRequest('/layers', {'token':self.token}))
-        tables = getJson(self.sendGetRequest('/tables', {'token':self.token}))
-        return accounts, projects, layers, tables
+        projects = self.getJson(self.sendGetRequest('/projects', {'token':self.token}))
+        layers = self.getJson(self.sendGetRequest('/layers', {'token':self.token}))
+        tables = self.getJson(self.sendGetRequest('/tables', {'token':self.token}))
+        return accounts['data'], projects['data'], layers['data'], tables['data']
+    
+    def diviGetLayerFeatures(self, layerid):
+        QgsMessageLog.logMessage('Fecthing layer %s' % layerid, 'DIVI')
+        layer = self.sendGetRequest('/features/%s'%layerid, {'token':self.token, 'geometry':'wkt'})
+        return self.getJson(layer)
     
     #Helpers
     
@@ -132,3 +129,9 @@ class DiviConnector(QObject):
         url = QUrl(self.DIVI_HOST + endpoint)
         url.setQueryItems(list(params.iteritems()))
         return url
+    
+    @staticmethod
+    def getJson(data):
+        if data:
+            return json.loads(data)
+        return []

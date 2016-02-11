@@ -27,7 +27,8 @@ from PyQt4 import QtGui, uic
 from PyQt4.QtCore import pyqtSignal, QSettings
 from qgis.core import QgsMessageLog
 from ..utils.connector import DiviConnector
-from ..utils.model import AccountItem, DiviModel
+from ..utils.data import addLayer
+from ..utils.model import DiviModel, LayerItem
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'dockwidget.ui'))
@@ -53,6 +54,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         #Signals
         self.btnConnect.clicked.connect(self.diviConnect)
         self.connector.tokenSetted.connect(self.setToken)
+        self.tvData.doubleClicked.connect(self.dblClick)
     
     def closeEvent(self, event):
         self.closingPlugin.emit()
@@ -65,3 +67,10 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     
     def setToken(self, token):
         self.token = token
+    
+    def dblClick(self, index):
+        item = index.internalPointer()
+        if isinstance(item, LayerItem):
+            data = self.connector.diviGetLayerFeatures(item.id)
+            if data:
+                addLayer(data['features'], item)
