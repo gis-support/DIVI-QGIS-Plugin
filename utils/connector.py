@@ -33,7 +33,7 @@ class DiviConnector(QObject):
     #DIVI_HOST = 'https://divi.io'
     DIVI_HOST = 'http://0.0.0.0:5034'
     
-    def __init__(self, iface):
+    def __init__(self, iface=None):
         QObject.__init__(self)
         self.iface = iface
         self.token = QSettings().value('divi/token', None)
@@ -116,8 +116,13 @@ class DiviConnector(QObject):
         return accounts['data'], projects['data'], layers['data'], tables['data']
     
     def diviGetLayerFeatures(self, layerid):
-        QgsMessageLog.logMessage('Fecthing layer %s' % layerid, 'DIVI')
+        QgsMessageLog.logMessage('Fecthing layer %s features' % layerid, 'DIVI')
         layer = self.sendGetRequest('/features/%s'%layerid, {'token':self.token, 'geometry':'wkt'})
+        return self.getJson(layer)
+    
+    def diviGetLayer(self, layerid):
+        QgsMessageLog.logMessage('Fecthing layer %s' % layerid, 'DIVI')
+        layer = self.sendGetRequest('/layers/%s'%layerid, {'token':self.token})
         return self.getJson(layer)
     
     #Helpers

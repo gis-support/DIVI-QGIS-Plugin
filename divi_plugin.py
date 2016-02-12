@@ -29,6 +29,7 @@ import resources
 from dialogs.dockwidget import DiviPluginDockWidget
 import os.path
 
+from .utils.data import loadLayer
 
 class DiviPlugin:
     """QGIS Plugin Implementation."""
@@ -166,7 +167,9 @@ class DiviPlugin:
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
-
+        
+        QgsProject.instance().readMapLayer.connect(loadLayer)
+        
         icon_path = ':/plugins/DiviPlugin/images/icon.png'
         self.add_action(
             icon_path,
@@ -197,6 +200,8 @@ class DiviPlugin:
         """Removes the plugin menu item and icon from QGIS GUI."""
 
         #print "** UNLOAD DiviPlugin"
+        
+        QgsProject.instance().readMapLayer.disconnect(loadLayer)
 
         for action in self.actions:
             self.iface.removePluginWebMenu(
