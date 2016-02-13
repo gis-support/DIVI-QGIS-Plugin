@@ -30,8 +30,8 @@ import json
 class DiviConnector(QObject):
     tokenSetted = pyqtSignal(str)
     
-    #DIVI_HOST = 'https://divi.io'
-    DIVI_HOST = 'http://0.0.0.0:5034'
+    DIVI_HOST = 'https://divi.io'
+    #DIVI_HOST = 'http://0.0.0.0:5034'
     
     def __init__(self, iface=None):
         QObject.__init__(self)

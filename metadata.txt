@@ -10,7 +10,7 @@
 name=DIVI QGIS Plugin
 qgisMinimumVersion=2.0
 description=Integracja QGIS z platformą DIVI firmy GIS Support sp. z o. o.
-version=0.1
+version=0.2
 author=GIS Support sp. z o. o.
 email=info@gis-support.pl
 
@@ -23,7 +23,13 @@ repository=https://bitbucket.org/gissupport/divi-qgis-plugin
 # Recommended items:
 
 # Uncomment the following line and add your changelog:
-changelog=0.1
+changelog=0.2
+  - support for DIVI tables in tree view
+  - show icons for layers and tables in tree view
+  - load DIVI layers to QGIS
+  - DIVI layers are restored when QGIS project is loaded
+  - fix bugs with expired token
+  0.1
   - first release
   - login to divi.io
   - download accounts/projects/layers lists and display in tree view
