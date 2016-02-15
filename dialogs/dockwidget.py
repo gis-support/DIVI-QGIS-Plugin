@@ -25,7 +25,7 @@ import os
 
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import pyqtSignal, QSettings
-from qgis.core import QgsMessageLog
+from qgis.core import QgsMessageLog, QgsMapLayerRegistry
 from qgis.gui import QgsMessageBar
 from ..utils.connector import DiviConnector
 from ..utils.data import addLayer
@@ -77,6 +77,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             if data is not None:
                 self.tvData.model().addData( *data )
                 self.setLogginStatus(True)
+                self.getLoadedDiviLayers()
                 return
         QSettings().remove('divi/token')
         self.setLogginStatus(False)
@@ -100,6 +101,22 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.token = token
         if token:
             self.setLogginStatus(True)
+    
+    def getLoadedDiviLayers(self):
+        def setLoad(items, ids):
+            for item in items:
+                if item.childItems:
+                    setLoad(item.childItems, ids)
+                elif isinstance(item, LayerItem) and item.id in ids:
+                    item.loaded = True
+                    
+        self.layers_id = set([])
+        for _, layer in QgsMapLayerRegistry.instance().mapLayers().iteritems():
+            layerid = layer.customProperty('DiviId')
+            if layerid is not None:
+                self.layers_id.add(layerid)
+        setLoad( self.tvData.model().rootItem.childItems, self.layers_id )
+        QgsMessageLog.logMessage(str(self.layers_id), 'DIVI')
     
     #SLOTS
     
