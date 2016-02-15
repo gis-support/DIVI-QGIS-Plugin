@@ -59,6 +59,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.btnConnect.clicked.connect(self.diviConnection)
         self.tvData.doubleClicked.connect(self.dblClick)
         self.tvData.customContextMenuRequested.connect(self.showMenu)
+        QgsMapLayerRegistry.instance().layersWillBeRemoved.connect( self.layersRemoved )
     
     def getConnector(self, auto_login=True):
         connector = DiviConnector(auto_login=auto_login)
@@ -103,19 +104,12 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             self.setLogginStatus(True)
     
     def getLoadedDiviLayers(self):
-        def setLoad(items, ids):
-            for item in items:
-                if item.childItems:
-                    setLoad(item.childItems, ids)
-                elif isinstance(item, LayerItem) and item.id in ids:
-                    item.loaded = True
-                    
         self.layers_id = set([])
         for _, layer in QgsMapLayerRegistry.instance().mapLayers().iteritems():
             layerid = layer.customProperty('DiviId')
             if layerid is not None:
                 self.layers_id.add(layerid)
-        setLoad( self.tvData.model().rootItem.childItems, self.layers_id )
+        self.setLoad( self.tvData.model().rootItem.childItems, self.layers_id, True )
         QgsMessageLog.logMessage(str(self.layers_id), 'DIVI')
     
     #SLOTS
@@ -127,6 +121,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             data = connector.diviGetLayerFeatures(item.id)
             if data:
                 addLayer(data['features'], item)
+                item.loaded = True
         elif isinstance(item, TableItem):
             self.iface.messageBar().pushMessage('DIVI',
                 self.trUtf8(u'Aby dodać tabelę musisz posiadać QGIS w wersji 2.14 lub nowszej.'),
@@ -142,3 +137,22 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             #Layer menu
             menu.addAction(self.trUtf8(u'Dodaj warstwę'), lambda: self.dblClick(index))
         menu.popup(self.tvData.viewport().mapToGlobal(point))
+    
+    def layersRemoved(self, layers):
+        removed_ids = set([])
+        for lid in layers:
+            layer = QgsMapLayerRegistry.instance().mapLayer(lid)
+            layerid = layer.customProperty('DiviId')
+            if layerid in self.layers_id:
+                self.layers_id.remove(layerid)
+                removed_ids.add(layerid)
+        self.setLoad( self.tvData.model().rootItem.childItems, removed_ids, False )
+    
+    #OTHERS
+    
+    def setLoad(self, items, ids, value):
+        for item in items:
+            if item.childItems:
+                self.setLoad(item.childItems, ids, value)
+            elif isinstance(item, LayerItem) and item.id in ids:
+                item.loaded = value
