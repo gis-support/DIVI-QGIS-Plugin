@@ -28,14 +28,15 @@ from qgis.core import QgsMessageLog, QgsCredentials
 import json
 
 class DiviConnector(QObject):
-    tokenSetted = pyqtSignal(str)
+    diviLogged = pyqtSignal(str, str)
     
-    DIVI_HOST = 'https://divi.io'
-    #DIVI_HOST = 'http://0.0.0.0:5034'
+    #DIVI_HOST = 'https://divi.io'
+    DIVI_HOST = 'http://0.0.0.0:5034'
     
-    def __init__(self, iface=None):
+    def __init__(self, iface=None, auto_login=True):
         QObject.__init__(self)
         self.iface = iface
+        self.auto_login = auto_login
         self.token = QSettings().value('divi/token', None)
     
     #Sending requests to DIVI
@@ -61,6 +62,8 @@ class DiviConnector(QObject):
         reply = send(params)
         content = unicode(reply.readAll())
         if reply.attribute(QNetworkRequest.HttpStatusCodeAttribute) == 403:
+            if not self.auto_login:
+                return
             #Invalid token, try to login and fetch data again
             result = self.diviLogin()
             if not result:
@@ -100,7 +103,7 @@ class DiviConnector(QObject):
         self.token = data['token']
         settings.setValue('divi/email', email)
         settings.setValue('divi/token', self.token)
-        self.tokenSetted.emit(self.token)
+        self.diviLogged.emit(email, self.token)
         return self.token
     
     #Fetching data from server
@@ -109,7 +112,7 @@ class DiviConnector(QObject):
         QgsMessageLog.logMessage('Fecthing data', 'DIVI')
         accounts = self.getJson(self.sendGetRequest('/accounts', {'token':self.token}))
         if not accounts:
-            return [], [], [], []
+            return
         projects = self.getJson(self.sendGetRequest('/projects', {'token':self.token}))
         layers = self.getJson(self.sendGetRequest('/layers', {'token':self.token}))
         tables = self.getJson(self.sendGetRequest('/tables', {'token':self.token}))

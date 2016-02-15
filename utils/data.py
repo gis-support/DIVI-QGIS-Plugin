@@ -62,12 +62,10 @@ def addLayer(features, layer):
     addFeatures(layer.id, features, fields=getFields(layer.fields), points=points, lines=lines, polygons=polygons)
 
 def getFields(fields):
-    QgsMessageLog.logMessage(str(fields), 'DIVI')
     return [ QgsField(field['key'], TYPES_MAP.get(field['type'], QVariant.String)) for field in fields ]
 
 def addFeatures(layerid, features, fields, points=None, lines=None, polygons=None):#, layer=None, mapLayer=None):
     """ Add DIVI layer to QGIS """
-    QgsMessageLog.logMessage(str(fields), 'DIVI')
     if points:
         points_pr = points.dataProvider()
         if points_pr.fields():

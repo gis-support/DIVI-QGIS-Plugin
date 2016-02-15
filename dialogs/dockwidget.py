@@ -49,30 +49,62 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.iface = iface
         self.token = QSettings().value('divi/token', None)
+        self.user = QSettings().value('divi/email', None)
         self.setupUi(self)
         self.tvData.setModel( DiviModel() )
-        self.connector = DiviConnector(iface)
+        self.setLogginStatus(bool(self.token))
+        if self.token:
+            self.diviConnection(True, auto_login=False)
         #Signals
-        self.btnConnect.clicked.connect(self.diviConnect)
-        self.connector.tokenSetted.connect(self.setToken)
+        self.btnConnect.clicked.connect(self.diviConnection)
         self.tvData.doubleClicked.connect(self.dblClick)
+    
+    def getConnector(self, auto_login=True):
+        connector = DiviConnector(auto_login=auto_login)
+        connector.diviLogged.connect(self.setUserData)
+        return connector
     
     def closeEvent(self, event):
         self.closingPlugin.emit()
         event.accept()
     
-    def diviConnect(self, checked):
-        data = self.connector.diviFeatchData()
-        if data is not None:
-            self.tvData.model().addData( *data )
+    def diviConnection(self, checked, auto_login=True):
+        if checked:
+            #Connect
+            connector = self.getConnector(auto_login)
+            data = connector.diviFeatchData()
+            if data is not None:
+                self.tvData.model().addData( *data )
+                self.setLogginStatus(True)
+                return
+        QSettings().remove('divi/token')
+        self.setLogginStatus(False)
+            
     
-    def setToken(self, token):
+    def setLogginStatus(self, logged):
+        if logged:
+            self.lblStatus.setText(self.tr('Zalogowany: %s' % self.user))
+            self.btnConnect.setText(self.trUtf8(u'Rozłącz'))
+            self.btnConnect.setChecked(True)
+        else:
+            self.tvData.model().removeAll()
+            self.lblStatus.setText(self.tr('Niezalogowany'))
+            self.btnConnect.setText(self.trUtf8(u'Połącz'))
+            self.btnConnect.setChecked(False)
+            self.token = None
+        QgsMessageLog.logMessage(str(self.token), 'DIVI')
+    
+    def setUserData(self, user, token):
+        self.user = user
         self.token = token
+        if token:
+            self.setLogginStatus(True)
     
     def dblClick(self, index):
         item = index.internalPointer()
         if isinstance(item, LayerItem):
-            data = self.connector.diviGetLayerFeatures(item.id)
+            connector = self.getConnector()
+            data = connector.diviGetLayerFeatures(item.id)
             if data:
                 addLayer(data['features'], item)
         elif isinstance(item, TableItem):
