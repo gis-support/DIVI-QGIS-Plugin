@@ -51,6 +51,9 @@
     </item>
     <item>
      <widget class="QTreeView" name="tvData">
+      <property name="contextMenuPolicy">
+       <enum>Qt::CustomContextMenu</enum>
+      </property>
       <attribute name="headerVisible">
        <bool>false</bool>
       </attribute>

@@ -58,6 +58,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         #Signals
         self.btnConnect.clicked.connect(self.diviConnection)
         self.tvData.doubleClicked.connect(self.dblClick)
+        self.tvData.customContextMenuRequested.connect(self.showMenu)
     
     def getConnector(self, auto_login=True):
         connector = DiviConnector(auto_login=auto_login)
@@ -100,6 +101,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         if token:
             self.setLogginStatus(True)
     
+    #SLOTS
+    
     def dblClick(self, index):
         item = index.internalPointer()
         if isinstance(item, LayerItem):
@@ -113,3 +116,12 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 QgsMessageBar.CRITICAL,
                 duration = 3
             )
+    
+    def showMenu(self, point):
+        index = self.tvData.indexAt(point)
+        item = index.internalPointer()
+        menu = QtGui.QMenu(self)
+        if isinstance(item, LayerItem):
+            #Layer menu
+            menu.addAction(self.trUtf8(u'Dodaj warstwę'), lambda: self.dblClick(index))
+        menu.popup(self.tvData.viewport().mapToGlobal(point))
