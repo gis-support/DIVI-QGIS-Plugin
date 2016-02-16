@@ -50,6 +50,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.iface = iface
         self.token = QSettings().value('divi/token', None)
         self.user = QSettings().value('divi/email', None)
+        self.layers_id = set([])
         self.setupUi(self)
         self.tvData.setModel( DiviModel() )
         self.setLogginStatus(bool(self.token))
@@ -62,7 +63,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         QgsMapLayerRegistry.instance().layersWillBeRemoved.connect( self.layersRemoved )
     
     def getConnector(self, auto_login=True):
-        connector = DiviConnector(auto_login=auto_login)
+        connector = DiviConnector(iface=self.iface, auto_login=auto_login)
         connector.diviLogged.connect(self.setUserData)
         return connector
     
@@ -104,13 +105,11 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             self.setLogginStatus(True)
     
     def getLoadedDiviLayers(self):
-        self.layers_id = set([])
         for _, layer in QgsMapLayerRegistry.instance().mapLayers().iteritems():
             layerid = layer.customProperty('DiviId')
             if layerid is not None:
                 self.layers_id.add(layerid)
         self.setLoad( self.tvData.model().rootItem.childItems, self.layers_id, True )
-        QgsMessageLog.logMessage(str(self.layers_id), 'DIVI')
     
     #SLOTS
     
@@ -120,8 +119,10 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             connector = self.getConnector()
             data = connector.diviGetLayerFeatures(item.id)
             if data:
-                addLayer(data['features'], item)
-                item.loaded = True
+                added = addLayer(data['features'], item)
+                if added:
+                    self.layers_id.add(item.id)
+                    item.loaded = True
         elif isinstance(item, TableItem):
             self.iface.messageBar().pushMessage('DIVI',
                 self.trUtf8(u'Aby dodać tabelę musisz posiadać QGIS w wersji 2.14 lub nowszej.'),

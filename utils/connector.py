@@ -25,6 +25,7 @@ from PyQt4.QtCore import QUrl, QObject, QEventLoop, pyqtSignal, QSettings
 from PyQt4.QtNetwork import QNetworkRequest, QNetworkAccessManager, \
     QHttpMultiPart, QHttpPart, QNetworkReply
 from qgis.core import QgsMessageLog, QgsCredentials
+from qgis.gui import QgsMessageBar
 import json
 
 class DiviConnector(QObject):
@@ -61,7 +62,13 @@ class DiviConnector(QObject):
         manager.sslErrors.connect(self._sslError)
         reply = send(params)
         content = unicode(reply.readAll())
-        if reply.attribute(QNetworkRequest.HttpStatusCodeAttribute) == 403:
+        if reply.error() == QNetworkReply.ConnectionRefusedError:
+            if self.iface is not None:
+                self.iface.messageBar().pushMessage(self.trUtf8("Błąd"),
+                    self.trUtf8("Serwer odrzucił żądanie"),
+                    level=QgsMessageBar.CRITICAL, duration=3)
+            return
+        elif reply.attribute(QNetworkRequest.HttpStatusCodeAttribute) == 403:
             if not self.auto_login:
                 return
             #Invalid token, try to login and fetch data again

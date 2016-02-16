@@ -59,12 +59,12 @@ def addLayer(features, layer):
     points = QgsVectorLayer("MultiPoint"+definition, layer.name, "memory")
     lines = QgsVectorLayer("MultiLineString"+definition, layer.name, "memory")
     polygons = QgsVectorLayer("MultiPolygon"+definition, layer.name, "memory")
-    addFeatures(layer.id, features, fields=getFields(layer.fields), points=points, lines=lines, polygons=polygons)
+    return addFeatures(layer.id, features, fields=getFields(layer.fields), points=points, lines=lines, polygons=polygons)
 
 def getFields(fields):
     return [ QgsField(field['key'], TYPES_MAP.get(field['type'], QVariant.String)) for field in fields ]
 
-def addFeatures(layerid, features, fields, points=None, lines=None, polygons=None):#, layer=None, mapLayer=None):
+def addFeatures(layerid, features, fields, points=None, lines=None, polygons=None):
     """ Add DIVI layer to QGIS """
     if points:
         points_pr = points.dataProvider()
@@ -115,5 +115,7 @@ def addFeatures(layerid, features, fields, points=None, lines=None, polygons=Non
         polygons_pr.addFeatures(polygons_list)
         polygons.setCustomProperty('DiviId', layerid)
         QgsMapLayerRegistry.instance().addMapLayer(polygons)
-    #if points_list or lines_list or polygons_list:
-    #    layer.loaded = True
+    if points_list or lines_list or polygons_list:
+        return True
+    else:
+        return False
