@@ -33,7 +33,7 @@ TYPES_MAP = {
 def getFields(fields):
     return [ QgsField(field['key'], TYPES_MAP.get(field['type'], QVariant.String)) for field in fields ]
 
-def addFeatures(layerid, features, fields, points=None, lines=None, polygons=None):
+def addFeatures(layerid, features, fields, points=None, lines=None, polygons=None, progress=None, progressMin=0, progressMax=100):
     """ Add DIVI layer to QGIS """
     if points:
         points_pr = points.dataProvider()
@@ -57,7 +57,8 @@ def addFeatures(layerid, features, fields, points=None, lines=None, polygons=Non
     points_list = []
     lines_list = []
     polygons_list = []
-    for feature in features:
+    count = len(features)
+    for i, feature in enumerate(features):
         geom = QgsGeometry.fromWkt(feature['geometry'])
         f = QgsFeature()
         f.setGeometry(geom)
@@ -71,6 +72,8 @@ def addFeatures(layerid, features, fields, points=None, lines=None, polygons=Non
             polygons_list.append(f)
         else:
             continue
+        if progress is not None:
+            progress.setValue( progressMin+int(progressMax*i/count) )
     #Add only layers that have features
     if points_list:
         points_pr.addFeatures(points_list)

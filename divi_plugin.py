@@ -244,7 +244,7 @@ class DiviPlugin:
         if layerid is not None:
             msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%mapLayer.name())
             connector = DiviConnector()
-            msgBar.setValue(10)
+            msgBar.progress.setValue(10)
             layer_meta = connector.diviGetLayer(layerid)
             data = connector.diviGetLayerFeatures(layerid)
             if data:
@@ -259,6 +259,7 @@ class DiviPlugin:
                     layer = {'polygons':polygons}
                 else:
                     return
-                addFeatures(layerid, data['features'], fields=getFields(layer_meta['fields']), **layer)
-            msgBar.setValue(100)
+                addFeatures(layerid, data['features'], fields=getFields(layer_meta['fields']),
+                    progress=msgBar.progress, progressMin=50, progressMax=100, **layer)
+            msgBar.progress.setValue(100)
             msgBar.close()

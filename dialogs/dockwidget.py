@@ -63,8 +63,9 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.tvData.customContextMenuRequested.connect(self.showMenu)
         QgsMapLayerRegistry.instance().layersWillBeRemoved.connect( self.layersRemoved )
     
-    def getConnector(self, auto_login=True, progress=None):
-        connector = DiviConnector(iface=self.iface, auto_login=auto_login, progress=progress)
+    def getConnector(self, auto_login=True, progress=None, progressMin=0, progressMax=40):
+        connector = DiviConnector(iface=self.iface, auto_login=auto_login,
+            progress=progress, progressMin=progressMin, progressMax=progressMax)
         connector.diviLogged.connect(self.setUserData)
         return connector
     
@@ -118,13 +119,15 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         item = index.internalPointer()
         if isinstance(item, LayerItem):
             msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%item.name)
-            connector = self.getConnector(progress=msgBar.progress)
+            msgBar.progress.setValue(10)
+            connector = self.getConnector(progress=msgBar.progress, progressMin=10, progressMax=40)
             data = connector.diviGetLayerFeatures(item.id)
             if data:
-                added = self.addLayer(data['features'], item)
+                added = self.addLayer(data['features'], item, progress=msgBar.progress)
                 if added:
                     self.layers_id.add(item.id)
                     item.loaded = True
+            msgBar.progress.setValue(100)
             msgBar.close()
         elif isinstance(item, TableItem):
             self.iface.messageBar().pushMessage('DIVI',
@@ -154,14 +157,16 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     
     #OTHERS
     
-    def addLayer(self, features, layer):
+    def addLayer(self, features, layer, progress=None):
         #Layers have CRS==4326
         definition = '?crs=epsg:4326'
         #Create temp layers for point, linestring and polygon geometry types
         points = QgsVectorLayer("MultiPoint"+definition, layer.name, "memory")
         lines = QgsVectorLayer("MultiLineString"+definition, layer.name, "memory")
         polygons = QgsVectorLayer("MultiPolygon"+definition, layer.name, "memory")
-        return addFeatures(layer.id, features, fields=getFields(layer.fields), points=points, lines=lines, polygons=polygons)
+        return addFeatures(layer.id, features, fields=getFields(layer.fields),
+            points=points, lines=lines, polygons=polygons,
+            progress=progress, progressMin=50, progressMax=100)
     
     def setLoad(self, items, ids, value):
         for item in items:

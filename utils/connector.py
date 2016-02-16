@@ -30,15 +30,18 @@ import json
 
 class DiviConnector(QObject):
     diviLogged = pyqtSignal(str, str)
+    downloadingProgress = pyqtSignal(int)
     
     #DIVI_HOST = 'https://divi.io'
     DIVI_HOST = 'http://0.0.0.0:5034'
     
-    def __init__(self, iface=None, auto_login=True, progress=None):
+    def __init__(self, iface=None, auto_login=True, progress=None, progressMin=0, progressMax=20):
         QObject.__init__(self)
         self.iface = iface
         self.auto_login = auto_login
         self.progress = progress
+        self.progressMin = progressMin
+        self.progressMax = progressMax
         self.token = QSettings().value('divi/token', None)
     
     #Sending requests to DIVI
@@ -142,7 +145,7 @@ class DiviConnector(QObject):
     
     def downloadProgress(self, received, total):
         if self.progress is not None:
-            self.progress.setValue(self.progress.value()+int(20*received/total))
+            self.progress.setValue(self.progressMin+int(self.progressMax*received/total))
     
     def _sslError(self, reply, errors):
         reply.ignoreSslErrors()
