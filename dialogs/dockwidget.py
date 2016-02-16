@@ -63,8 +63,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.tvData.customContextMenuRequested.connect(self.showMenu)
         QgsMapLayerRegistry.instance().layersWillBeRemoved.connect( self.layersRemoved )
     
-    def getConnector(self, auto_login=True):
-        connector = DiviConnector(iface=self.iface, auto_login=auto_login)
+    def getConnector(self, auto_login=True, progress=None):
+        connector = DiviConnector(iface=self.iface, auto_login=auto_login, progress=progress)
         connector.diviLogged.connect(self.setUserData)
         return connector
     
@@ -118,7 +118,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         item = index.internalPointer()
         if isinstance(item, LayerItem):
             msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%item.name)
-            connector = self.getConnector()
+            connector = self.getConnector(progress=msgBar.progress)
             data = connector.diviGetLayerFeatures(item.id)
             if data:
                 added = self.addLayer(data['features'], item)

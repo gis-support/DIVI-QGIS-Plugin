@@ -22,6 +22,7 @@
 """
 
 from PyQt4.QtCore import QObject
+from PyQt4.QtGui import QProgressBar
 
 class ProgressMessageBar(QObject):
     
@@ -30,7 +31,11 @@ class ProgressMessageBar(QObject):
         self.iface = iface
         if self.iface is not None:
             msgBar = self.iface.messageBar().createMessage('DIVI',message)
+            self.progress = QProgressBar()
+            msgBar.layout().addWidget(self.progress)
             self.iface.messageBar().pushWidget(msgBar, self.iface.messageBar().INFO)
+        else:
+            self.progress = None
     
     def close(self):
         if self.iface is not None:

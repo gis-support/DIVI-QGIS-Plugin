@@ -34,10 +34,11 @@ class DiviConnector(QObject):
     #DIVI_HOST = 'https://divi.io'
     DIVI_HOST = 'http://0.0.0.0:5034'
     
-    def __init__(self, iface=None, auto_login=True):
+    def __init__(self, iface=None, auto_login=True, progress=None):
         QObject.__init__(self)
         self.iface = iface
         self.auto_login = auto_login
+        self.progress = progress
         self.token = QSettings().value('divi/token', None)
     
     #Sending requests to DIVI
@@ -53,7 +54,7 @@ class DiviConnector(QObject):
             else:
                 reply = getattr(manager, method)(request, data)
             loop = QEventLoop()
-            #reply.downloadProgress.connect(self.progressCB)
+            reply.downloadProgress.connect(self.downloadProgress)
             #reply.error.connect(self._error)
             reply.finished.connect(loop.exit)
             loop.exec_()
@@ -62,6 +63,7 @@ class DiviConnector(QObject):
         manager.sslErrors.connect(self._sslError)
         reply = send(params)
         content = unicode(reply.readAll())
+        #reply.downloadProgress.disconnect(self.downloadProgress)
         if reply.error() == QNetworkReply.ConnectionRefusedError:
             if self.iface is not None:
                 self.iface.messageBar().pushMessage(self.trUtf8("Błąd"),
@@ -79,6 +81,7 @@ class DiviConnector(QObject):
             params['token'] = result
             reply = send(params)
             content = unicode(reply.readAll())
+        #reply.downloadProgress.disconnect(self.downloadProgress)
         return content
     
     def sendPostRequest(self, endpoint, data, params={}):
@@ -136,6 +139,10 @@ class DiviConnector(QObject):
         return self.getJson(layer)
     
     #Helpers
+    
+    def downloadProgress(self, received, total):
+        if self.progress is not None:
+            self.progress.setValue(self.progress.value()+int(20*received/total))
     
     def _sslError(self, reply, errors):
         reply.ignoreSslErrors()
