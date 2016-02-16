@@ -30,37 +30,6 @@ TYPES_MAP = {
     'number' : QVariant.Double,
 }
 
-from .connector import DiviConnector
-
-def loadLayer(mapLayer, node):
-    layerid = mapLayer.customProperty('DiviId')
-    if layerid is not None:
-        connector = DiviConnector()
-        layer_meta = connector.diviGetLayer(layerid)
-        data = connector.diviGetLayerFeatures(layerid)
-        if data:
-            if mapLayer.geometryType() == QGis.Point:
-                points = mapLayer
-                layer = {'points':points}
-            elif mapLayer.geometryType() == QGis.Line:
-                lines = mapLayer
-                layer = {'lines':lines}
-            elif mapLayer.geometryType() == QGis.Polygon:
-                polygons = mapLayer
-                layer = {'polygons':polygons}
-            else:
-                return
-            addFeatures(layerid, data['features'], fields=getFields(layer_meta['fields']), **layer)
-
-def addLayer(features, layer):
-    #Layers have CRS==4326
-    definition = '?crs=epsg:4326'
-    #Create temp layers for point, linestring and polygon geometry types
-    points = QgsVectorLayer("MultiPoint"+definition, layer.name, "memory")
-    lines = QgsVectorLayer("MultiLineString"+definition, layer.name, "memory")
-    polygons = QgsVectorLayer("MultiPolygon"+definition, layer.name, "memory")
-    return addFeatures(layer.id, features, fields=getFields(layer.fields), points=points, lines=lines, polygons=polygons)
-
 def getFields(fields):
     return [ QgsField(field['key'], TYPES_MAP.get(field['type'], QVariant.String)) for field in fields ]
 

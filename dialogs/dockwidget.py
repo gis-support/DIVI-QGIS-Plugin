@@ -25,11 +25,12 @@ import os
 
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import pyqtSignal, QSettings
-from qgis.core import QgsMessageLog, QgsMapLayerRegistry
+from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer
 from qgis.gui import QgsMessageBar
 from ..utils.connector import DiviConnector
-from ..utils.data import addLayer
+from ..utils.data import getFields, addFeatures
 from ..utils.model import DiviModel, LayerItem, TableItem
+from ..utils.widgets import ProgressMessageBar
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'dockwidget.ui'))
@@ -116,13 +117,15 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     def dblClick(self, index):
         item = index.internalPointer()
         if isinstance(item, LayerItem):
+            msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%item.name)
             connector = self.getConnector()
             data = connector.diviGetLayerFeatures(item.id)
             if data:
-                added = addLayer(data['features'], item)
+                added = self.addLayer(data['features'], item)
                 if added:
                     self.layers_id.add(item.id)
                     item.loaded = True
+            msgBar.close()
         elif isinstance(item, TableItem):
             self.iface.messageBar().pushMessage('DIVI',
                 self.trUtf8(u'Aby dodać tabelę musisz posiadać QGIS w wersji 2.14 lub nowszej.'),
@@ -150,6 +153,15 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.setLoad( self.tvData.model().rootItem.childItems, removed_ids, False )
     
     #OTHERS
+    
+    def addLayer(self, features, layer):
+        #Layers have CRS==4326
+        definition = '?crs=epsg:4326'
+        #Create temp layers for point, linestring and polygon geometry types
+        points = QgsVectorLayer("MultiPoint"+definition, layer.name, "memory")
+        lines = QgsVectorLayer("MultiLineString"+definition, layer.name, "memory")
+        polygons = QgsVectorLayer("MultiPolygon"+definition, layer.name, "memory")
+        return addFeatures(layer.id, features, fields=getFields(layer.fields), points=points, lines=lines, polygons=polygons)
     
     def setLoad(self, items, ids, value):
         for item in items:

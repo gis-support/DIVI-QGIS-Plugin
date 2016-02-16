@@ -22,7 +22,7 @@
 """
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
 from PyQt4.QtGui import QAction, QIcon
-from qgis.core import QgsProject
+from qgis.core import QgsProject, QGis
 # Initialize Qt resources from file resources.py
 import resources
 
@@ -30,7 +30,9 @@ import resources
 from dialogs.dockwidget import DiviPluginDockWidget
 import os.path
 
-from .utils.data import loadLayer
+from .utils.connector import DiviConnector
+from .utils.data import addFeatures, getFields
+from .utils.widgets import ProgressMessageBar
 
 class DiviPlugin:
     """QGIS Plugin Implementation."""
@@ -169,7 +171,7 @@ class DiviPlugin:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
         
-        QgsProject.instance().readMapLayer.connect(loadLayer)
+        QgsProject.instance().readMapLayer.connect(self.loadLayer)
         
         icon_path = ':/plugins/DiviPlugin/images/icon.png'
         self.add_action(
@@ -202,7 +204,7 @@ class DiviPlugin:
 
         #print "** UNLOAD DiviPlugin"
         
-        QgsProject.instance().readMapLayer.disconnect(loadLayer)
+        QgsProject.instance().readMapLayer.disconnect(self.loadLayer)
 
         for action in self.actions:
             self.iface.removePluginWebMenu(
@@ -236,4 +238,25 @@ class DiviPlugin:
             # TODO: fix to allow choice of dock location
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
-
+    
+    def loadLayer(self, mapLayer, node):
+        layerid = mapLayer.customProperty('DiviId')
+        if layerid is not None:
+            msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%mapLayer.name())
+            connector = DiviConnector()
+            layer_meta = connector.diviGetLayer(layerid)
+            data = connector.diviGetLayerFeatures(layerid)
+            if data:
+                if mapLayer.geometryType() == QGis.Point:
+                    points = mapLayer
+                    layer = {'points':points}
+                elif mapLayer.geometryType() == QGis.Line:
+                    lines = mapLayer
+                    layer = {'lines':lines}
+                elif mapLayer.geometryType() == QGis.Polygon:
+                    polygons = mapLayer
+                    layer = {'polygons':polygons}
+                else:
+                    return
+                addFeatures(layerid, data['features'], fields=getFields(layer_meta['fields']), **layer)
+            msgBar.close()
