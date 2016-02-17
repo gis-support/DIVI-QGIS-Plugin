@@ -332,17 +332,17 @@ class DiviPlugin:
                 self.msgBar.setProgress(i/count)
         #Add only layers that have features
         result = []
-        if points_list:
+        if points_list and points is not None:
             points_pr.addFeatures(points_list)
             points.setCustomProperty('DiviId', layerid)
             QgsMapLayerRegistry.instance().addMapLayer(points)
             result.append(points)
-        if lines_list:
+        if lines_list and lines is not None:
             lines_pr.addFeatures(lines_list)
             lines.setCustomProperty('DiviId', layerid)
             QgsMapLayerRegistry.instance().addMapLayer(lines)
             result.append(lines)
-        if polygons_list:
+        if polygons_list and polygons is not None:
             polygons_pr.addFeatures(polygons_list)
             polygons.setCustomProperty('DiviId', layerid)
             QgsMapLayerRegistry.instance().addMapLayer(polygons)
