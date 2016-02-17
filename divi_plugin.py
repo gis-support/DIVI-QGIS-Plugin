@@ -273,6 +273,8 @@ class DiviPlugin:
             self.msgBar.progress.setValue(100)
             self.msgBar.close()
             self.msgBar = None
+        if self.dockwidget is not None:
+            self.dockwidget.getLoadedDiviLayers([mapLayer])
     
     def addLayer(self, features, layer):
         #Layers have CRS==4326

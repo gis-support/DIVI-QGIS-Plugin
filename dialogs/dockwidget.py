@@ -103,8 +103,9 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         if token:
             self.setLogginStatus(True)
     
-    def getLoadedDiviLayers(self):
-        layers = [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]
+    def getLoadedDiviLayers(self, layers=None):
+        if layers is None:
+            layers = [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]
         for layer in layers:
             layerItem = self.findLayerItem(layer.customProperty('DiviId'))
             if layerItem is not None:
