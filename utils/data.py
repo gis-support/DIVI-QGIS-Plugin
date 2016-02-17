@@ -75,19 +75,20 @@ def addFeatures(layerid, features, fields, points=None, lines=None, polygons=Non
         if progress is not None:
             progress.setValue( progressMin+int(progressMax*i/count) )
     #Add only layers that have features
+    result = []
     if points_list:
         points_pr.addFeatures(points_list)
         points.setCustomProperty('DiviId', layerid)
         QgsMapLayerRegistry.instance().addMapLayer(points)
+        result.append(points)
     if lines_list:
         lines_pr.addFeatures(lines_list)
         lines.setCustomProperty('DiviId', layerid)
         QgsMapLayerRegistry.instance().addMapLayer(lines)
+        result.append(lines)
     if polygons_list:
         polygons_pr.addFeatures(polygons_list)
         polygons.setCustomProperty('DiviId', layerid)
         QgsMapLayerRegistry.instance().addMapLayer(polygons)
-    if points_list or lines_list or polygons_list:
-        return True
-    else:
-        return False
+        result.append(polygons)
+    return result

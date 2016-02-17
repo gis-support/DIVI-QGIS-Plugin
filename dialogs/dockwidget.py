@@ -24,7 +24,7 @@
 import os
 
 from PyQt4 import QtGui, uic
-from PyQt4.QtCore import pyqtSignal, QSettings
+from PyQt4.QtCore import pyqtSignal, QSettings, Qt
 from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer
 from qgis.gui import QgsMessageBar
 from ..utils.connector import DiviConnector
@@ -51,7 +51,6 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.iface = iface
         self.token = QSettings().value('divi/token', None)
         self.user = QSettings().value('divi/email', None)
-        self.layers_id = set([])
         self.setupUi(self)
         self.tvData.setModel( DiviModel() )
         self.setLogginStatus(bool(self.token))
@@ -85,7 +84,6 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 return
         QSettings().remove('divi/token')
         self.setLogginStatus(False)
-            
     
     def setLogginStatus(self, logged):
         if logged:
@@ -107,11 +105,11 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             self.setLogginStatus(True)
     
     def getLoadedDiviLayers(self):
-        for _, layer in QgsMapLayerRegistry.instance().mapLayers().iteritems():
-            layerid = layer.customProperty('DiviId')
-            if layerid is not None:
-                self.layers_id.add(layerid)
-        self.setLoad( self.tvData.model().rootItem.childItems, self.layers_id, True )
+        layers = [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]
+        for layer in layers:
+            layerItem = self.findLayerItem(layer.customProperty('DiviId'))
+            if layerItem is not None:
+                layerItem.items.append(layer)
     
     #SLOTS
     
@@ -123,10 +121,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             connector = self.getConnector(progress=msgBar.progress, progressMin=10, progressMax=40)
             data = connector.diviGetLayerFeatures(item.id)
             if data:
-                added = self.addLayer(data['features'], item, progress=msgBar.progress)
-                if added:
-                    self.layers_id.add(item.id)
-                    item.loaded = True
+                item.items.extend( self.addLayer(data['features'], item, progress=msgBar.progress) )
             msgBar.progress.setValue(100)
             msgBar.close()
         elif isinstance(item, TableItem):
@@ -149,11 +144,9 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         removed_ids = set([])
         for lid in layers:
             layer = QgsMapLayerRegistry.instance().mapLayer(lid)
-            layerid = layer.customProperty('DiviId')
-            if layerid in self.layers_id:
-                self.layers_id.remove(layerid)
-                removed_ids.add(layerid)
-        self.setLoad( self.tvData.model().rootItem.childItems, removed_ids, False )
+            layerItem = self.findLayerItem(layer.customProperty('DiviId'))
+            if layerItem is not None and layer in layerItem.items:
+                layerItem.items.remove(layer)
     
     #OTHERS
     
@@ -168,9 +161,15 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             points=points, lines=lines, polygons=polygons,
             progress=progress, progressMin=50, progressMax=100)
     
-    def setLoad(self, items, ids, value):
-        for item in items:
-            if item.childItems:
-                self.setLoad(item.childItems, ids, value)
-            elif isinstance(item, LayerItem) and item.id in ids:
-                item.loaded = value
+    def findLayerItem(self, lid):
+        if lid is None:
+            return
+        layers = self.tvData.model().match(
+            self.tvData.model().index(0,0),
+            Qt.UserRole,
+            'layer@%s' % lid,
+            1,
+            Qt.MatchRecursive
+        )
+        if layers:
+            return layers[0].internalPointer()

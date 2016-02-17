@@ -103,7 +103,7 @@ class LayerItem(TreeItem):
         self.fields = data.get('fields')
         
         self.icon = QIcon(':/plugins/DiviPlugin/images/layer.png')
-        self.loaded = False
+        self.items = []
 
 class TableItem(TreeItem):
     
@@ -116,7 +116,7 @@ class TableItem(TreeItem):
         self.abstract = data.get('abstract')
         
         self.icon = QIcon(':/plugins/DiviPlugin/images/table.png')
-        self.loaded = False
+        self.items = []
 
 class DiviModel(QAbstractItemModel):
     
@@ -140,12 +140,15 @@ class DiviModel(QAbstractItemModel):
             return item.name
         elif role == Qt.DecorationRole and hasattr(item, 'icon'):
             return item.icon
-        elif role == Qt.FontRole and hasattr(item, 'loaded'):
+        elif role == Qt.FontRole and hasattr(item, 'items'):
             font = QFont()
-            font.setBold(item.loaded)
+            font.setBold(bool(item.items))
             return font
         elif role == Qt.ToolTipRole:
             return item.abstract
+        elif role == Qt.UserRole:
+            #Required for finding layer item
+            return 'layer@%s' % item.id
     
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole and section == 0:
