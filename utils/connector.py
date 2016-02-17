@@ -32,8 +32,8 @@ class DiviConnector(QObject):
     diviLogged = pyqtSignal(str, str)
     downloadingProgress = pyqtSignal(float)
     
-    #DIVI_HOST = 'https://divi.io'
-    DIVI_HOST = 'http://0.0.0.0:5034'
+    DIVI_HOST = 'https://divi.io'
+    #DIVI_HOST = 'http://0.0.0.0:5034'
     
     def __init__(self, iface=None, auto_login=True):
         QObject.__init__(self)
