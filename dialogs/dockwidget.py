@@ -82,6 +82,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 self.getLoadedDiviLayers()
                 return
         QSettings().remove('divi/token')
+        QSettings().remove('divi/id')
+        QSettings().remove('divi/status')
         self.setLogginStatus(False)
     
     def setLogginStatus(self, logged):
@@ -122,8 +124,9 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             connector.downloadingProgress.connect(self.plugin.updateDownloadProgress)
             data = connector.diviGetLayerFeatures(item.id)
             if data:
+                permissions = connector.getUserLayerPermissions(item.id)
                 self.plugin.msgBar.setBoundries(50, 50)
-                item.items.extend( self.plugin.addLayer(data['features'], item) )
+                item.items.extend( self.plugin.addLayer(data['features'], item, permissions) )
             self.plugin.msgBar.progress.setValue(100)
             self.plugin.msgBar.close()
             self.plugin.msgBar = None

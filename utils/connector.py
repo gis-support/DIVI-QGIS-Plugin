@@ -32,8 +32,8 @@ class DiviConnector(QObject):
     diviLogged = pyqtSignal(str, str)
     downloadingProgress = pyqtSignal(float)
     
-    DIVI_HOST = 'https://divi.io'
-    #DIVI_HOST = 'http://0.0.0.0:5034'
+    #DIVI_HOST = 'https://divi.io'
+    DIVI_HOST = 'http://0.0.0.0:5034'
     
     def __init__(self, iface=None, auto_login=True):
         QObject.__init__(self)
@@ -113,6 +113,7 @@ class DiviConnector(QObject):
         self.token = data['token']
         settings.setValue('divi/email', email)
         settings.setValue('divi/token', self.token)
+        settings.setValue('divi/status', data['status'])
         self.diviLogged.emit(email, self.token)
         return self.token
     
@@ -138,6 +139,27 @@ class DiviConnector(QObject):
         layer = self.sendGetRequest('/layers/%s'%layerid, {'token':self.token})
         return self.getJson(layer)
     
+    def getUserLayersPermissions(self, userid=None):
+        if userid is None:
+            userid = self.getUserId()
+        if userid is None:
+            return
+        QgsMessageLog.logMessage('Fecthing permissions for user %s' % userid, 'DIVI')
+        perms = self.getJson(self.sendGetRequest('/user_layers/%s'%userid, {'token':self.token}))
+        if not perms:
+            return
+        return { lyr['id']:lyr.get('editing', 0) for lyr in perms['data'] }
+    
+    def getUserLayerPermissions(self, layerid, userid=None):
+        if userid is None:
+            userid = self.getUserId()
+        if userid is None:
+            return
+        QgsMessageLog.logMessage('Fecthing permissions to layer %s for user %s' % (layerid, userid), 'DIVI')
+        perm = self.getJson(self.sendGetRequest('/user_layers/%s/%s'%(userid, layerid), {'token':self.token}))
+        if perm:
+            return { layerid : perm.get('editing', 0) }
+    
     #Helpers
     
     def downloadProgress(self, received, total):
@@ -150,6 +172,24 @@ class DiviConnector(QObject):
         url = QUrl(self.DIVI_HOST + endpoint)
         url.setQueryItems(list(params.iteritems()))
         return url
+    
+    def getUserId(self):
+        settings = QSettings()
+        userid = settings.value('divi/id', None)
+        if userid is None:
+            username = settings.value('divi/email', None)
+            users = self.getJson(self.sendGetRequest('/users', {'token':self.token}))
+            if not users or username is None:
+                return
+            for data in users['data']:
+                if data['email'] == username:
+                    userid = data['id']
+                    settings.setValue('divi/id', userid)
+                    settings.setValue('divi/status', data['status'])
+                    break
+            else:
+                return
+        return userid
     
     @staticmethod
     def getJson(data):

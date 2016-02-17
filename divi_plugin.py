@@ -31,6 +31,7 @@ import resources
 # Import the code for the DockWidget
 from dialogs.dockwidget import DiviPluginDockWidget
 import os.path
+from functools import partial
 
 from .utils.connector import DiviConnector
 from .utils.widgets import ProgressMessageBar
@@ -258,25 +259,23 @@ class DiviPlugin:
             data = connector.diviGetLayerFeatures(layerid)
             if data:
                 if mapLayer.geometryType() == QGis.Point:
-                    points = mapLayer
-                    layer = {'points':points}
+                    layer = {'points':mapLayer}
                 elif mapLayer.geometryType() == QGis.Line:
-                    lines = mapLayer
-                    layer = {'lines':lines}
+                    layer = {'lines':mapLayer}
                 elif mapLayer.geometryType() == QGis.Polygon:
-                    polygons = mapLayer
-                    layer = {'polygons':polygons}
+                    layer = {'polygons':mapLayer}
                 else:
                     return
                 self.msgBar.setBoundries(50, 50)
-                self.addFeatures(layerid, data['features'], fields=self.getFields(layer_meta['fields']),**layer)
+                permissions = connector.getUserLayersPermissions()
+                self.addFeatures(layerid, data['features'], fields=self.getFields(layer_meta['fields']),permissions=permissions,**layer)
             self.msgBar.progress.setValue(100)
             self.msgBar.close()
             self.msgBar = None
         if self.dockwidget is not None:
             self.dockwidget.getLoadedDiviLayers([mapLayer])
     
-    def addLayer(self, features, layer):
+    def addLayer(self, features, layer, permissions):
         #Layers have CRS==4326
         definition = '?crs=epsg:4326'
         #Create temp layers for point, linestring and polygon geometry types
@@ -284,12 +283,12 @@ class DiviPlugin:
         lines = QgsVectorLayer("MultiLineString"+definition, layer.name, "memory")
         polygons = QgsVectorLayer("MultiPolygon"+definition, layer.name, "memory")
         return self.addFeatures(layer.id, features, fields=self.getFields(layer.fields),
-            points=points, lines=lines, polygons=polygons)
+            points=points, lines=lines, polygons=polygons, permissions=permissions)
     
     def getFields(self, fields):
         return [ QgsField(field['key'], self.TYPES_MAP.get(field['type'], QVariant.String)) for field in fields ]
 
-    def addFeatures(self, layerid, features, fields, points=None, lines=None, polygons=None):
+    def addFeatures(self, layerid, features, fields, points=None, lines=None, polygons=None, permissions={}):
         """ Add DIVI layer to QGIS """
         if points:
             points_pr = points.dataProvider()
@@ -332,22 +331,23 @@ class DiviPlugin:
                 self.msgBar.setProgress(i/count)
         #Add only layers that have features
         result = []
+        status = QSettings().value('divi/status', 3)
+        register = partial(self.registerLayer, layerid=layerid, status=status, permissions=permissions)
         if points_list and points is not None:
-            points_pr.addFeatures(points_list)
-            points.setCustomProperty('DiviId', layerid)
-            QgsMapLayerRegistry.instance().addMapLayer(points)
-            result.append(points)
+            result.append(register(layer=points, features=points_list))
         if lines_list and lines is not None:
-            lines_pr.addFeatures(lines_list)
-            lines.setCustomProperty('DiviId', layerid)
-            QgsMapLayerRegistry.instance().addMapLayer(lines)
-            result.append(lines)
+            result.append(register(layer=lines, features=lines_list))
         if polygons_list and polygons is not None:
-            polygons_pr.addFeatures(polygons_list)
-            polygons.setCustomProperty('DiviId', layerid)
-            QgsMapLayerRegistry.instance().addMapLayer(polygons)
-            result.append(polygons)
+            result.append(register(layer=polygons, features=polygons_list))
         return result
+    
+    def registerLayer(self, layer, layerid, features, status, permissions):
+        layer.dataProvider().addFeatures(features)
+        layer.setCustomProperty('DiviId', layerid)
+        if status>2:
+            layer.setReadOnly( not bool(permissions.get(layerid, False)) )
+        QgsMapLayerRegistry.instance().addMapLayer(layer)
+        return layer
     
     def updateDownloadProgress(self, value):
         if self.msgBar is not None:
