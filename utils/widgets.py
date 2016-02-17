@@ -23,12 +23,15 @@
 
 from PyQt4.QtCore import QObject
 from PyQt4.QtGui import QProgressBar
+from qgis.core import QgsMessageLog
 
 class ProgressMessageBar(QObject):
     
-    def __init__(self, iface, message):
+    def __init__(self, iface, message, minValue=10, delta=40):
         super(ProgressMessageBar, self).__init__()
         self.iface = iface
+        self.minValue = minValue
+        self.delta = delta
         if self.iface is not None:
             msgBar = self.iface.messageBar().createMessage('DIVI',message)
             self.progress = QProgressBar()
@@ -36,6 +39,15 @@ class ProgressMessageBar(QObject):
             self.iface.messageBar().pushWidget(msgBar, self.iface.messageBar().INFO)
         else:
             self.progress = None
+    
+    def setProgress(self, value):
+        self.progress.setValue(self.minValue+int(self.delta*value))
+    
+    def setBoundries(self, minValue=None, delta=None):
+        if minValue is not None:
+            self.minValue = minValue
+        if delta is not None:
+            self.delta = delta
     
     def close(self):
         if self.iface is not None:

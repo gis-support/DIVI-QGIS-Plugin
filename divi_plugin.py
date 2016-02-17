@@ -20,9 +20,11 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
+from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt,\
+    QVariant
 from PyQt4.QtGui import QAction, QIcon
-from qgis.core import QgsProject, QGis
+from qgis.core import QgsProject, QGis, QgsVectorLayer, QgsMessageLog,\
+    QgsMapLayerRegistry, QgsField, QgsFeature, QgsGeometry
 # Initialize Qt resources from file resources.py
 import resources
 
@@ -31,11 +33,14 @@ from dialogs.dockwidget import DiviPluginDockWidget
 import os.path
 
 from .utils.connector import DiviConnector
-from .utils.data import addFeatures, getFields
 from .utils.widgets import ProgressMessageBar
 
 class DiviPlugin:
     """QGIS Plugin Implementation."""
+    
+    TYPES_MAP = {
+        'number' : QVariant.Double,
+    }
 
     def __init__(self, iface):
         """Constructor.
@@ -76,6 +81,8 @@ class DiviPlugin:
 
         self.pluginIsActive = False
         self.dockwidget = None
+        
+        self.msgBar = None
 
 
     # noinspection PyMethodMayBeStatic
@@ -188,6 +195,7 @@ class DiviPlugin:
         #print "** CLOSING DiviPlugin"
 
         # disconnects
+        QgsMapLayerRegistry.instance().layersWillBeRemoved.connect( self.dockwidget.layersRemoved )
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
 
         # remove this statement if dockwidget is to remain
@@ -229,7 +237,7 @@ class DiviPlugin:
             #    removed on close (see self.onClosePlugin method)
             if self.dockwidget == None:
                 # Create the dockwidget (after translation) and keep reference
-                self.dockwidget = DiviPluginDockWidget(self.iface)
+                self.dockwidget = DiviPluginDockWidget(self)
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
@@ -242,9 +250,10 @@ class DiviPlugin:
     def loadLayer(self, mapLayer, node):
         layerid = mapLayer.customProperty('DiviId')
         if layerid is not None:
-            msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%mapLayer.name())
+            self.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%mapLayer.name())
             connector = DiviConnector()
-            msgBar.progress.setValue(10)
+            connector.downloadingProgress.connect(self.updateDownloadProgress)
+            self.msgBar.progress.setValue(10)
             layer_meta = connector.diviGetLayer(layerid)
             data = connector.diviGetLayerFeatures(layerid)
             if data:
@@ -259,7 +268,85 @@ class DiviPlugin:
                     layer = {'polygons':polygons}
                 else:
                     return
-                addFeatures(layerid, data['features'], fields=getFields(layer_meta['fields']),
-                    progress=msgBar.progress, progressMin=50, progressMax=100, **layer)
-            msgBar.progress.setValue(100)
-            msgBar.close()
+                self.msgBar.setBoundries(50, 50)
+                self.addFeatures(layerid, data['features'], fields=self.getFields(layer_meta['fields']),**layer)
+            self.msgBar.progress.setValue(100)
+            self.msgBar.close()
+            self.msgBar = None
+    
+    def addLayer(self, features, layer):
+        #Layers have CRS==4326
+        definition = '?crs=epsg:4326'
+        #Create temp layers for point, linestring and polygon geometry types
+        points = QgsVectorLayer("MultiPoint"+definition, layer.name, "memory")
+        lines = QgsVectorLayer("MultiLineString"+definition, layer.name, "memory")
+        polygons = QgsVectorLayer("MultiPolygon"+definition, layer.name, "memory")
+        return self.addFeatures(layer.id, features, fields=self.getFields(layer.fields),
+            points=points, lines=lines, polygons=polygons)
+    
+    def getFields(self, fields):
+        return [ QgsField(field['key'], self.TYPES_MAP.get(field['type'], QVariant.String)) for field in fields ]
+
+    def addFeatures(self, layerid, features, fields, points=None, lines=None, polygons=None):
+        """ Add DIVI layer to QGIS """
+        if points:
+            points_pr = points.dataProvider()
+            if points_pr.fields():
+                points_pr.deleteAttributes(range(len(points_pr.fields())))
+            points_pr.addAttributes(fields)
+            points.updateFields()
+        if lines:
+            lines_pr = lines.dataProvider()
+            if lines_pr.fields():
+                lines_pr.deleteAttributes(range(len(lines_pr.fields())))
+            lines_pr.addAttributes(fields)
+            lines.updateFields()
+        if polygons:
+            polygons_pr = polygons.dataProvider()
+            if polygons_pr.fields():
+                polygons_pr.deleteAttributes(range(len(polygons_pr.fields())))
+            polygons_pr.addAttributes(fields)
+            polygons.updateFields()
+        #Lists of QGIS features
+        points_list = []
+        lines_list = []
+        polygons_list = []
+        count = float(len(features))
+        for i, feature in enumerate(features):
+            geom = QgsGeometry.fromWkt(feature['geometry'])
+            f = QgsFeature()
+            f.setGeometry(geom)
+            f.setAttributes([ feature['properties'].get(field.name()) for field in fields ])
+            #Add feature to list by geometry type
+            if geom.type() == QGis.Point:
+                points_list.append(f)
+            elif geom.type() == QGis.Line:
+                lines_list.append(f)
+            elif geom.type() == QGis.Polygon:
+                polygons_list.append(f)
+            else:
+                continue
+            if self.msgBar is not None:
+                self.msgBar.setProgress(i/count)
+        #Add only layers that have features
+        result = []
+        if points_list:
+            points_pr.addFeatures(points_list)
+            points.setCustomProperty('DiviId', layerid)
+            QgsMapLayerRegistry.instance().addMapLayer(points)
+            result.append(points)
+        if lines_list:
+            lines_pr.addFeatures(lines_list)
+            lines.setCustomProperty('DiviId', layerid)
+            QgsMapLayerRegistry.instance().addMapLayer(lines)
+            result.append(lines)
+        if polygons_list:
+            polygons_pr.addFeatures(polygons_list)
+            polygons.setCustomProperty('DiviId', layerid)
+            QgsMapLayerRegistry.instance().addMapLayer(polygons)
+            result.append(polygons)
+        return result
+    
+    def updateDownloadProgress(self, value):
+        if self.msgBar is not None:
+            self.msgBar.setProgress(value)

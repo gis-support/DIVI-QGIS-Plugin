@@ -28,7 +28,6 @@ from PyQt4.QtCore import pyqtSignal, QSettings, Qt
 from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer
 from qgis.gui import QgsMessageBar
 from ..utils.connector import DiviConnector
-from ..utils.data import getFields, addFeatures
 from ..utils.model import DiviModel, LayerItem, TableItem
 from ..utils.widgets import ProgressMessageBar
 
@@ -40,7 +39,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
 
-    def __init__(self, iface, parent=None):
+    def __init__(self, plugin, parent=None):
         """Constructor."""
         super(DiviPluginDockWidget, self).__init__(parent)
         # Set up the user interface from Designer.
@@ -48,7 +47,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         # self.<objectname>, and you can use autoconnect slots - see
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
-        self.iface = iface
+        self.plugin = plugin
+        self.iface = plugin.iface
         self.token = QSettings().value('divi/token', None)
         self.user = QSettings().value('divi/email', None)
         self.setupUi(self)
@@ -62,9 +62,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.tvData.customContextMenuRequested.connect(self.showMenu)
         QgsMapLayerRegistry.instance().layersWillBeRemoved.connect( self.layersRemoved )
     
-    def getConnector(self, auto_login=True, progress=None, progressMin=0, progressMax=40):
-        connector = DiviConnector(iface=self.iface, auto_login=auto_login,
-            progress=progress, progressMin=progressMin, progressMax=progressMax)
+    def getConnector(self, auto_login=True):
+        connector = DiviConnector(iface=self.iface, auto_login=auto_login)
         connector.diviLogged.connect(self.setUserData)
         return connector
     
@@ -116,14 +115,17 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     def dblClick(self, index):
         item = index.internalPointer()
         if isinstance(item, LayerItem):
-            msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%item.name)
-            msgBar.progress.setValue(10)
-            connector = self.getConnector(progress=msgBar.progress, progressMin=10, progressMax=40)
+            self.plugin.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%item.name)
+            self.plugin.msgBar.progress.setValue(10)
+            connector = self.getConnector()
+            connector.downloadingProgress.connect(self.plugin.updateDownloadProgress)
             data = connector.diviGetLayerFeatures(item.id)
             if data:
-                item.items.extend( self.addLayer(data['features'], item, progress=msgBar.progress) )
-            msgBar.progress.setValue(100)
-            msgBar.close()
+                self.plugin.msgBar.setBoundries(50, 50)
+                item.items.extend( self.plugin.addLayer(data['features'], item) )
+            self.plugin.msgBar.progress.setValue(100)
+            self.plugin.msgBar.close()
+            self.plugin.msgBar = None
         elif isinstance(item, TableItem):
             self.iface.messageBar().pushMessage('DIVI',
                 self.trUtf8(u'Aby dodać tabelę musisz posiadać QGIS w wersji 2.14 lub nowszej.'),
@@ -149,17 +151,6 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 layerItem.items.remove(layer)
     
     #OTHERS
-    
-    def addLayer(self, features, layer, progress=None):
-        #Layers have CRS==4326
-        definition = '?crs=epsg:4326'
-        #Create temp layers for point, linestring and polygon geometry types
-        points = QgsVectorLayer("MultiPoint"+definition, layer.name, "memory")
-        lines = QgsVectorLayer("MultiLineString"+definition, layer.name, "memory")
-        polygons = QgsVectorLayer("MultiPolygon"+definition, layer.name, "memory")
-        return addFeatures(layer.id, features, fields=getFields(layer.fields),
-            points=points, lines=lines, polygons=polygons,
-            progress=progress, progressMin=50, progressMax=100)
     
     def findLayerItem(self, lid):
         if lid is None:
