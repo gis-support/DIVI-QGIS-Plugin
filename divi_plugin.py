@@ -21,7 +21,7 @@
  ***************************************************************************/
 """
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt,\
-    QVariant
+    QVariant, QObject, QPyNullVariant
 from PyQt4.QtGui import QAction, QIcon
 from qgis.core import QgsProject, QGis, QgsVectorLayer, QgsMessageLog,\
     QgsMapLayerRegistry, QgsField, QgsFeature, QgsGeometry
@@ -36,7 +36,7 @@ from functools import partial
 from .utils.connector import DiviConnector
 from .utils.widgets import ProgressMessageBar
 
-class DiviPlugin:
+class DiviPlugin(QObject):
     """QGIS Plugin Implementation."""
     
     TYPES_MAP = {
@@ -51,6 +51,7 @@ class DiviPlugin:
             application at run time.
         :type iface: QgsInterface
         """
+        super(DiviPlugin, self).__init__()
         # Save reference to the QGIS interface
         self.iface = iface
 
@@ -84,6 +85,7 @@ class DiviPlugin:
         self.dockwidget = None
         
         self.msgBar = None
+        self.ids_map = {}
 
 
     # noinspection PyMethodMayBeStatic
@@ -313,7 +315,10 @@ class DiviPlugin:
         lines_list = []
         polygons_list = []
         count = float(len(features))
-        for i, feature in enumerate(features):
+        points_ids = {}
+        lines_ids = {}
+        polygons_ids = {}
+        for i, feature in enumerate(features, start=1):
             geom = QgsGeometry.fromWkt(feature['geometry'])
             f = QgsFeature()
             f.setGeometry(geom)
@@ -321,10 +326,13 @@ class DiviPlugin:
             #Add feature to list by geometry type
             if geom.type() == QGis.Point:
                 points_list.append(f)
+                points_ids[len(points_list)] = feature['id']
             elif geom.type() == QGis.Line:
                 lines_list.append(f)
+                lines_ids[len(lines_list)] = feature['id']
             elif geom.type() == QGis.Polygon:
                 polygons_list.append(f)
+                polygons_ids[len(polygons_list)] = feature['id']
             else:
                 continue
             if self.msgBar is not None:
@@ -335,10 +343,13 @@ class DiviPlugin:
         register = partial(self.registerLayer, layerid=layerid, status=status, permissions=permissions)
         if points_list and points is not None:
             result.append(register(layer=points, features=points_list))
+            self.ids_map[points.id()] = points_ids
         if lines_list and lines is not None:
             result.append(register(layer=lines, features=lines_list))
+            self.ids_map[lines.id()] = lines_ids
         if polygons_list and polygons is not None:
             result.append(register(layer=polygons, features=polygons_list))
+            self.ids_map[polygons.id()] = polygons_ids
         return result
     
     def registerLayer(self, layer, layerid, features, status, permissions):
@@ -346,8 +357,38 @@ class DiviPlugin:
         layer.setCustomProperty('DiviId', layerid)
         if status>2:
             layer.setReadOnly( not bool(permissions.get(layerid, False)) )
+        if not layer.isReadOnly():
+            layer.beforeCommitChanges.connect(self.onLayerCommit)
+            layer.committedFeaturesAdded.connect(self.onFeaturesAdded)
         QgsMapLayerRegistry.instance().addMapLayer(layer)
         return layer
+    
+    def onLayerCommit(self):
+        layer = self.sender()
+        QgsMessageLog.logMessage(self.tr('Zapisywanie warstwy %s') % layer.name(), 'DIVI')
+        editBuffer = layer.editBuffer()
+    
+    def onFeaturesAdded(self, layerid, features):
+        layer = QgsMapLayerRegistry.instance().mapLayer(layerid)
+        QgsMessageLog.logMessage(self.tr('Zapisywanie obiektów do warstwy %s') % layer.name(), 'DIVI')
+        geojson_features = []
+        ids = []
+        for feature in features:
+            f = feature.__geo_interface__
+            f['properties'] = { key:None if isinstance(value, QPyNullVariant) else value for key, value in f['properties'].iteritems() }
+            geojson_features.append(f)
+            ids.append(feature.id())
+        addedFeatures = {u'type': u'FeatureCollection', u'features': geojson_features }
+        connector = DiviConnector()
+        result = connector.addNewFeatures(layer.customProperty('DiviId'), addedFeatures)
+        if len(ids) != len(result['inserted']):
+            self.iface.messageBar().pushMessage('BŁĄD',
+                self.trUtf8(u'Podczas dodawania nowych obiektów wystąpił błąd. Nie wszystkie obiekty zostały dodane'),
+                self.iface.messageBar().CRITICAL,
+                duration = 3
+            )
+        else:
+            self.ids_map[layerid].update({ qgis_id:divi_id for qgis_id,divi_id in zip(ids, result['inserted']) })
     
     def updateDownloadProgress(self, value):
         if self.msgBar is not None:

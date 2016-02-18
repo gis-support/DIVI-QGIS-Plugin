@@ -155,10 +155,19 @@ class DiviConnector(QObject):
             userid = self.getUserId()
         if userid is None:
             return
+        if int(QSettings().value('divi/status', 3)) < 3:
+            return { layerid : 1 }
         QgsMessageLog.logMessage('Fecthing permissions to layer %s for user %s' % (layerid, userid), 'DIVI')
         perm = self.getJson(self.sendGetRequest('/user_layers/%s/%s'%(userid, layerid), {'token':self.token}))
         if perm:
             return { layerid : perm.get('editing', 0) }
+    
+    #Edit data
+    
+    def addNewFeatures(self, layerid, data):
+        content = self.sendPostRequest('/features/%s'%layerid, data, params={'token':self.token})
+        QgsMessageLog.logMessage(str(content), 'DIVI')
+        return self.getJson(content)
     
     #Helpers
     
