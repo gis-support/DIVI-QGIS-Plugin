@@ -21,7 +21,8 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import QUrl, QObject, QEventLoop, pyqtSignal, QSettings
+from PyQt4.QtCore import QUrl, QObject, QEventLoop, pyqtSignal, QSettings, \
+    QBuffer, qDebug
 from PyQt4.QtNetwork import QNetworkRequest, QNetworkAccessManager, \
     QHttpMultiPart, QHttpPart, QNetworkReply
 from qgis.core import QgsMessageLog, QgsCredentials
@@ -49,10 +50,13 @@ class DiviConnector(QObject):
             request = QNetworkRequest(url)
             for key, value in headers.iteritems():
                 request.setRawHeader(key, value)
-            if not data:
-                reply = getattr(manager, method)(request)
+            if method == 'delete':
+                reply = manager.sendCustomRequest(request, 'DELETE', data)
             else:
-                reply = getattr(manager, method)(request, data)
+                if not data:
+                    reply = getattr(manager, method)(request)
+                else:
+                    reply = getattr(manager, method)(request, data)
             loop = QEventLoop()
             reply.downloadProgress.connect(self.downloadProgress)
             #reply.error.connect(self._error)
@@ -90,6 +94,26 @@ class DiviConnector(QObject):
                 json.dumps(data),
                 {"Content-Type":"application/json", "User-Agent":"Divi QGIS Plugin"},
             )
+    
+    def sendPutRequest(self, endpoint, data, params={}):
+        return self.sendRequest( endpoint, params,
+                'put',
+                json.dumps(data),
+                {"Content-Type":"application/json", "User-Agent":"Divi QGIS Plugin"},
+            )
+    
+    def sendDeleteRequest(self, endpoint, data, params={}):
+        buff = QBuffer()
+        buff.open(QBuffer.ReadWrite)
+        buff.write(json.dumps(data).decode('utf-8'))
+        buff.seek(0)
+        content = self.sendRequest( endpoint, params,
+            'delete',
+            buff,
+            {"Content-Type":"application/json", "User-Agent":"Divi QGIS Plugin"},
+        )
+        buff.close()
+        return content
     
     def sendGetRequest(self, endpoint, data):
         return self.sendRequest(endpoint, data, 'get',
@@ -166,13 +190,25 @@ class DiviConnector(QObject):
     
     def addNewFeatures(self, layerid, data):
         content = self.sendPostRequest('/features/%s'%layerid, data, params={'token':self.token})
-        QgsMessageLog.logMessage(str(content), 'DIVI')
+        return self.getJson(content)
+    
+    def deleteFeatures(self, layerid, fids):
+        QgsMessageLog.logMessage('Removing objects: '+str(fids), 'DIVI')
+        content = self.sendDeleteRequest('/features/%s'%layerid, {'features':fids}, params={'token':self.token})
+        return self.getJson(content)
+    
+    def changeFeatures(self, layerid, data):
+        QgsMessageLog.logMessage('Saving changed objects', 'DIVI')
+        content = self.sendPutRequest('/features/%s'%layerid, {'features':data}, params={'token':self.token})
         return self.getJson(content)
     
     #Helpers
     
     def downloadProgress(self, received, total):
-        self.downloadingProgress.emit( float(received)/total )
+        if total!=0:
+            self.downloadingProgress.emit( float(received)/total )
+        else:
+            self.downloadingProgress.emit( 1. )
     
     def _sslError(self, reply, errors):
         reply.ignoreSslErrors()

@@ -24,7 +24,7 @@ from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt,
     QVariant, QObject, QPyNullVariant
 from PyQt4.QtGui import QAction, QIcon
 from qgis.core import QgsProject, QGis, QgsVectorLayer, QgsMessageLog,\
-    QgsMapLayerRegistry, QgsField, QgsFeature, QgsGeometry
+    QgsMapLayerRegistry, QgsField, QgsFeature, QgsGeometry, QgsFeatureRequest
 # Initialize Qt resources from file resources.py
 import resources
 
@@ -365,8 +365,41 @@ class DiviPlugin(QObject):
     
     def onLayerCommit(self):
         layer = self.sender()
+        layerid = layer.id()
+        divi_id = layer.customProperty('DiviId')
         QgsMessageLog.logMessage(self.tr('Zapisywanie warstwy %s') % layer.name(), 'DIVI')
         editBuffer = layer.editBuffer()
+        ids_map = self.ids_map[layerid]
+        connector = DiviConnector()
+        #Deleted features
+        deleted = editBuffer.deletedFeatureIds()
+        if deleted:
+            fids = [ ids_map[fid] for fid in deleted ]
+            result = connector.deleteFeatures(divi_id, fids)
+            deleted_ids = result['deleted']
+            if len(set(fids).symmetric_difference(set(deleted_ids))):
+                self.iface.messageBar().pushMessage('BŁĄD',
+                    self.trUtf8(u'Podczas usuwania obiektów wystąpił błąd. Nie wszystkie obiekty zostały usunięcte'),
+                    self.iface.messageBar().CRITICAL,
+                    duration = 3
+                )
+                return
+            else:
+                for oid in deleted:
+                    ids_map.pop(oid, None)
+        #Changed features
+        changedAttributes = editBuffer.changedAttributeValues()
+        changedGeometries = editBuffer.changedGeometries()
+        fids = list(set(changedAttributes.keys()+changedGeometries.keys()))
+        if fids:
+            data = []
+            request = QgsFeatureRequest().setFilterFids(fids)
+            for f in layer.getFeatures(request):
+                geojson = f.__geo_interface__
+                geojson['properties'] = { key:None if isinstance(value, QPyNullVariant) else value for key, value in geojson['properties'].iteritems() }
+                geojson['id'] = ids_map[f.id()]
+                data.append(geojson)
+            result = connector.changeFeatures(divi_id, data)
     
     def onFeaturesAdded(self, layerid, features):
         layer = QgsMapLayerRegistry.instance().mapLayer(layerid)
