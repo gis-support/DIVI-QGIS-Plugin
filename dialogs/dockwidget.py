@@ -137,6 +137,13 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 duration = 3
             )
     
+    def refreshData(self, item):
+        layers = item.items[:]
+        for lyr in layers:
+            lyr.dataProvider().deleteFeatures(lyr.allFeatureIds())
+            self.plugin.loadLayer(lyr)
+            lyr.triggerRepaint()
+    
     def showMenu(self, point):
         index = self.tvData.indexAt(point)
         item = index.internalPointer()
@@ -144,6 +151,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         if isinstance(item, LayerItem):
             #Layer menu
             menu.addAction(self.trUtf8(u'Dodaj warstwę'), lambda: self.dblClick(index))
+            if item.items:
+                menu.addAction(self.trUtf8(u'Odśwież dane'), lambda: self.refreshData(item))
         menu.popup(self.tvData.viewport().mapToGlobal(point))
     
     def layersRemoved(self, layers):
