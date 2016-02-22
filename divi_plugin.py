@@ -270,7 +270,7 @@ class DiviPlugin(QObject):
                     return
                 self.msgBar.setBoundries(50, 50)
                 permissions = connector.getUserLayersPermissions()
-                self.addFeatures(layerid, data['features'], fields=self.getFields(layer_meta['fields']),permissions=permissions,**layer)
+                self.addFeatures(layerid, data['features'], fields=layer_meta['fields'],permissions=permissions,**layer)
             self.msgBar.progress.setValue(100)
             self.msgBar.close()
             self.msgBar = None
@@ -284,31 +284,30 @@ class DiviPlugin(QObject):
         points = QgsVectorLayer("MultiPoint"+definition, layer.name, "memory")
         lines = QgsVectorLayer("MultiLineString"+definition, layer.name, "memory")
         polygons = QgsVectorLayer("MultiPolygon"+definition, layer.name, "memory")
-        return self.addFeatures(layer.id, features, fields=self.getFields(layer.fields),
+        return self.addFeatures(layer.id, features, fields=layer.fields,
             points=points, lines=lines, polygons=polygons, permissions=permissions)
     
-    def getFields(self, fields):
-        return [ QgsField(field['key'], self.TYPES_MAP.get(field['type'], QVariant.String)) for field in fields ]
 
     def addFeatures(self, layerid, features, fields, points=None, lines=None, polygons=None, permissions={}):
         """ Add DIVI layer to QGIS """
+        qgis_fields = [ QgsField(field['key'], self.TYPES_MAP.get(field['type'], QVariant.String)) for field in fields ]
         if points:
             points_pr = points.dataProvider()
             if points_pr.fields():
                 points_pr.deleteAttributes(range(len(points_pr.fields())))
-            points_pr.addAttributes(fields)
+            points_pr.addAttributes(qgis_fields)
             points.updateFields()
         if lines:
             lines_pr = lines.dataProvider()
             if lines_pr.fields():
                 lines_pr.deleteAttributes(range(len(lines_pr.fields())))
-            lines_pr.addAttributes(fields)
+            lines_pr.addAttributes(qgis_fields)
             lines.updateFields()
         if polygons:
             polygons_pr = polygons.dataProvider()
             if polygons_pr.fields():
                 polygons_pr.deleteAttributes(range(len(polygons_pr.fields())))
-            polygons_pr.addAttributes(fields)
+            polygons_pr.addAttributes(qgis_fields)
             polygons.updateFields()
         #Lists of QGIS features
         points_list = []
@@ -322,7 +321,7 @@ class DiviPlugin(QObject):
             geom = QgsGeometry.fromWkt(feature['geometry'])
             f = QgsFeature()
             f.setGeometry(geom)
-            f.setAttributes([ feature['properties'].get(field.name()) for field in fields ])
+            f.setAttributes([ feature['properties'].get(field['key']) for field in fields ])
             #Add feature to list by geometry type
             if geom.type() == QGis.Point:
                 points_list.append(f)
@@ -344,12 +343,18 @@ class DiviPlugin(QObject):
         if points_list and points is not None:
             result.append(register(layer=points, features=points_list))
             self.ids_map[points.id()] = points_ids
+            for i, field in enumerate(fields):
+                points.addAttributeAlias(i, field['name'])
         if lines_list and lines is not None:
             result.append(register(layer=lines, features=lines_list))
             self.ids_map[lines.id()] = lines_ids
+            for i, field in enumerate(fields):
+                lines.addAttributeAlias(i, field['name'])
         if polygons_list and polygons is not None:
             result.append(register(layer=polygons, features=polygons_list))
             self.ids_map[polygons.id()] = polygons_ids
+            for i, field in enumerate(fields):
+                polygons.addAttributeAlias(i, field['name'])
         return result
     
     def registerLayer(self, layer, layerid, features, status, permissions):
