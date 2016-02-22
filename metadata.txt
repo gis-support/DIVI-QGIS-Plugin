@@ -23,7 +23,10 @@ repository=https://bitbucket.org/gissupport/divi-qgis-plugin
 # Recommended items:
 
 # Uncomment the following line and add your changelog:
-changelog=0.3
+changelog=0.4
+  - checking editing permission for layers
+  - add layer edit capabilities (adding new features, editing attributes and geometry, deleting features)
+  0.3
   - user can disconnect from DIVI  (delete active token) and login as another user
   - added right click menu for layers in tree view
   - loaded DIVI layers are bold in tree view
