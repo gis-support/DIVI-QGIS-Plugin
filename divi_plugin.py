@@ -75,15 +75,7 @@ class DiviPlugin(QObject):
         # Declare instance attributes
         self.actions = []
         self.menu = self.tr(u'&DIVI QGIS Plugin')
-        # TODO: We are going to let the user set this up in a future iteration
-        self.toolbar = self.iface.addToolBar(u'DiviPlugin')
-        self.toolbar.setObjectName(u'DiviPlugin')
 
-        #print "** INITIALIZING DiviPlugin"
-
-        self.pluginIsActive = False
-        self.dockwidget = None
-        
         self.msgBar = None
         self.ids_map = {}
 
@@ -108,7 +100,8 @@ class DiviPlugin(QObject):
         self,
         icon_path,
         text,
-        callback,
+        callback=None,
+        action=None,
         enabled_flag=True,
         add_to_menu=True,
         add_to_toolbar=True,
@@ -154,9 +147,13 @@ class DiviPlugin(QObject):
         :rtype: QAction
         """
 
-        icon = QIcon(icon_path)
-        action = QAction(icon, text, parent)
-        action.triggered.connect(callback)
+        if action is None:
+            action = QAction(icon, text, parent)
+        else:
+            action.setIcon(QIcon(icon_path))
+            action.setText(text)
+        if callback is not None:
+            action.triggered.connect(callback)
         action.setEnabled(enabled_flag)
 
         if status_tip is not None:
@@ -166,7 +163,7 @@ class DiviPlugin(QObject):
             action.setWhatsThis(whats_this)
 
         if add_to_toolbar:
-            self.toolbar.addAction(action)
+            self.iface.addWebToolBarIcon(action)
 
         if add_to_menu:
             self.iface.addPluginToWebMenu(
@@ -184,73 +181,37 @@ class DiviPlugin(QObject):
         QgsProject.instance().readMapLayer.connect(self.loadLayer)
         
         icon_path = ':/plugins/DiviPlugin/images/icon.png'
+        self.dockwidget = DiviPluginDockWidget(self)
+        
         self.add_action(
             icon_path,
-            text=self.tr(u'DIVI'),
-            callback=self.run,
+            text=self.tr(u'DIVI QGIS Plugin'),
+            action = self.dockwidget.toggleViewAction(),
             parent=self.iface.mainWindow())
+        
+        self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
 
     #--------------------------------------------------------------------------
-
-    def onClosePlugin(self):
-        """Cleanup necessary items here when plugin dockwidget is closed"""
-
-        #print "** CLOSING DiviPlugin"
-
-        # disconnects
-        QgsMapLayerRegistry.instance().layersWillBeRemoved.connect( self.dockwidget.layersRemoved )
-        self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
-
-        # remove this statement if dockwidget is to remain
-        # for reuse if plugin is reopened
-        # Commented next statement since it causes QGIS crashe
-        # when closing the docked window:
-        # self.dockwidget = None
-
-        self.pluginIsActive = False
-
-
+    
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
 
         #print "** UNLOAD DiviPlugin"
         
         QgsProject.instance().readMapLayer.disconnect(self.loadLayer)
+        QgsMapLayerRegistry.instance().layersWillBeRemoved.connect( self.dockwidget.layersRemoved )
 
         for action in self.actions:
             self.iface.removePluginWebMenu(
                 self.tr(u'&DIVI QGIS Plugin'),
                 action)
-            self.iface.removeToolBarIcon(action)
-        # remove the toolbar
-        del self.toolbar
+            # remove icon from toolbar
+            self.iface.removeWebToolBarIcon(action)
+        self.iface.removeDockWidget(self.dockwidget)
 
     #--------------------------------------------------------------------------
-
-    def run(self):
-        """Run method that loads and starts the plugin"""
-
-        if not self.pluginIsActive:
-            self.pluginIsActive = True
-
-            #print "** STARTING DiviPlugin"
-
-            # dockwidget may not exist if:
-            #    first run of plugin
-            #    removed on close (see self.onClosePlugin method)
-            if self.dockwidget == None:
-                # Create the dockwidget (after translation) and keep reference
-                self.dockwidget = DiviPluginDockWidget(self)
-
-            # connect to provide cleanup on closing of dockwidget
-            self.dockwidget.closingPlugin.connect(self.onClosePlugin)
-
-            # show the dockwidget
-            # TODO: fix to allow choice of dock location
-            self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
-            self.dockwidget.show()
     
-    def loadLayer(self, mapLayer, node):
+    def loadLayer(self, mapLayer, node=None):
         layerid = mapLayer.customProperty('DiviId')
         if layerid is not None:
             self.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%mapLayer.name())
@@ -287,7 +248,6 @@ class DiviPlugin(QObject):
         return self.addFeatures(layer.id, features, fields=layer.fields,
             points=points, lines=lines, polygons=polygons, permissions=permissions)
     
-
     def addFeatures(self, layerid, features, fields, points=None, lines=None, polygons=None, permissions={}):
         """ Add DIVI layer to QGIS """
         qgis_fields = [ QgsField(field['key'], self.TYPES_MAP.get(field['type'], QVariant.String)) for field in fields ]
@@ -338,8 +298,7 @@ class DiviPlugin(QObject):
                 self.msgBar.setProgress(i/count)
         #Add only layers that have features
         result = []
-        status = QSettings().value('divi/status', 3)
-        register = partial(self.registerLayer, layerid=layerid, status=status, permissions=permissions)
+        register = partial(self.registerLayer, layerid=layerid, permissions=permissions, addToMap=True)
         if points_list and points is not None:
             result.append(register(layer=points, features=points_list))
             self.ids_map[points.id()] = points_ids
@@ -357,15 +316,16 @@ class DiviPlugin(QObject):
                 polygons.addAttributeAlias(i, field['name'])
         return result
     
-    def registerLayer(self, layer, layerid, features, status, permissions):
+    def registerLayer(self, layer, layerid, features, permissions, addToMap):
         layer.dataProvider().addFeatures(features)
         layer.setCustomProperty('DiviId', layerid)
-        if status>2:
+        if int(QSettings().value('divi/status', 3)) > 2:
             layer.setReadOnly( not bool(permissions.get(layerid, False)) )
         if not layer.isReadOnly():
             layer.beforeCommitChanges.connect(self.onLayerCommit)
             layer.committedFeaturesAdded.connect(self.onFeaturesAdded)
-        QgsMapLayerRegistry.instance().addMapLayer(layer)
+        if addToMap:
+            QgsMapLayerRegistry.instance().addMapLayer(layer)
         return layer
     
     def onLayerCommit(self):

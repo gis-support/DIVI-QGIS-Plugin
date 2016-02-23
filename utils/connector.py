@@ -68,7 +68,6 @@ class DiviConnector(QObject):
         manager.sslErrors.connect(self._sslError)
         reply = send(params)
         content = unicode(reply.readAll())
-        #reply.downloadProgress.disconnect(self.downloadProgress)
         if reply.error() == QNetworkReply.ConnectionRefusedError:
             if self.iface is not None:
                 self.iface.messageBar().pushMessage(self.trUtf8("Błąd"),
@@ -86,7 +85,6 @@ class DiviConnector(QObject):
             params['token'] = result
             reply = send(params)
             content = unicode(reply.readAll())
-        #reply.downloadProgress.disconnect(self.downloadProgress)
         return content
     
     def sendPostRequest(self, endpoint, data, params={}):

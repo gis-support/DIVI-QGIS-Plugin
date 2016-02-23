@@ -160,11 +160,12 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         for lid in layers:
             layer = QgsMapLayerRegistry.instance().mapLayer(lid)
             QgsMessageLog.logMessage(self.trUtf8('Usuwanie warstwy %s')%layer.name(), 'DIVI')
-            layer.beforeCommitChanges.disconnect(self.plugin.onLayerCommit)
-            layer.committedFeaturesAdded.disconnect(self.plugin.onFeaturesAdded)
             layerItem = self.findLayerItem(layer.customProperty('DiviId'))
             if layerItem is not None and layer in layerItem.items:
                 layerItem.items.remove(layer)
+                if not layer.isReadOnly():
+                    layer.beforeCommitChanges.disconnect(self.plugin.onLayerCommit)
+                    layer.committedFeaturesAdded.disconnect(self.plugin.onFeaturesAdded)
     
     #OTHERS
     
