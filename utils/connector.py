@@ -85,6 +85,12 @@ class DiviConnector(QObject):
             params['token'] = result
             reply = send(params)
             content = unicode(reply.readAll())
+        elif reply.error() == QNetworkReply.ContentNotFoundError:
+            if self.iface is not None:
+                self.iface.messageBar().pushMessage(self.trUtf8("Błąd"),
+                    self.trUtf8("Błąd 404: nie znaleziono żądanego zasobu"),
+                    level=QgsMessageBar.CRITICAL, duration=3)
+            return
         return content
     
     def sendPostRequest(self, endpoint, data, params={}):
@@ -132,7 +138,10 @@ class DiviConnector(QObject):
                 'email': email,
                 'password' : password
             })
-        data = json.loads(content)
+        try:
+            data = json.loads(content)
+        except TypeError:
+            return
         self.token = data['token']
         settings.setValue('divi/email', email)
         settings.setValue('divi/token', self.token)
