@@ -41,6 +41,12 @@ class DiviPlugin(QObject):
     
     TYPES_MAP = {
         'number' : QVariant.Double,
+        'calendar' : QVariant.DateTime,
+    }
+    
+    QGIS2DIVI_TYPES_MAP = {
+        'number' : (QVariant.Int, QVariant.Double, QVariant.UInt, QVariant.ULongLong),
+        'date' : (QVariant.Date, QVariant.DateTime)
     }
 
     def __init__(self, iface):
@@ -336,6 +342,38 @@ class DiviPlugin(QObject):
         editBuffer = layer.editBuffer()
         ids_map = self.ids_map[layerid]
         connector = DiviConnector()
+        #Added/removed fields
+        added_fields = editBuffer.addedAttributes()
+        removed_fields = editBuffer.deletedAttributeIds()
+        if added_fields or removed_fields:
+            item = self.dockwidget.findLayerItem(divi_id)
+            if len(item.items) > 1:
+                self.iface.messageBar.pushMessage(self.trUtf8("Uwaga:"),
+                    self.trUtf8("Zmieniono strukturę jednej warstwy z wczytanych %d powiązanych z wybraną warstwą DIVI. "
+                        "Wczytaj ponownie warstwy aby zaktualizować ich strukturę.") % (len(item.items),),
+                    level=QgsMessageBar.WARNING)
+            fields = item.fields[:]
+            for fid in sorted(removed_fields, reverse=True):
+                fields.pop(fid)
+            for field in added_fields:
+                if field.type() in self.QGIS2DIVI_TYPES_MAP['number']:
+                    _type = 'number'
+                elif field.type() in self.QGIS2DIVI_TYPES_MAP['date']:
+                    _type = 'calendar'
+                else:
+                    _type = 'text'
+                fields.append({
+                    'key':field.name(),
+                    'name':field.name(),
+                    'type':_type
+                })
+            response = connector.updateLayer(divi_id, {'fields':fields})
+            updated_layer = response.get('layer')
+            if updated_layer:
+                for new, old in zip(updated_layer['fields'], fields):
+                    if new['key'] != old['key']:
+                        item.fields_mapper[old['key']] = new['key']
+                item.fields = updated_layer['fields']
         #Deleted features
         deleted = editBuffer.deletedFeatureIds()
         if deleted:
@@ -361,7 +399,7 @@ class DiviPlugin(QObject):
             request = QgsFeatureRequest().setFilterFids(fids)
             for f in layer.getFeatures(request):
                 geojson = f.__geo_interface__
-                geojson['properties'] = { key:None if isinstance(value, QPyNullVariant) else value for key, value in geojson['properties'].iteritems() }
+                geojson['properties'] = self.map_attributes(geojson['properties'], item.fields_mapper)
                 geojson['id'] = ids_map[f.id()]
                 data.append(geojson)
             result = connector.changeFeatures(divi_id, data)
@@ -369,16 +407,18 @@ class DiviPlugin(QObject):
     def onFeaturesAdded(self, layerid, features):
         layer = QgsMapLayerRegistry.instance().mapLayer(layerid)
         QgsMessageLog.logMessage(self.tr('Zapisywanie obiektów do warstwy %s') % layer.name(), 'DIVI')
+        divi_id = layer.customProperty('DiviId')
+        item = self.dockwidget.findLayerItem(divi_id)
         geojson_features = []
         ids = []
         for feature in features:
-            f = feature.__geo_interface__
-            f['properties'] = { key:None if isinstance(value, QPyNullVariant) else value for key, value in f['properties'].iteritems() }
-            geojson_features.append(f)
+            geojson = feature.__geo_interface__
+            geojson['properties'] = self.map_attributes(geojson['properties'], item.fields_mapper)
+            geojson_features.append(geojson)
             ids.append(feature.id())
         addedFeatures = {u'type': u'FeatureCollection', u'features': geojson_features }
         connector = DiviConnector()
-        result = connector.addNewFeatures(layer.customProperty('DiviId'), addedFeatures)
+        result = connector.addNewFeatures(divi_id, addedFeatures)
         if len(ids) != len(result['inserted']):
             self.iface.messageBar().pushMessage('BŁĄD',
                 self.trUtf8(u'Podczas dodawania nowych obiektów wystąpił błąd. Nie wszystkie obiekty zostały dodane'),
@@ -391,3 +431,15 @@ class DiviPlugin(QObject):
     def updateDownloadProgress(self, value):
         if self.msgBar is not None:
             self.msgBar.setProgress(value)
+    
+    @staticmethod
+    def map_attributes(attributes, fields_mapper):
+        new_attributes = {}
+        for key, value in attributes.iteritems():
+            if key in fields_mapper:
+                key = fields_mapper[key]
+            if isinstance(value, QPyNullVariant):
+                new_attributes[key] = None
+            else:
+                new_attributes[key] = value
+        return new_attributes

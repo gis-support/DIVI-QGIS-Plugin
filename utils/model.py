@@ -104,6 +104,7 @@ class LayerItem(TreeItem):
         
         self.icon = QIcon(':/plugins/DiviPlugin/images/layer.png')
         self.items = []
+        self.fields_mapper = {}
 
 class TableItem(TreeItem):
     
