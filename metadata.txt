@@ -10,7 +10,7 @@
 name=DIVI QGIS Plugin
 qgisMinimumVersion=2.0
 description=Integracja QGIS z platformą DIVI firmy GIS Support sp. z o. o.
-version=0.4
+version=0.5
 author=GIS Support sp. z o. o.
 email=info@gis-support.pl
 
@@ -23,7 +23,14 @@ repository=https://bitbucket.org/gissupport/divi-qgis-plugin
 # Recommended items:
 
 # Uncomment the following line and add your changelog:
-changelog=0.4
+changelog=0.5
+  - QGIS fields edition (add/remove) are saved to DIVI
+  - force load layer with selected geometry type
+  - remember dock position
+  - fields names are now visible as field aliases
+  - manual data refresh in layer menu
+  - bug fixes
+  0.4
   - checking editing permission for layers
   - add layer edit capabilities (adding new features, editing attributes and geometry, deleting features)
   0.3
