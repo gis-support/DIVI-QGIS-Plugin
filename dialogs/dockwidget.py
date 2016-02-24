@@ -144,6 +144,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             lyr.dataProvider().deleteFeatures(lyr.allFeatureIds())
             self.plugin.loadLayer(lyr)
             lyr.triggerRepaint()
+        item.items = layers[:]
     
     def showMenu(self, point):
         index = self.tvData.indexAt(point)

@@ -285,9 +285,9 @@ class DiviPlugin(QObject):
         lines_list = []
         polygons_list = []
         count = float(len(features))
-        points_ids = {}
-        lines_ids = {}
-        polygons_ids = {}
+        points_ids = []
+        lines_ids = []
+        polygons_ids = []
         for i, feature in enumerate(features, start=1):
             geom = QgsGeometry.fromWkt(feature['geometry'])
             f = QgsFeature()
@@ -296,13 +296,13 @@ class DiviPlugin(QObject):
             #Add feature to list by geometry type
             if geom.type() == QGis.Point:
                 points_list.append(f)
-                points_ids[len(points_list)] = feature['id']
+                points_ids.append(feature['id'])
             elif geom.type() == QGis.Line:
                 lines_list.append(f)
-                lines_ids[len(lines_list)] = feature['id']
+                lines_ids.append(feature['id'])
             elif geom.type() == QGis.Polygon:
                 polygons_list.append(f)
-                polygons_ids[len(polygons_list)] = feature['id']
+                polygons_ids.append(feature['id'])
             else:
                 continue
             if self.msgBar is not None:
@@ -312,17 +312,17 @@ class DiviPlugin(QObject):
         register = partial(self.registerLayer, layerid=layerid, permissions=permissions, addToMap=True)
         if points is not None and (points_list or add_empty):
             result.append(register(layer=points, features=points_list))
-            self.ids_map[points.id()] = points_ids
+            self.ids_map[points.id()] = dict(zip(points.allFeatureIds(), points_ids))
             for i, field in enumerate(fields):
                 points.addAttributeAlias(i, field['name'])
         if lines is not None and (lines_list or add_empty):
             result.append(register(layer=lines, features=lines_list))
-            self.ids_map[lines.id()] = lines_ids
+            self.ids_map[lines.id()] = dict(zip(lines.allFeatureIds(), lines_ids))
             for i, field in enumerate(fields):
                 lines.addAttributeAlias(i, field['name'])
         if polygons is not None and (polygons_list or add_empty):
             result.append(register(layer=polygons, features=polygons_list))
-            self.ids_map[polygons.id()] = polygons_ids
+            self.ids_map[polygons.id()] = dict(zip(polygons.allFeatureIds(), polygons_ids))
             for i, field in enumerate(fields):
                 polygons.addAttributeAlias(i, field['name'])
         return result
