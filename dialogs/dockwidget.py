@@ -22,6 +22,7 @@
 """
 
 import os
+from functools import partial
 
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import pyqtSignal, QSettings, Qt
@@ -151,6 +152,11 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         if isinstance(item, LayerItem):
             #Layer menu
             menu.addAction(self.trUtf8(u'Dodaj warstwę'), lambda: self.dblClick(index))
+            open_as_menu = menu.addMenu(self.trUtf8(u"Dodaj warstwę jako..."))
+            load_layer_as = partial(self.plugin.loadLayerType, item=item)
+            open_as_menu.addAction(self.tr('Punkty'), lambda: load_layer_as(geom_type='MultiPoint'))
+            open_as_menu.addAction(self.tr('Linie'), lambda: load_layer_as(geom_type='MultiLineString'))
+            open_as_menu.addAction(self.tr('Poligony'), lambda: load_layer_as(geom_type='MultiPolygon'))
             if item.items:
                 menu.addAction(self.trUtf8(u'Odśwież dane'), lambda: self.refreshData(item))
         menu.popup(self.tvData.viewport().mapToGlobal(point))

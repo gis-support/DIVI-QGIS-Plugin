@@ -217,7 +217,7 @@ class DiviPlugin(QObject):
 
     #--------------------------------------------------------------------------
     
-    def loadLayer(self, mapLayer, node=None):
+    def loadLayer(self, mapLayer, node=None, add_empty=False):
         layerid = mapLayer.customProperty('DiviId')
         if layerid is not None:
             self.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%mapLayer.name())
@@ -237,12 +237,17 @@ class DiviPlugin(QObject):
                     return
                 self.msgBar.setBoundries(50, 50)
                 permissions = connector.getUserLayersPermissions()
-                self.addFeatures(layerid, data['features'], fields=layer_meta['fields'],permissions=permissions,**layer)
+                self.addFeatures(layerid, data['features'], fields=layer_meta['fields'],permissions=permissions,add_empty=add_empty,**layer)
             self.msgBar.progress.setValue(100)
             self.msgBar.close()
             self.msgBar = None
         if self.dockwidget is not None:
             self.dockwidget.getLoadedDiviLayers([mapLayer])
+    
+    def loadLayerType(self, item, geom_type):
+        layer = QgsVectorLayer("%s?crs=epsg:4326" % geom_type, item.name, "memory")
+        layer.setCustomProperty('DiviId', item.id)
+        self.loadLayer(layer, add_empty=True)
     
     def addLayer(self, features, layer, permissions):
         #Layers have CRS==4326
@@ -254,7 +259,7 @@ class DiviPlugin(QObject):
         return self.addFeatures(layer.id, features, fields=layer.fields,
             points=points, lines=lines, polygons=polygons, permissions=permissions)
     
-    def addFeatures(self, layerid, features, fields, points=None, lines=None, polygons=None, permissions={}):
+    def addFeatures(self, layerid, features, fields, points=None, lines=None, polygons=None, permissions={}, add_empty=False):
         """ Add DIVI layer to QGIS """
         qgis_fields = [ QgsField(field['key'], self.TYPES_MAP.get(field['type'], QVariant.String)) for field in fields ]
         if points:
@@ -305,17 +310,17 @@ class DiviPlugin(QObject):
         #Add only layers that have features
         result = []
         register = partial(self.registerLayer, layerid=layerid, permissions=permissions, addToMap=True)
-        if points_list and points is not None:
+        if points is not None and (points_list or add_empty):
             result.append(register(layer=points, features=points_list))
             self.ids_map[points.id()] = points_ids
             for i, field in enumerate(fields):
                 points.addAttributeAlias(i, field['name'])
-        if lines_list and lines is not None:
+        if lines is not None and (lines_list or add_empty):
             result.append(register(layer=lines, features=lines_list))
             self.ids_map[lines.id()] = lines_ids
             for i, field in enumerate(fields):
                 lines.addAttributeAlias(i, field['name'])
-        if polygons_list and polygons is not None:
+        if polygons is not None and (polygons_list or add_empty):
             result.append(register(layer=polygons, features=polygons_list))
             self.ids_map[polygons.id()] = polygons_ids
             for i, field in enumerate(fields):

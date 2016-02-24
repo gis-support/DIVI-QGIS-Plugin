@@ -147,7 +147,7 @@ class DiviModel(QAbstractItemModel):
             return font
         elif role == Qt.ToolTipRole:
             return item.abstract
-        elif role == Qt.UserRole:
+        elif role == Qt.UserRole and isinstance(item,LayerItem):
             #Required for finding layer item
             return 'layer@%s' % item.id
     
