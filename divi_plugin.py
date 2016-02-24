@@ -346,12 +346,12 @@ class DiviPlugin(QObject):
         QgsMessageLog.logMessage(self.tr('Zapisywanie warstwy %s') % layer.name(), 'DIVI')
         editBuffer = layer.editBuffer()
         ids_map = self.ids_map[layerid]
+        item = self.dockwidget.findLayerItem(divi_id)
         connector = DiviConnector()
         #Added/removed fields
         added_fields = editBuffer.addedAttributes()
         removed_fields = editBuffer.deletedAttributeIds()
         if added_fields or removed_fields:
-            item = self.dockwidget.findLayerItem(divi_id)
             if len(item.items) > 1:
                 self.iface.messageBar.pushMessage(self.trUtf8("Uwaga:"),
                     self.trUtf8("Zmieniono strukturę jednej warstwy z wczytanych %d powiązanych z wybraną warstwą DIVI. "
