@@ -140,6 +140,13 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     
     def refreshData(self, item):
         layers = item.items[:]
+        if any( l.isEditable() for l in layers ):
+            self.iface.messageBar().pushMessage('DIVI',
+                self.trUtf8(u'Jedna z powiązanych warstw jest w trybie edycji. Zakończ edycję aby kontynuować.'),
+                self.iface.messageBar().CRITICAL,
+                duration = 3
+            )
+            return
         for lyr in layers:
             lyr.dataProvider().deleteFeatures(lyr.allFeatureIds())
             self.plugin.loadLayer(lyr)

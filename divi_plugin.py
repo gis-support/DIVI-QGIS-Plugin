@@ -220,11 +220,12 @@ class DiviPlugin(QObject):
     def loadLayer(self, mapLayer, node=None, add_empty=False):
         layerid = mapLayer.customProperty('DiviId')
         if layerid is not None:
-            self.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%mapLayer.name())
+            self.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%mapLayer.name(), 5, 5)
             connector = DiviConnector()
             connector.downloadingProgress.connect(self.updateDownloadProgress)
-            self.msgBar.progress.setValue(10)
+            self.msgBar.progress.setValue(5)
             layer_meta = connector.diviGetLayer(layerid)
+            self.msgBar.setBoundries(10, 35)
             data = connector.diviGetLayerFeatures(layerid)
             if data:
                 if mapLayer.geometryType() == QGis.Point:
@@ -235,8 +236,9 @@ class DiviPlugin(QObject):
                     layer = {'polygons':mapLayer}
                 else:
                     return
-                self.msgBar.setBoundries(50, 50)
+                self.msgBar.setBoundries(45, 5)
                 permissions = connector.getUserLayersPermissions()
+                self.msgBar.setBoundries(50, 50)
                 self.addFeatures(layerid, data['features'], fields=layer_meta['fields'],permissions=permissions,add_empty=add_empty,**layer)
             self.msgBar.progress.setValue(100)
             self.msgBar.close()
@@ -353,10 +355,10 @@ class DiviPlugin(QObject):
         removed_fields = editBuffer.deletedAttributeIds()
         if added_fields or removed_fields:
             if len(item.items) > 1:
-                self.iface.messageBar.pushMessage(self.trUtf8("Uwaga:"),
+                self.iface.messageBar().pushMessage(self.trUtf8("Uwaga:"),
                     self.trUtf8("Zmieniono strukturę jednej warstwy z wczytanych %d powiązanych z wybraną warstwą DIVI. "
                         "Wczytaj ponownie warstwy aby zaktualizować ich strukturę.") % (len(item.items),),
-                    level=QgsMessageBar.WARNING)
+                    level=self.iface.messageBar().WARNING)
             fields = item.fields[:]
             for fid in sorted(removed_fields, reverse=True):
                 fields.pop(fid)
