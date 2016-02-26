@@ -211,7 +211,7 @@ class DiviConnector(QObject):
         return self.getJson(content)
     
     def updateLayer(self, layerid, data):
-        QgsMessageLog.logMessage('Saving changed objects', 'DIVI')
+        QgsMessageLog.logMessage('Saving changed layer %s' % layerid, 'DIVI')
         content = self.sendPutRequest('/layers/%s'%layerid, data, params={'token':self.token})
         return self.getJson(content)
     

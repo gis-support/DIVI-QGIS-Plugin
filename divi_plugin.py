@@ -219,6 +219,7 @@ class DiviPlugin(QObject):
     
     def loadLayer(self, mapLayer, node=None, add_empty=False):
         layerid = mapLayer.customProperty('DiviId')
+        layer_meta = None
         if layerid is not None:
             self.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%mapLayer.name(), 5, 5)
             connector = DiviConnector()
@@ -245,6 +246,7 @@ class DiviPlugin(QObject):
             self.msgBar = None
         if self.dockwidget is not None:
             self.dockwidget.getLoadedDiviLayers([mapLayer])
+        return layer_meta
     
     def loadLayerType(self, item, geom_type):
         layer = QgsVectorLayer("%s?crs=epsg:4326" % geom_type, item.name, "memory")

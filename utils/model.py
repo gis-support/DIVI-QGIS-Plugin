@@ -105,6 +105,11 @@ class LayerItem(TreeItem):
         self.icon = QIcon(':/plugins/DiviPlugin/images/layer.png')
         self.items = []
         self.fields_mapper = {}
+    
+    def updateData(self, data):
+        for key in ['fields', 'name', 'abstract']:
+            if key in data:
+                setattr(self, key, data[key])
 
 class TableItem(TreeItem):
     

@@ -149,9 +149,13 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             return
         for lyr in layers:
             lyr.dataProvider().deleteFeatures(lyr.allFeatureIds())
-            self.plugin.loadLayer(lyr)
+            #We must disconnect signal because loadLayer will connect them again
+            lyr.beforeCommitChanges.disconnect()
+            lyr.committedFeaturesAdded.disconnect()
+            layer_meta = self.plugin.loadLayer(lyr)
             lyr.triggerRepaint()
         item.items = layers[:]
+        item.updateData(layer_meta)
     
     def showMenu(self, point):
         index = self.tvData.indexAt(point)
