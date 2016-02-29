@@ -117,6 +117,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     #SLOTS
     
     def dblClick(self, index):
+        if not self.plugin.setLoading(True):
+            return
         item = index.internalPointer()
         if isinstance(item, LayerItem):
             self.plugin.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%item.name)
@@ -137,6 +139,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 QgsMessageBar.CRITICAL,
                 duration = 3
             )
+        self.plugin.setLoading(False)
     
     def refreshData(self, item):
         layers = item.items[:]

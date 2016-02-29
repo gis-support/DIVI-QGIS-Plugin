@@ -84,7 +84,7 @@ class DiviPlugin(QObject):
 
         self.msgBar = None
         self.ids_map = {}
-
+        self.loading = False
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -217,7 +217,20 @@ class DiviPlugin(QObject):
 
     #--------------------------------------------------------------------------
     
+    def setLoading(self, isLoading):
+        if isLoading and self.loading:s
+            self.iface.messageBar().pushMessage('BŁĄD',
+                self.trUtf8(u'Załadowanie nowej warstwy będzie możliwe dopiero po zakończeniu trwającej operacji.'),
+                self.iface.messageBar().CRITICAL,
+                duration = 3
+            )
+            return False
+        self.loading = isLoading
+        return True
+    
     def loadLayer(self, mapLayer, node=None, add_empty=False):
+        if not self.setLoading(True):
+            return
         layerid = mapLayer.customProperty('DiviId')
         layer_meta = None
         if layerid is not None:
@@ -246,6 +259,7 @@ class DiviPlugin(QObject):
             self.msgBar = None
         if self.dockwidget is not None:
             self.dockwidget.getLoadedDiviLayers([mapLayer])
+        self.setLoading(False)
         return layer_meta
     
     def loadLayerType(self, item, geom_type):
