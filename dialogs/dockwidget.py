@@ -120,7 +120,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         item = index.internalPointer()
         if isinstance(item, LayerItem):
             self.plugin.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%item.name)
-            self.plugin.msgBar.progress.setValue(10)
+            self.plugin.msgBar.setValue(10)
             connector = self.getConnector()
             connector.downloadingProgress.connect(self.plugin.updateDownloadProgress)
             data = connector.diviGetLayerFeatures(item.id)
@@ -128,7 +128,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 permissions = connector.getUserLayerPermissions(item.id)
                 self.plugin.msgBar.setBoundries(50, 50)
                 item.items.extend( self.plugin.addLayer(data['features'], item, permissions) )
-            self.plugin.msgBar.progress.setValue(100)
+            self.plugin.msgBar.setValue(100)
             self.plugin.msgBar.close()
             self.plugin.msgBar = None
         elif isinstance(item, TableItem):

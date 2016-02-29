@@ -32,16 +32,30 @@ class ProgressMessageBar(QObject):
         self.iface = iface
         self.minValue = minValue
         self.delta = delta
+        self.progress = None
+        self.msgBar = None
         if self.iface is not None:
-            msgBar = self.iface.messageBar().createMessage('DIVI',message)
+            self.msgBar = self.iface.messageBar().createMessage('DIVI',message)
             self.progress = QProgressBar()
-            msgBar.layout().addWidget(self.progress)
-            self.iface.messageBar().pushWidget(msgBar, self.iface.messageBar().INFO)
-        else:
-            self.progress = None
+            self.msgBar.layout().addWidget(self.progress)
+            self.iface.messageBar().pushWidget(self.msgBar, self.iface.messageBar().INFO)
     
     def setProgress(self, value):
-        self.progress.setValue(self.minValue+int(self.delta*value))
+        try:
+            progress = self.minValue+int(self.delta*value)
+            if self.iface is not None:
+                self.iface.mainWindow().statusBar().showMessage( self.trUtf8("Ładowanie warstwy {} %").format(progress) )
+                self.progress.setValue(progress)
+        except RuntimeError:
+            pass
+    
+    def setValue(self, value):
+        try:
+            if self.iface is not None:
+                self.iface.mainWindow().statusBar().showMessage( self.trUtf8("Ładowanie warstwy {} %").format(value) )
+                self.progress.setValue(value)
+        except RuntimeError:
+            pass
     
     def setBoundries(self, minValue=None, delta=None):
         if minValue is not None:
@@ -52,3 +66,5 @@ class ProgressMessageBar(QObject):
     def close(self):
         if self.iface is not None:
             self.iface.messageBar().clearWidgets()
+            self.progress = None
+            self.msgBar = None
