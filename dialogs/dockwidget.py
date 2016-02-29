@@ -139,6 +139,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 QgsMessageBar.CRITICAL,
                 duration = 3
             )
+        self.tvData.model().dataChanged.emit(index, index)
         self.plugin.setLoading(False)
     
     def refreshData(self, item):

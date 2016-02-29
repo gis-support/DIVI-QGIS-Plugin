@@ -218,7 +218,7 @@ class DiviPlugin(QObject):
     #--------------------------------------------------------------------------
     
     def setLoading(self, isLoading):
-        if isLoading and self.loading:s
+        if isLoading and self.loading:
             self.iface.messageBar().pushMessage('BŁĄD',
                 self.trUtf8(u'Załadowanie nowej warstwy będzie możliwe dopiero po zakończeniu trwającej operacji.'),
                 self.iface.messageBar().CRITICAL,
