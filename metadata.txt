@@ -16,8 +16,8 @@ email=info@gis-support.pl
 
 about=Integracja QGIS z platformą DIVI (https://divi.io)
 
-tracker=https://bitbucket.org/gissupport/divi-qgis-plugin/issues
-repository=https://bitbucket.org/gissupport/divi-qgis-plugin
+tracker=https://github.com/gis-support/DIVI-QGIS-Plugin/issues
+repository=https://github.com/gis-support/DIVI-QGIS-Plugin
 # End of mandatory metadata
 
 # Recommended items:
