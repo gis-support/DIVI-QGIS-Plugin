@@ -75,6 +75,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     def diviConnection(self, checked, auto_login=True):
         if checked:
             #Connect
+            self.tvData.model().showLoading()
             connector = self.getConnector(auto_login)
             data = connector.diviFeatchData()
             if data is not None:
@@ -82,6 +83,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 self.setLogginStatus(True)
                 self.getLoadedDiviLayers()
                 return
+            else:
+                self.tvData.model().removeAll()
         QSettings().remove('divi/token')
         QSettings().remove('divi/id')
         QSettings().remove('divi/status')
@@ -135,7 +138,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             self.plugin.msgBar = None
         elif isinstance(item, TableItem):
             self.iface.messageBar().pushMessage('DIVI',
-                self.trUtf8(u'Aby dodać tabelę musisz posiadać QGIS w wersji 2.14 lub nowszej.'),
+                #self.trUtf8(u'Aby dodać tabelę musisz posiadać QGIS w wersji 2.14 lub nowszej.'),
+                self.trUtf8(u'W aktualnej wersji nie można wczytywać tabel DIVI.'),
                 QgsMessageBar.CRITICAL,
                 duration = 3
             )

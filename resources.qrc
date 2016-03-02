@@ -8,4 +8,7 @@
     <qresource prefix="/plugins/DiviPlugin" >
         <file>images/table.png</file>
     </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/downloading.png</file>
+    </qresource>
 </RCC>

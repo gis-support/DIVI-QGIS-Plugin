@@ -74,6 +74,14 @@ class TreeItem(QObject):
             self.disconnect(self.childItems[row], SIGNAL("itemRemoved"), self.childRemoved)
             del self.childItems[row]
 
+class LoadingItem(TreeItem):
+    
+    def __init__(self, parent=None):
+        super(LoadingItem, self).__init__(self, parent)
+        self.name = self.trUtf8(u'Pobieranie danych...')
+        
+        self.icon = QIcon(':/plugins/DiviPlugin/images/downloading.png')
+
 class AccountItem(TreeItem):
     
     def __init__(self, data, parent=None):
@@ -160,6 +168,12 @@ class DiviModel(QAbstractItemModel):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole and section == 0:
             return self.tr('Dane')
         return None
+    
+    def showLoading(self):
+        self.removeAll()
+        self.beginInsertRows(QModelIndex(), 0, 1)
+        item = LoadingItem( self.rootItem )
+        self.endInsertRows()
     
     def addData(self, accounts, projects, layers, tables):
         self.removeAll()
