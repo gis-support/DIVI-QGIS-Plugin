@@ -146,6 +146,7 @@ class DiviConnector(QObject):
         settings.setValue('divi/email', email)
         settings.setValue('divi/token', self.token)
         settings.setValue('divi/status', data['status'])
+        settings.setValue('divi/id', data['id'])
         self.diviLogged.emit(email, self.token)
         return self.token
     
