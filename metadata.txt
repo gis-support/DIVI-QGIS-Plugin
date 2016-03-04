@@ -10,7 +10,7 @@
 name=DIVI QGIS Plugin
 qgisMinimumVersion=2.0
 description=Integracja QGIS z platformą DIVI firmy GIS Support sp. z o. o.
-version=0.5.3
+version=0.6
 author=Piotr Pociask, GIS Support sp. z o. o.
 email=info@gis-support.pl
 
@@ -23,7 +23,13 @@ repository=https://github.com/gis-support/DIVI-QGIS-Plugin
 # Recommended items:
 
 # Uncomment the following line and add your changelog:
-changelog=0.5.3.
+changelog=0.6
+  - loading DIVI tables in QGIS 2.14+
+  - add all layers from selected project
+  - add option for editing layer name
+  - search items in tree view
+  - LICENSE file added
+  0.5.3.
   - READMY file added (PL)
   - block loading another layer while other layer is downloading from DIVI
   - fix error after closing progress bar while loading layer
