@@ -22,7 +22,7 @@
 """
 
 from PyQt4.QtCore import QObject, QAbstractItemModel, Qt, QModelIndex, SIGNAL
-from PyQt4.QtGui import QIcon, QFont
+from PyQt4.QtGui import QIcon, QFont, QSortFilterProxyModel
 from qgis.core import QgsMessageLog
 
 class TreeItem(QObject):
@@ -160,7 +160,10 @@ class DiviModel(QAbstractItemModel):
             return font
         elif role == Qt.ToolTipRole:
             return item.abstract
-        elif role == Qt.UserRole and isinstance(item,LayerItem):
+        elif role == Qt.UserRole:
+            #Return item itself
+            return item
+        elif role == Qt.UserRole+1  and isinstance(item,LayerItem):
             #Required for finding layer item
             return 'layer@%s' % item.id
     
@@ -252,3 +255,53 @@ class DiviModel(QAbstractItemModel):
     def hasChildren(self, parent):
         parentItem = parent.internalPointer() if parent.isValid() else self.rootItem
         return parentItem.childCount() > 0
+
+class LeafFilterProxyModel(QSortFilterProxyModel):
+    # Source: http://gaganpreet.in/blog/2013/07/04/qtreeview-and-custom-filter-models/
+    ''' Class to override the following behaviour:
+            If a parent item doesn't match the filter,
+            none of its children will be shown.
+ 
+        This Model matches items which are descendants
+        or ascendants of matching items.
+    '''
+ 
+    def filterAcceptsRow(self, row_num, source_parent):
+        ''' Overriding the parent function '''
+ 
+        # Check if the current row matches
+        if self.filter_accepts_row_itself(row_num, source_parent):
+            return True
+ 
+        # Traverse up all the way to root and check if any of them match
+        if self.filter_accepts_any_parent(source_parent):
+            return True
+ 
+        # Finally, check if any of the children match
+        return self.has_accepted_children(row_num, source_parent)
+ 
+    def filter_accepts_row_itself(self, row_num, parent):
+        return super(LeafFilterProxyModel, self).filterAcceptsRow(row_num, parent)
+ 
+    def filter_accepts_any_parent(self, parent):
+        ''' Traverse to the root node and check if any of the
+            ancestors match the filter
+        '''
+        while parent.isValid():
+            if self.filter_accepts_row_itself(parent.row(), parent.parent()):
+                return True
+            parent = parent.parent()
+        return False
+ 
+    def has_accepted_children(self, row_num, parent):
+        ''' Starting from the current node as root, traverse all
+            the descendants and test if any of the children match
+        '''
+        model = self.sourceModel()
+        source_index = model.index(row_num, 0, parent)
+ 
+        children_count =  model.rowCount(source_index)
+        for i in xrange(children_count):
+            if self.filterAcceptsRow(i, source_index):
+                return True
+        return False

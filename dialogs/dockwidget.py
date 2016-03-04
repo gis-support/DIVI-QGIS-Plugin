@@ -25,11 +25,11 @@ import os
 from functools import partial
 
 from PyQt4 import QtGui, uic
-from PyQt4.QtCore import pyqtSignal, QSettings, Qt
+from PyQt4.QtCore import pyqtSignal, QSettings, Qt, QRegExp
 from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer
 from qgis.gui import QgsMessageBar
 from ..utils.connector import DiviConnector
-from ..utils.model import DiviModel, LayerItem, TableItem
+from ..utils.model import DiviModel, LeafFilterProxyModel, LayerItem, TableItem
 from ..utils.widgets import ProgressMessageBar
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -53,12 +53,15 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.token = QSettings().value('divi/token', None)
         self.user = QSettings().value('divi/email', None)
         self.setupUi(self)
-        self.tvData.setModel( DiviModel() )
+        proxyModel = LeafFilterProxyModel()
+        proxyModel.setSourceModel( DiviModel() )
+        self.tvData.setModel( proxyModel )
         self.setLogginStatus(bool(self.token))
         if self.token:
             self.diviConnection(True, auto_login=False)
         #Signals
         self.btnConnect.clicked.connect(self.diviConnection)
+        self.eSearch.textChanged.connect(self.searchData)
         self.tvData.doubleClicked.connect(self.dblClick)
         self.tvData.customContextMenuRequested.connect(self.showMenu)
         QgsMapLayerRegistry.instance().layersWillBeRemoved.connect( self.layersRemoved )
@@ -73,18 +76,19 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         event.accept()
     
     def diviConnection(self, checked, auto_login=True):
+        model = self.tvData.model().sourceModel()
         if checked:
             #Connect
-            self.tvData.model().showLoading()
+            model.showLoading()
             connector = self.getConnector(auto_login)
             data = connector.diviFeatchData()
             if data is not None:
-                self.tvData.model().addData( *data )
+                model.addData( *data )
                 self.setLogginStatus(True)
                 self.getLoadedDiviLayers()
                 return
             else:
-                self.tvData.model().removeAll()
+                model.removeAll()
         QSettings().remove('divi/token')
         QSettings().remove('divi/id')
         QSettings().remove('divi/status')
@@ -96,7 +100,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             self.btnConnect.setText(self.trUtf8(u'Rozłącz'))
             self.btnConnect.setChecked(True)
         else:
-            self.tvData.model().removeAll()
+            self.tvData.model().sourceModel().removeAll()
             self.lblStatus.setText(self.tr('Niezalogowany'))
             self.btnConnect.setText(self.trUtf8(u'Połącz'))
             self.btnConnect.setChecked(False)
@@ -122,7 +126,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     def dblClick(self, index):
         if not self.plugin.setLoading(True):
             return
-        item = index.internalPointer()
+        item = index.data(role=Qt.UserRole)
         if isinstance(item, LayerItem):
             self.plugin.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%item.name)
             self.plugin.msgBar.setValue(10)
@@ -143,7 +147,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 QgsMessageBar.CRITICAL,
                 duration = 3
             )
-        self.tvData.model().dataChanged.emit(index, index)
+        self.tvData.model().sourceModel().dataChanged.emit(index, index)
         self.plugin.setLoading(False)
     
     def refreshData(self, item):
@@ -167,7 +171,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     
     def showMenu(self, point):
         index = self.tvData.indexAt(point)
-        item = index.internalPointer()
+        item = index.data(role=Qt.UserRole)
         menu = QtGui.QMenu(self)
         if isinstance(item, LayerItem):
             #Layer menu
@@ -193,17 +197,25 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                     layer.beforeCommitChanges.disconnect(self.plugin.onLayerCommit)
                     layer.committedFeaturesAdded.disconnect(self.plugin.onFeaturesAdded)
     
+    def searchData(self, text):
+        self.tvData.model().setFilterRegExp(QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString))
+        if text:
+            self.tvData.expandAll()
+        else:
+            self.tvData.collapseAll()
+    
     #OTHERS
     
     def findLayerItem(self, lid):
         if lid is None:
             return
-        layers = self.tvData.model().match(
-            self.tvData.model().index(0,0),
-            Qt.UserRole,
+        model = self.tvData.model().sourceModel()
+        layers = model.match(
+            model.index(0,0),
+            Qt.UserRole+1,
             'layer@%s' % lid,
             1,
             Qt.MatchRecursive
         )
         if layers:
-            return layers[0].internalPointer()
+            return layers[0].data(role=Qt.UserRole)

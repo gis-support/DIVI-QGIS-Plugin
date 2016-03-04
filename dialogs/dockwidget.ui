@@ -50,6 +50,13 @@
      </layout>
     </item>
     <item>
+     <widget class="QLineEdit" name="eSearch">
+      <property name="placeholderText">
+       <string>Szukaj...</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QTreeView" name="tvData">
       <property name="contextMenuPolicy">
        <enum>Qt::CustomContextMenu</enum>
