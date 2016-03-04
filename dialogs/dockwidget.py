@@ -29,7 +29,8 @@ from PyQt4.QtCore import pyqtSignal, QSettings, Qt, QRegExp
 from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer
 from qgis.gui import QgsMessageBar
 from ..utils.connector import DiviConnector
-from ..utils.model import DiviModel, LeafFilterProxyModel, LayerItem, TableItem
+from ..utils.model import DiviModel, LeafFilterProxyModel, LayerItem, TableItem, \
+    ProjectItem
 from ..utils.widgets import ProgressMessageBar
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -62,7 +63,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         #Signals
         self.btnConnect.clicked.connect(self.diviConnection)
         self.eSearch.textChanged.connect(self.searchData)
-        self.tvData.doubleClicked.connect(self.dblClick)
+        self.tvData.doubleClicked.connect(self.addLayer)
         self.tvData.customContextMenuRequested.connect(self.showMenu)
         QgsMapLayerRegistry.instance().layersWillBeRemoved.connect( self.layersRemoved )
     
@@ -123,10 +124,11 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     
     #SLOTS
     
-    def dblClick(self, index):
+    def addLayer(self, index):
         if not self.plugin.setLoading(True):
             return
         item = index.data(role=Qt.UserRole)
+        addedData = []
         if isinstance(item, LayerItem):
             self.plugin.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%item.name)
             self.plugin.msgBar.setValue(10)
@@ -136,7 +138,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             if data:
                 permissions = connector.getUserLayerPermissions(item.id)
                 self.plugin.msgBar.setBoundries(50, 50)
-                item.items.extend( self.plugin.addLayer(data['features'], item, permissions) )
+                addedData.extended( self.plugin.addLayer(data['features'], item, permissions) )
+                item.items.extend( addedData )
             self.plugin.msgBar.setValue(100)
             self.plugin.msgBar.close()
             self.plugin.msgBar = None
@@ -149,6 +152,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             )
         self.tvData.model().sourceModel().dataChanged.emit(index, index)
         self.plugin.setLoading(False)
+        return addedData
     
     def refreshData(self, item):
         layers = item.items[:]
@@ -175,7 +179,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         menu = QtGui.QMenu(self)
         if isinstance(item, LayerItem):
             #Layer menu
-            menu.addAction(self.trUtf8(u'Dodaj warstwę'), lambda: self.dblClick(index))
+            menu.addAction(self.trUtf8(u'Dodaj warstwę'), lambda: self.addLayer(index))
             open_as_menu = menu.addMenu(self.trUtf8(u"Dodaj warstwę jako..."))
             load_layer_as = partial(self.plugin.loadLayerType, item=item)
             open_as_menu.addAction(self.tr('Punkty'), lambda: load_layer_as(geom_type='MultiPoint'))
@@ -184,6 +188,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             menu.addAction(self.trUtf8(u'Zmień nazwę warstwy...'), lambda: self.editLayerName(index))
             if item.items:
                 menu.addAction(self.trUtf8(u'Odśwież dane'), lambda: self.refreshData(item))
+        elif isinstance(item, ProjectItem):
+            menu.addAction(self.trUtf8(u'Dodaj warstwy z projektu'), lambda: self.addProjectData(index))
         menu.popup(self.tvData.viewport().mapToGlobal(point))
     
     def layersRemoved(self, layers):
@@ -229,6 +235,17 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     def editLayerMetadata(self, layerid, data):
         connector = self.getConnector()
         return connector.updateLayer(layerid, data)
+    
+    def addProjectData(self, index):
+        item = index.data( role=Qt.UserRole )
+        layers = []
+        for i, data in enumerate(item.childItems):
+            if isinstance(data, LayerItem):
+                layers.extend( self.addLayer( index.child(i, 0) ) )
+        if layers:
+            idx = self.iface.legendInterface().addGroup(item.name, True)
+            for layer in layers:
+                self.iface.legendInterface().moveLayer(layer, idx)
     
     #OTHERS
     
