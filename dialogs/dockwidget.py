@@ -181,6 +181,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             open_as_menu.addAction(self.tr('Punkty'), lambda: load_layer_as(geom_type='MultiPoint'))
             open_as_menu.addAction(self.tr('Linie'), lambda: load_layer_as(geom_type='MultiLineString'))
             open_as_menu.addAction(self.tr('Poligony'), lambda: load_layer_as(geom_type='MultiPolygon'))
+            menu.addAction(self.trUtf8(u'Zmień nazwę warstwy...'), lambda: self.editLayerName(index))
             if item.items:
                 menu.addAction(self.trUtf8(u'Odśwież dane'), lambda: self.refreshData(item))
         menu.popup(self.tvData.viewport().mapToGlobal(point))
@@ -203,6 +204,31 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             self.tvData.expandAll()
         else:
             self.tvData.collapseAll()
+    
+    def editLayerName(self, index):
+        item = index.data(role=Qt.UserRole)
+        name, status = QtGui.QInputDialog.getText(self, self.trUtf8(u'Zmień nazwę'),
+            self.trUtf8(u'Podaj nową nazwę dla warstwy %s') % item.name,
+            text = item.name)
+        if status and name != item.name:
+            result = self.editLayerMetadata(item.id, {'name':name})
+            if result['layer']['name'] == name:
+                self.iface.messageBar().pushMessage('DIVI',
+                    self.trUtf8(u'Zmieniono nazwę warstwy %s na %s.') % (item.name, name),
+                    duration = 3
+                )
+                item.name = name
+                self.tvData.model().sourceModel().dataChanged.emit(index, index)
+            else:
+                self.iface.messageBar().pushMessage('DIVI',
+                    self.trUtf8(u'Wystąpił błąd podczas zmiany nazwy.'),
+                    self.iface.messageBar().CRITICAL,
+                    duration = 3
+                )
+    
+    def editLayerMetadata(self, layerid, data):
+        connector = self.getConnector()
+        return connector.updateLayer(layerid, data)
     
     #OTHERS
     
