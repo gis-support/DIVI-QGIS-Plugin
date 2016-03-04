@@ -231,29 +231,40 @@ class DiviPlugin(QObject):
     def loadLayer(self, mapLayer, node=None, add_empty=False):
         if not self.setLoading(True):
             return
-        layerid = mapLayer.customProperty('DiviId')
+        divi_id = mapLayer.customProperty('DiviId')
         layer_meta = None
-        if layerid is not None:
+        if divi_id is not None:
             self.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%mapLayer.name(), 5, 5)
             connector = DiviConnector()
             connector.downloadingProgress.connect(self.updateDownloadProgress)
             self.msgBar.progress.setValue(5)
-            layer_meta = connector.diviGetLayer(layerid)
-            self.msgBar.setBoundries(10, 35)
-            data = connector.diviGetLayerFeatures(layerid)
-            if data:
-                if mapLayer.geometryType() == QGis.Point:
-                    layer = {'points':mapLayer}
-                elif mapLayer.geometryType() == QGis.Line:
-                    layer = {'lines':mapLayer}
-                elif mapLayer.geometryType() == QGis.Polygon:
-                    layer = {'polygons':mapLayer}
-                else:
-                    return
-                self.msgBar.setBoundries(45, 5)
-                permissions = connector.getUserLayersPermissions()
-                self.msgBar.setBoundries(50, 50)
-                self.addFeatures(layerid, data['features'], fields=layer_meta['fields'],permissions=permissions,add_empty=add_empty,**layer)
+            
+            if mapLayer.geometryType() == QGis.NoGeometry:
+                layer_meta = connector.diviGetTable(divi_id)
+                self.msgBar.setBoundries(10, 35)
+                data = connector.diviGetTableRecords(divi_id)
+                if data:
+                    self.msgBar.setBoundries(45, 5)
+                    permissions = connector.getUserPermissions('tables')
+                    self.msgBar.setBoundries(50, 50)
+                    self.addRecords(divi_id, data['header'], data['data'], fields=layer_meta['fields'], table=mapLayer, permissions=permissions)
+            else:
+                layer_meta = connector.diviGetLayer(divi_id)
+                self.msgBar.setBoundries(10, 35)
+                data = connector.diviGetLayerFeatures(divi_id)
+                if data:
+                    if mapLayer.geometryType() == QGis.Point:
+                        layer = {'points':mapLayer}
+                    elif mapLayer.geometryType() == QGis.Line:
+                        layer = {'lines':mapLayer}
+                    elif mapLayer.geometryType() == QGis.Polygon:
+                        layer = {'polygons':mapLayer}
+                    else:
+                        return
+                    self.msgBar.setBoundries(45, 5)
+                    permissions = connector.getUserPermissions('layers')
+                    self.msgBar.setBoundries(50, 50)
+                    self.addFeatures(divi_id, data['features'], fields=layer_meta['fields'],permissions=permissions,add_empty=add_empty,**layer)
             self.msgBar.progress.setValue(100)
             self.msgBar.close()
             self.msgBar = None
@@ -267,7 +278,7 @@ class DiviPlugin(QObject):
         layer.setCustomProperty('DiviId', item.id)
         self.loadLayer(layer, add_empty=True)
     
-    def addLayer(self, features, layer, permissions):
+    def addLayer(self, features, layer, permissions={}):
         #Layers have CRS==4326
         definition = '?crs=epsg:4326'
         #Create temp layers for point, linestring and polygon geometry types
@@ -276,6 +287,31 @@ class DiviPlugin(QObject):
         polygons = QgsVectorLayer("MultiPolygon"+definition, layer.name, "memory")
         return self.addFeatures(layer.id, features, fields=layer.fields,
             points=points, lines=lines, polygons=polygons, permissions=permissions)
+    
+    def addTable(self, header, records, table, permissions={}):
+        qgsTable = QgsVectorLayer("none", table.name, "memory")
+        return self.addRecords(table.id, header, records, fields=table.fields,
+            table=qgsTable, permissions=permissions)
+    
+    def addRecords(self, tableid, header, records, fields, table, permissions):
+        qgis_fields = [ QgsField(field['key'], self.TYPES_MAP.get(field['type'], QVariant.String)) for field in fields ]
+        provider = table.dataProvider()
+        if provider.fields():
+            provider.deleteAttributes(range(len(provider.fields())))
+        provider.addAttributes(qgis_fields)
+        table.updateFields()
+        count = float(len(records))
+        records_list = []
+        records_ids = []
+        id_idx = header.index('_dbid')
+        for i, record in enumerate(records, start=1):
+            records_ids.append( record.pop(id_idx) )
+            r = QgsFeature()
+            r.setAttributes(record)
+            records_list.append(r)
+            if self.msgBar is not None:
+                self.msgBar.setProgress(i/count)
+        return self.registerLayer(layer=table, features=records_list, layerid=tableid, permissions={}, addToMap=True)
     
     def addFeatures(self, layerid, features, fields, points=None, lines=None, polygons=None, permissions={}, add_empty=False):
         """ Add DIVI layer to QGIS """
@@ -364,7 +400,8 @@ class DiviPlugin(QObject):
         QgsMessageLog.logMessage(self.tr('Zapisywanie warstwy %s') % layer.name(), 'DIVI')
         editBuffer = layer.editBuffer()
         ids_map = self.ids_map[layerid]
-        item = self.dockwidget.findLayerItem(divi_id)
+        item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
+        item = self.dockwidget.findLayerItem(divi_id, item_type=item_type)
         connector = DiviConnector()
         #Added/removed fields
         added_fields = editBuffer.addedAttributes()
@@ -431,7 +468,8 @@ class DiviPlugin(QObject):
         layer = QgsMapLayerRegistry.instance().mapLayer(layerid)
         QgsMessageLog.logMessage(self.tr('Zapisywanie obiektów do warstwy %s') % layer.name(), 'DIVI')
         divi_id = layer.customProperty('DiviId')
-        item = self.dockwidget.findLayerItem(divi_id)
+        item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
+        item = self.dockwidget.findLayerItem(divi_id, item_type=item_type)
         geojson_features = []
         ids = []
         for feature in features:

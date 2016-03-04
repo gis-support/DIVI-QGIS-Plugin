@@ -128,6 +128,7 @@ class TableItem(TreeItem):
         self.id_accounts = data.get('id_accounts')
         self.id_projects = data.get('id_projects')
         self.abstract = data.get('abstract')
+        self.fields = data.get('fields')
         
         self.icon = QIcon(':/plugins/DiviPlugin/images/table.png')
         self.items = []
@@ -163,9 +164,12 @@ class DiviModel(QAbstractItemModel):
         elif role == Qt.UserRole:
             #Return item itself
             return item
-        elif role == Qt.UserRole+1  and isinstance(item,LayerItem):
-            #Required for finding layer item
-            return 'layer@%s' % item.id
+        elif role == Qt.UserRole+1:
+            #Required for finding item
+            if isinstance(item,LayerItem):
+                return 'layer@%s' % item.id
+            elif isinstance(item,TableItem):
+                return 'table@%s' % item.id
     
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole and section == 0:

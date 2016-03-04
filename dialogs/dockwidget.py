@@ -26,7 +26,7 @@ from functools import partial
 
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import pyqtSignal, QSettings, Qt, QRegExp
-from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer
+from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis
 from qgis.gui import QgsMessageBar
 from ..utils.connector import DiviConnector
 from ..utils.model import DiviModel, LeafFilterProxyModel, LayerItem, TableItem, \
@@ -118,7 +118,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         if layers is None:
             layers = [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]
         for layer in layers:
-            layerItem = self.findLayerItem(layer.customProperty('DiviId'))
+            item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
+            layerItem = self.findLayerItem(layer.customProperty('DiviId'), item_type=item_type)
             if layerItem is not None:
                 layerItem.items.append(layer)
     
@@ -136,20 +137,34 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             connector.downloadingProgress.connect(self.plugin.updateDownloadProgress)
             data = connector.diviGetLayerFeatures(item.id)
             if data:
-                permissions = connector.getUserLayerPermissions(item.id)
+                permissions = connector.getUserPermission(item.id, 'layer')
                 self.plugin.msgBar.setBoundries(50, 50)
-                addedData.extended( self.plugin.addLayer(data['features'], item, permissions) )
+                addedData.extend( self.plugin.addLayer(data['features'], item, permissions) )
                 item.items.extend( addedData )
             self.plugin.msgBar.setValue(100)
             self.plugin.msgBar.close()
             self.plugin.msgBar = None
         elif isinstance(item, TableItem):
-            self.iface.messageBar().pushMessage('DIVI',
-                #self.trUtf8(u'Aby dodać tabelę musisz posiadać QGIS w wersji 2.14 lub nowszej.'),
-                self.trUtf8(u'W aktualnej wersji nie można wczytywać tabel DIVI.'),
-                QgsMessageBar.CRITICAL,
-                duration = 3
-            )
+            if QGis.QGIS_VERSION_INT < 21400:
+                self.iface.messageBar().pushMessage('DIVI',
+                    self.trUtf8(u'Aby dodać tabelę musisz posiadać QGIS w wersji 2.14 lub nowszej.'),
+                    QgsMessageBar.CRITICAL,
+                    duration = 3
+                )
+            else:
+                self.plugin.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie tabeli '%s'...")%item.name)
+                self.plugin.msgBar.setValue(10)
+                connector = self.getConnector()
+                connector.downloadingProgress.connect(self.plugin.updateDownloadProgress)
+                data = connector.diviGetTableRecords(item.id)
+                if data:
+                    permissions = connector.getUserPermission(item.id, 'table')
+                    self.plugin.msgBar.setBoundries(50, 50)
+                    addedData.append( self.plugin.addTable(data['header'], data['data'], item, permissions) )
+                    item.items.extend( addedData )
+                self.plugin.msgBar.setValue(100)
+                self.plugin.msgBar.close()
+                self.plugin.msgBar = None
         self.tvData.model().sourceModel().dataChanged.emit(index, index)
         self.plugin.setLoading(False)
         return addedData
@@ -197,7 +212,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         for lid in layers:
             layer = QgsMapLayerRegistry.instance().mapLayer(lid)
             QgsMessageLog.logMessage(self.trUtf8('Usuwanie warstwy %s')%layer.name(), 'DIVI')
-            layerItem = self.findLayerItem(layer.customProperty('DiviId'))
+            item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
+            layerItem = self.findLayerItem(layer.customProperty('DiviId'), item_type=item_type)
             if layerItem is not None and layer in layerItem.items:
                 layerItem.items.remove(layer)
                 if not layer.isReadOnly():
@@ -249,14 +265,14 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     
     #OTHERS
     
-    def findLayerItem(self, lid):
+    def findLayerItem(self, lid, item_type='layer'):
         if lid is None:
             return
         model = self.tvData.model().sourceModel()
         layers = model.match(
             model.index(0,0),
             Qt.UserRole+1,
-            'layer@%s' % lid,
+            '%s@%s' % (item_type, lid),
             1,
             Qt.MatchRecursive
         )

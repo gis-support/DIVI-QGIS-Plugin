@@ -34,8 +34,8 @@ class DiviConnector(QObject):
     downloadingProgress = pyqtSignal(float)
     
     #DIVI_HOST = 'https://divi.io'
-    DIVI_HOST = 'http://0.0.0.0:5034'
-    #DIVI_HOST = 'http://dev.apps.divi.pl:5034'
+    #DIVI_HOST = 'http://0.0.0.0:5034'
+    DIVI_HOST = 'http://dev.apps.divi.pl:5034'
     
     def __init__(self, iface=None, auto_login=True):
         QObject.__init__(self)
@@ -167,31 +167,41 @@ class DiviConnector(QObject):
         layer = self.sendGetRequest('/features/%s'%layerid, {'token':self.token, 'geometry':'wkt'})
         return self.getJson(layer)
     
+    def diviGetTableRecords(self, tableid):
+        QgsMessageLog.logMessage('Fecthing table %s records' % tableid, 'DIVI')
+        records = self.sendGetRequest('/records/%s'%tableid, {'token':self.token})
+        return self.getJson(records)
+    
     def diviGetLayer(self, layerid):
         QgsMessageLog.logMessage('Fecthing layer %s' % layerid, 'DIVI')
         layer = self.sendGetRequest('/layers/%s'%layerid, {'token':self.token})
         return self.getJson(layer)
     
-    def getUserLayersPermissions(self, userid=None):
+    def diviGetTable(self, tableid):
+        QgsMessageLog.logMessage('Fecthing table %s' % tableid, 'DIVI')
+        table = self.sendGetRequest('/tables/%s'%tableid, {'token':self.token})
+        return self.getJson(table)
+    
+    def getUserPermissions(self, item_type, userid=None):
         if userid is None:
             userid = self.getUserId()
         if userid is None:
             return
         QgsMessageLog.logMessage('Fecthing permissions for user %s' % userid, 'DIVI')
-        perms = self.getJson(self.sendGetRequest('/user_layers/%s'%userid, {'token':self.token}))
+        perms = self.getJson(self.sendGetRequest('/user_%s/%s'%(item_type, userid), {'token':self.token}))
         if not perms:
             return
         return { lyr['id']:lyr.get('editing', 0) for lyr in perms['data'] }
     
-    def getUserLayerPermissions(self, layerid, userid=None):
+    def getUserPermission(self, layerid, item_type, userid=None):
         if userid is None:
             userid = self.getUserId()
         if userid is None:
             return
         if int(QSettings().value('divi/status', 3)) < 3:
             return { layerid : 1 }
-        QgsMessageLog.logMessage('Fecthing permissions to layer %s for user %s' % (layerid, userid), 'DIVI')
-        perm = self.getJson(self.sendGetRequest('/user_layers/%s/%s'%(userid, layerid), {'token':self.token}))
+        QgsMessageLog.logMessage('Fecthing permissions to %s %s for user %s' % (item_type, layerid, userid), 'DIVI')
+        perm = self.getJson(self.sendGetRequest('/user_%ss/%s/%s'%(item_type, userid, layerid), {'token':self.token}))
         if perm:
             return { layerid : perm.get('editing', 0) }
     
