@@ -170,6 +170,11 @@ class DiviModel(QAbstractItemModel):
                 return 'layer@%s' % item.id
             elif isinstance(item,TableItem):
                 return 'table@%s' % item.id
+            elif isinstance(item,AccountItem):
+                return 'account@%s' % item.id
+        elif role == Qt.UserRole+2:
+            QgsMessageLog.logMessage(item.metaObject().className(), 'DIVI')
+            return item.metaObject().className()
     
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole and section == 0:

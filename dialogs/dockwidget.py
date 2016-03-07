@@ -266,7 +266,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     
     #OTHERS
     
-    def findLayerItem(self, lid, item_type='layer'):
+    def findLayerItem(self, lid, item_type='layer', as_model=False):
         if lid is None:
             return
         model = self.tvData.model().sourceModel()
@@ -278,4 +278,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             Qt.MatchRecursive
         )
         if layers:
-            return layers[0].data(role=Qt.UserRole)
+            if as_model:
+                return layers[0]
+            else:
+                return layers[0].data(role=Qt.UserRole)

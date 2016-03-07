@@ -24,12 +24,14 @@ from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt,
     QVariant, QObject, QPyNullVariant
 from PyQt4.QtGui import QAction, QIcon
 from qgis.core import QgsProject, QGis, QgsVectorLayer, QgsMessageLog,\
-    QgsMapLayerRegistry, QgsField, QgsFeature, QgsGeometry, QgsFeatureRequest
+    QgsMapLayerRegistry, QgsField, QgsFeature, QgsGeometry, QgsFeatureRequest,\
+    QgsApplication
 # Initialize Qt resources from file resources.py
 import resources
 
 # Import the code for the DockWidget
 from dialogs.dockwidget import DiviPluginDockWidget
+from dialogs.import_dialog import DiviPluginImportDialog
 import os.path
 from functools import partial
 
@@ -154,7 +156,7 @@ class DiviPlugin(QObject):
         """
 
         if action is None:
-            action = QAction(icon, text, parent)
+            action = QAction(icon_path, text, parent)
         else:
             action.setIcon(QIcon(icon_path))
             action.setText(text)
@@ -193,6 +195,12 @@ class DiviPlugin(QObject):
             icon_path,
             text=self.tr(u'DIVI QGIS Plugin'),
             action = self.dockwidget.toggleViewAction(),
+            parent=self.iface.mainWindow())
+        
+        self.add_action(
+            QgsApplication.getThemeIcon('/mActionSharingImport.svg'),
+            text=self.trUtf8(u'Importuj warstwę'),
+            callback = self.importDialog,
             parent=self.iface.mainWindow())
         
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
@@ -488,6 +496,11 @@ class DiviPlugin(QObject):
             )
         else:
             self.ids_map[layerid].update({ qgis_id:divi_id for qgis_id,divi_id in zip(ids, result['inserted']) })
+    
+    def importDialog(self):
+        self.dlg = DiviPluginImportDialog(self)
+        QgsMessageLog.logMessage(str(self.dlg), 'DIVI')
+        self.dlg.show()
     
     def updateDownloadProgress(self, value):
         if self.msgBar is not None:
