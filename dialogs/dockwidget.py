@@ -26,7 +26,8 @@ from functools import partial
 
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import pyqtSignal, QSettings, Qt, QRegExp
-from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis
+from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis,\
+    QgsApplication
 from qgis.gui import QgsMessageBar
 from ..utils.connector import DiviConnector
 from ..utils.model import DiviModel, LeafFilterProxyModel, LayerItem, TableItem, \
@@ -194,17 +195,17 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         menu = QtGui.QMenu(self)
         if isinstance(item, LayerItem):
             #Layer menu
-            menu.addAction(self.trUtf8(u'Dodaj warstwę'), lambda: self.addLayer(index))
-            open_as_menu = menu.addMenu(self.trUtf8(u"Dodaj warstwę jako..."))
+            menu.addAction(QgsApplication.getThemeIcon('/mActionAddMap.png'), self.trUtf8(u'Dodaj warstwę'), lambda: self.addLayer(index))
+            open_as_menu = menu.addMenu(QgsApplication.getThemeIcon('/mActionAddOgrLayer.svg'), self.trUtf8(u"Dodaj warstwę jako..."))
             load_layer_as = partial(self.plugin.loadLayerType, item=item)
-            open_as_menu.addAction(self.tr('Punkty'), lambda: load_layer_as(geom_type='MultiPoint'))
-            open_as_menu.addAction(self.tr('Linie'), lambda: load_layer_as(geom_type='MultiLineString'))
-            open_as_menu.addAction(self.tr('Poligony'), lambda: load_layer_as(geom_type='MultiPolygon'))
-            menu.addAction(self.trUtf8(u'Zmień nazwę warstwy...'), lambda: self.editLayerName(index))
+            open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPointLayer.svg'), self.tr('Punkty'), lambda: load_layer_as(geom_type='MultiPoint'))
+            open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconLineLayer.svg'), self.tr('Linie'), lambda: load_layer_as(geom_type='MultiLineString'))
+            open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPolygonLayer.svg'), self.tr('Poligony'), lambda: load_layer_as(geom_type='MultiPolygon'))
+            menu.addAction(QgsApplication.getThemeIcon('/mActionToggleEditing.svg'), self.trUtf8(u'Zmień nazwę warstwy...'), lambda: self.editLayerName(index))
             if item.items:
-                menu.addAction(self.trUtf8(u'Odśwież dane'), lambda: self.refreshData(item))
+                menu.addAction(QgsApplication.getThemeIcon('/mActionDraw.svg'), self.trUtf8(u'Odśwież dane'), lambda: self.refreshData(item))
         elif isinstance(item, ProjectItem):
-            menu.addAction(self.trUtf8(u'Dodaj warstwy z projektu'), lambda: self.addProjectData(index))
+            menu.addAction(QgsApplication.getThemeIcon('/mActionAddGroup.png'), self.trUtf8(u'Dodaj warstwy z projektu'), lambda: self.addProjectData(index))
         menu.popup(self.tvData.viewport().mapToGlobal(point))
     
     def layersRemoved(self, layers):
