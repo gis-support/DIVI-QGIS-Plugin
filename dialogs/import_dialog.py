@@ -23,10 +23,11 @@
 
 import os
 import json
+import tempfile
 
 from PyQt4 import QtGui, uic
-from PyQt4.QtCore import QSettings, Qt
-from qgis.core import QgsMessageLog, QgsMapLayerRegistry
+from PyQt4.QtCore import QSettings, Qt, QFile, QIODevice
+from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorFileWriter
 from ..utils.connector import DiviConnector
 from ..utils.widgets import ProgressMessageBar, DiviJsonEncoder
 
@@ -95,16 +96,19 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
             msgBar.setProgress(value)
         layer = self.cmbLayers.itemData(self.cmbLayers.currentIndex())
         projectid = self.cmbProjects.itemData(self.cmbProjects.currentIndex())
-        data_format = '{"driver":"GeoJSON","name":"GeoJSON","layer_options":["srs"],"allowed_ext":".geojson"}'
+        data_format = '{"driver":"SQLite","name":"SpatiaLite","layer_options":["srs"],"allowed_ext":".sqlite,.db"}'
         msgBar = ProgressMessageBar(self.iface, self.trUtf8(u"Wysyłanie warstwy '%s'...")%layer.name(), 5, 5)
         msgBar.setValue(5)
         msgBar.setBoundries(5, 25)
-        geojson = {'type':'FeatureCollection', 'features':[]}
-        count = float(layer.featureCount())
-        for i, feature in enumerate(layer.getFeatures()):
-            geojson['features'].append(feature.__geo_interface__)
-            msgBar.setProgress(i/count)
-        data = json.dumps(geojson, cls=DiviJsonEncoder)
+        file_name = '%s.sqlite' % layer.name()
+        out_file = os.path.join(tempfile.gettempdir(), file_name)
+        QgsVectorFileWriter.writeAsVectorFormat(layer, out_file,
+            'UTF-8', layer.crs(), 'SpatiaLite')
+        data_file = QFile(out_file)
+        data_file.open(QIODevice.ReadOnly)
+        data = data_file.readAll()
+        data_file.close()
+        os.remove(out_file)
         connector = DiviConnector()
         connector.uploadingProgress.connect(updateDownloadProgress)
         msgBar.setBoundries(30, 30)
@@ -132,9 +136,7 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
             },
             params={'token':token})
         result = json.loads(content)
-        #Delete temp files
-        msgBar.setValue(95)
-        connector.sendDeleteRequest('/upload_gis/%s/new' % projectid, {'session_id':data['session_id']}, params={'token':token})
+        msgBar.setValue(100)
         msgBar.close()
         msgBar = None
         self.close()
