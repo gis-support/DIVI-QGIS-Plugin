@@ -22,18 +22,13 @@
 """
 
 import os
-from functools import partial
+import json
 
 from PyQt4 import QtGui, uic
-from PyQt4.QtCore import pyqtSignal, QSettings, Qt, QRegExp
-from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis,\
-    QgsApplication
-from qgis.gui import QgsMessageBar
+from PyQt4.QtCore import QSettings, Qt
+from qgis.core import QgsMessageLog, QgsMapLayerRegistry
 from ..utils.connector import DiviConnector
-from ..utils.model import DiviModel, LeafFilterProxyModel, LayerItem, TableItem, \
-    ProjectItem
-from ..utils.widgets import ProgressMessageBar
-from ..utils.model import AccountItem
+from ..utils.widgets import ProgressMessageBar, DiviJsonEncoder
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'import_dialog.ui'))
@@ -61,6 +56,7 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         self.loadProjects(self.cmbAccounts.currentIndex())
         
         self.cmbAccounts.currentIndexChanged[int].connect(self.loadProjects)
+        self.btnOK.clicked.connect(self.uploadLayer)
     
     def loadLayers(self):
         self.cmbLayers.clear()
@@ -75,7 +71,6 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
     def loadProjects(self, account):
         accountid = self.cmbAccounts.itemData(account)
         self.cmbProjects.clear()
-        QgsMessageLog.logMessage(str(accountid), 'DIVI')
         for project in self.getModelType("Project", accountid):
             self.cmbProjects.addItem(project.name, project.id)
     
@@ -94,3 +89,52 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         )
         for index in indexes:
             yield index.data(role=Qt.UserRole)
+    
+    def uploadLayer(self, checked):
+        def updateDownloadProgress(value):
+            msgBar.setProgress(value)
+        layer = self.cmbLayers.itemData(self.cmbLayers.currentIndex())
+        projectid = self.cmbProjects.itemData(self.cmbProjects.currentIndex())
+        data_format = '{"driver":"GeoJSON","name":"GeoJSON","layer_options":["srs"],"allowed_ext":".geojson"}'
+        msgBar = ProgressMessageBar(self.iface, self.trUtf8(u"Wysyłanie warstwy '%s'...")%layer.name(), 5, 5)
+        msgBar.setValue(5)
+        msgBar.setBoundries(5, 25)
+        geojson = {'type':'FeatureCollection', 'features':[]}
+        count = float(layer.featureCount())
+        for i, feature in enumerate(layer.getFeatures()):
+            geojson['features'].append(feature.__geo_interface__)
+            msgBar.setProgress(i/count)
+        data = json.dumps(geojson, cls=DiviJsonEncoder)
+        connector = DiviConnector()
+        connector.uploadingProgress.connect(updateDownloadProgress)
+        msgBar.setBoundries(30, 30)
+        msgBar.setValue(30)
+        #Send files to server
+        data = connector.sendGeoJSON(data, self.eLayerName.text(),
+            projectid, data_format
+        )
+        token = QSettings().value('divi/token', None)
+        srs = layer.crs().authid().split(':')[1]
+        #Add data to DIVI
+        msgBar.setBoundries(60, 35)
+        msgBar.setValue(60)
+        content = connector.sendPutRequest('/upload_gis/%s/new' % projectid,
+            {
+                'filename':data['filename'],
+                'format':data_format,
+                'session_id':data['session_id'],
+                'layers':[{
+                    'display_name':self.eLayerName.text(),
+                    'name':data['layers'][0]['name'],
+                    'srs':srs,
+                    'fields':data['layers'][0]['fields']
+                }]
+            },
+            params={'token':token})
+        result = json.loads(content)
+        #Delete temp files
+        msgBar.setValue(95)
+        connector.sendDeleteRequest('/upload_gis/%s/new' % projectid, {'session_id':data['session_id']}, params={'token':token})
+        msgBar.close()
+        msgBar = None
+        self.close()

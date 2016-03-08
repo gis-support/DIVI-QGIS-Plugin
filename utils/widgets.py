@@ -21,9 +21,10 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import QObject
+from PyQt4.QtCore import QObject, QPyNullVariant, QDate, Qt
 from PyQt4.QtGui import QProgressBar
 from qgis.core import QgsMessageLog
+import json
 
 class ProgressMessageBar(QObject):
     
@@ -68,3 +69,12 @@ class ProgressMessageBar(QObject):
             self.iface.messageBar().clearWidgets()
             self.progress = None
             self.msgBar = None
+
+class DiviJsonEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, QPyNullVariant):
+            return None
+        elif isinstance(obj, QDate):
+            return obj.toString(Qt.ISODate)
+        # Let the base class default method raise the TypeError
+        return json.JSONEncoder.default(self, obj)

@@ -24,7 +24,7 @@
 from PyQt4.QtCore import QUrl, QObject, QEventLoop, pyqtSignal, QSettings, \
     QBuffer, qDebug
 from PyQt4.QtNetwork import QNetworkRequest, QNetworkAccessManager, \
-    QHttpMultiPart, QHttpPart, QNetworkReply
+    QHttpMultiPart, QHttpPart, QNetworkReply, QHttpMultiPart, QHttpPart
 from qgis.core import QgsMessageLog, QgsCredentials
 from qgis.gui import QgsMessageBar
 import json
@@ -32,6 +32,7 @@ import json
 class DiviConnector(QObject):
     diviLogged = pyqtSignal(str, str)
     downloadingProgress = pyqtSignal(float)
+    uploadingProgress = pyqtSignal(float)
     
     #DIVI_HOST = 'https://divi.io'
     DIVI_HOST = 'http://0.0.0.0:5034'
@@ -59,6 +60,7 @@ class DiviConnector(QObject):
                 else:
                     reply = getattr(manager, method)(request, data)
             loop = QEventLoop()
+            reply.uploadProgress.connect(self.uploadProgress)
             reply.downloadProgress.connect(self.downloadProgress)
             #reply.error.connect(self._error)
             reply.finished.connect(loop.exit)
@@ -205,6 +207,24 @@ class DiviConnector(QObject):
         if perm:
             return { layerid : perm.get('editing', 0) }
     
+    def sendGeoJSON(self, data, filename, projectid, data_format):
+        multi_part = QHttpMultiPart(QHttpMultiPart.FormDataType)
+        format_part = QHttpPart()
+        format_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="format"')
+        format_part.setBody(data_format)
+        file_part = QHttpPart()
+        file_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="file[0]"; filename="%s.geojson"' % filename)
+        file_part.setHeader(QNetworkRequest.ContentTypeHeader, "application/vnd.geo+json")
+        file_part.setBody(data)
+        multi_part.append(format_part)
+        multi_part.append(file_part)
+        content = self.sendRequest( '/upload_gis/%s/new' % projectid, {'token':self.token},
+            'post',
+            multi_part,
+            {"User-Agent":"Divi QGIS Plugin"}
+        )
+        return json.loads(content)
+    
     #Edit data
     
     def addNewFeatures(self, layerid, data):
@@ -233,6 +253,12 @@ class DiviConnector(QObject):
             self.downloadingProgress.emit( float(received)/total )
         else:
             self.downloadingProgress.emit( 1. )
+    
+    def uploadProgress(self, received, total):
+        if total!=0:
+            self.uploadingProgress.emit( float(received)/total )
+        else:
+            self.uploadingProgress.emit( 1. )
     
     def _sslError(self, reply, errors):
         reply.ignoreSslErrors()

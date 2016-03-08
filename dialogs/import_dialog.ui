@@ -94,14 +94,14 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_2">
+      <widget class="QPushButton" name="btnCancel">
        <property name="text">
         <string>Anuluj</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="btnOK">
        <property name="text">
         <string>OK</string>
        </property>
@@ -114,7 +114,7 @@
  <resources/>
  <connections>
   <connection>
-   <sender>pushButton_2</sender>
+   <sender>btnCancel</sender>
    <signal>clicked()</signal>
    <receiver>Dialog</receiver>
    <slot>close()</slot>
