@@ -499,8 +499,15 @@ class DiviPlugin(QObject):
     
     def importDialog(self):
         self.dlg = DiviPluginImportDialog(self)
-        QgsMessageLog.logMessage(str(self.dlg), 'DIVI')
-        self.dlg.show()
+        if self.dlg.cmbLayers.count():
+            self.dlg.show()
+        else:
+            self.iface.messageBar().pushMessage('DIVI',
+                self.trUtf8(u'Brak wczytanych warstw wektorowych.'),
+                self.iface.messageBar().CRITICAL,
+                duration = 3
+            )
+            self.dlg = None
     
     def updateDownloadProgress(self, value):
         if self.msgBar is not None:
