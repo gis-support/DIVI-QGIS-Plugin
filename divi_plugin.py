@@ -213,7 +213,7 @@ class DiviPlugin(QObject):
         #print "** UNLOAD DiviPlugin"
         
         QgsProject.instance().readMapLayer.disconnect(self.loadLayer)
-        QgsMapLayerRegistry.instance().layersWillBeRemoved.connect( self.dockwidget.layersRemoved )
+        QgsMapLayerRegistry.instance().layersWillBeRemoved.disconnect( self.dockwidget.layersRemoved )
 
         for action in self.actions:
             self.iface.removePluginWebMenu(

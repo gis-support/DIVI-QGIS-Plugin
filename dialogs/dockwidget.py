@@ -214,9 +214,12 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         removed_ids = set([])
         for lid in layers:
             layer = QgsMapLayerRegistry.instance().mapLayer(lid)
+            divi_id = layer.customProperty('DiviId')
+            if divi_id is None:
+                continue
             QgsMessageLog.logMessage(self.trUtf8('Usuwanie warstwy %s')%layer.name(), 'DIVI')
             item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
-            layerItem = self.tvData.model().sourceModel().findItem(layer.customProperty('DiviId'), item_type=item_type)
+            layerItem = self.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
             if layerItem is not None and layer in layerItem.items:
                 layerItem.items.remove(layer)
                 if not layer.isReadOnly():
