@@ -223,8 +223,11 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             if layerItem is not None and layer in layerItem.items:
                 layerItem.items.remove(layer)
                 if not layer.isReadOnly():
-                    layer.beforeCommitChanges.disconnect(self.plugin.onLayerCommit)
-                    layer.committedFeaturesAdded.disconnect(self.plugin.onFeaturesAdded)
+                    try:
+                        layer.beforeCommitChanges.disconnect(self.plugin.onLayerCommit)
+                        layer.committedFeaturesAdded.disconnect(self.plugin.onFeaturesAdded)
+                    except TypeError:
+                        pass
     
     def searchData(self, text):
         self.tvData.model().setFilterRegExp(QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString))
