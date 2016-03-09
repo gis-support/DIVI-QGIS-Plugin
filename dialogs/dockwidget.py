@@ -266,5 +266,5 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 layers.extend( self.addLayer( index.child(i, 0) ) )
         if layers:
             idx = self.iface.legendInterface().addGroup(item.name, True)
-            for layer in layers:
+            for layer in reversed(layers):
                 self.iface.legendInterface().moveLayer(layer, idx)
