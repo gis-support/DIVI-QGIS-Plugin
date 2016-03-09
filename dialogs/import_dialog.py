@@ -81,13 +81,16 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         model = self.plugin.dockwidget.tvData.model().sourceModel()
         if parentid is None:
             parent = model.index(0,0)
+            #Accounts count
+            hits = len(model.rootItem.childItems)
         else:
-            parent = self.plugin.dockwidget.tvData.model().sourceModel().findItem(parentid, 'account', True)
+            parent = model.findItem(parentid, 'account', True)
+            hits = len(parent.data(role=Qt.UserRole).childItems)
         indexes = model.match(
             parent,
             Qt.UserRole+2,
             modelType,
-            -1,
+            hits,
             Qt.MatchRecursive | Qt.MatchStartsWith
         )
         for index in indexes:
