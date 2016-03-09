@@ -409,7 +409,7 @@ class DiviPlugin(QObject):
         editBuffer = layer.editBuffer()
         ids_map = self.ids_map[layerid]
         item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
-        item = self.dockwidget.findLayerItem(divi_id, item_type=item_type)
+        item = self.dockwidget.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
         connector = DiviConnector()
         #Added/removed fields
         added_fields = editBuffer.addedAttributes()
@@ -477,7 +477,7 @@ class DiviPlugin(QObject):
         QgsMessageLog.logMessage(self.tr('Zapisywanie obiektów do warstwy %s') % layer.name(), 'DIVI')
         divi_id = layer.customProperty('DiviId')
         item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
-        item = self.dockwidget.findLayerItem(divi_id, item_type=item_type)
+        item = self.dockwidget.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
         geojson_features = []
         ids = []
         for feature in features:

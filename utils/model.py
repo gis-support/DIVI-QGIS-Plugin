@@ -24,6 +24,7 @@
 from PyQt4.QtCore import QObject, QAbstractItemModel, Qt, QModelIndex, SIGNAL
 from PyQt4.QtGui import QIcon, QFont, QSortFilterProxyModel
 from qgis.core import QgsMessageLog
+import locale
 
 class TreeItem(QObject):
     '''
@@ -170,10 +171,11 @@ class DiviModel(QAbstractItemModel):
                 return 'layer@%s' % item.id
             elif isinstance(item,TableItem):
                 return 'table@%s' % item.id
+            elif isinstance(item,ProjectItem):
+                return 'project@%s' % item.id
             elif isinstance(item,AccountItem):
                 return 'account@%s' % item.id
         elif role == Qt.UserRole+2:
-            QgsMessageLog.logMessage(item.metaObject().className(), 'DIVI')
             return item.metaObject().className()
     
     def headerData(self, section, orientation, role):
@@ -197,22 +199,29 @@ class DiviModel(QAbstractItemModel):
         self.endInsertRows()
     
     def addAccounts(self, accounts):
-        for account in sorted(accounts, key=lambda x:x['name']):
+        for account in accounts:
             item = AccountItem(account, self.rootItem )
             self.accounts_map[item.id] = item
     
     def addProjects(self, projects):
-        for project in sorted(projects, key=lambda x:x['name']):
+        for project in projects:
             item = ProjectItem(project, self.accounts_map[project['id_accounts']] )
             self.projects_map[item.id] = item
     
     def addLayers(self, layers):
-        for layer in sorted(layers, key=lambda x:x['name']):
+        for layer in layers:
             item = LayerItem(layer, self.projects_map[layer['id_projects']] )
     
     def addTables(self, tables):
-        for table in sorted(tables, key=lambda x:x['name']):
+        for table in tables:
             item = TableItem(table, self.projects_map[table['id_projects']] )
+    
+    def addProjectLayers(self, project, layers):
+        parent = self.findItem(project.id, 'project', True)
+        count = len(project.childItems)
+        self.beginInsertRows(parent, count, count+len(layers)-1)
+        self.addLayers(layers)
+        self.endInsertRows()
     
     def removeAll(self):
         rows_count = self.rootItem.childCount()
@@ -256,7 +265,6 @@ class DiviModel(QAbstractItemModel):
 
         return self.createIndex(parentItem.row(), 0, parentItem)
 
-
     def rowCount(self, parent):
         parentItem = parent.internalPointer() if parent.isValid() else self.rootItem
         return parentItem.childCount()
@@ -264,8 +272,24 @@ class DiviModel(QAbstractItemModel):
     def hasChildren(self, parent):
         parentItem = parent.internalPointer() if parent.isValid() else self.rootItem
         return parentItem.childCount() > 0
+    
+    def findItem(self, oid, item_type='layer', as_model=False):
+        if oid is None:
+            return
+        indexes = self.match(
+            self.index(0,0),
+            Qt.UserRole+1,
+            '%s@%s' % (item_type, oid),
+            1,
+            Qt.MatchRecursive
+        )
+        if indexes:
+            if as_model:
+                return indexes[0]
+            else:
+                return indexes[0].data(role=Qt.UserRole)
 
-class LeafFilterProxyModel(QSortFilterProxyModel):
+class DiviProxyModel(QSortFilterProxyModel):
     # Source: http://gaganpreet.in/blog/2013/07/04/qtreeview-and-custom-filter-models/
     ''' Class to override the following behaviour:
             If a parent item doesn't match the filter,
@@ -290,7 +314,7 @@ class LeafFilterProxyModel(QSortFilterProxyModel):
         return self.has_accepted_children(row_num, source_parent)
  
     def filter_accepts_row_itself(self, row_num, parent):
-        return super(LeafFilterProxyModel, self).filterAcceptsRow(row_num, parent)
+        return super(DiviProxyModel, self).filterAcceptsRow(row_num, parent)
  
     def filter_accepts_any_parent(self, parent):
         ''' Traverse to the root node and check if any of the
@@ -314,3 +338,13 @@ class LeafFilterProxyModel(QSortFilterProxyModel):
             if self.filterAcceptsRow(i, source_index):
                 return True
         return False
+    
+    def lessThan(self, left, right):
+        lvalue = left.data()
+        rvalue = right.data()
+        if lvalue is None:
+            return True
+        if rvalue is None:
+            return False
+        return locale.strcoll(lvalue.lower(), rvalue.lower()) > 0
+

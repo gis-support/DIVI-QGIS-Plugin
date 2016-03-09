@@ -30,6 +30,7 @@ from PyQt4.QtCore import QSettings, Qt, QFile, QIODevice
 from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorFileWriter,\
     QgsCoordinateReferenceSystem
 from ..utils.connector import DiviConnector
+from ..utils.model import LayerItem
 from ..utils.widgets import ProgressMessageBar, DiviJsonEncoder
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -74,14 +75,14 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         accountid = self.cmbAccounts.itemData(account)
         self.cmbProjects.clear()
         for project in self.getModelType("Project", accountid):
-            self.cmbProjects.addItem(project.name, project.id)
+            self.cmbProjects.addItem(project.name, project)
     
     def getModelType(self, modelType, parentid=None):
         model = self.plugin.dockwidget.tvData.model().sourceModel()
         if parentid is None:
             parent = model.index(0,0)
         else:
-            parent = self.plugin.dockwidget.findLayerItem(parentid, 'account', True)
+            parent = self.plugin.dockwidget.tvData.model().sourceModel().findItem(parentid, 'account', True)
         indexes = model.match(
             parent,
             Qt.UserRole+2,
@@ -96,7 +97,7 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         def updateDownloadProgress(value):
             msgBar.setProgress(value)
         layer = self.cmbLayers.itemData(self.cmbLayers.currentIndex())
-        projectid = self.cmbProjects.itemData(self.cmbProjects.currentIndex())
+        project = self.cmbProjects.itemData(self.cmbProjects.currentIndex())
         data_format = '{"driver":"SQLite","name":"SpatiaLite","layer_options":["srs"],"allowed_ext":".sqlite,.db"}'
         msgBar = ProgressMessageBar(self.iface, self.trUtf8(u"Wysyłanie warstwy '%s'...")%layer.name(), 5, 5)
         msgBar.setValue(5)
@@ -116,13 +117,13 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         msgBar.setValue(30)
         #Send files to server
         data = connector.sendGeoJSON(data, self.eLayerName.text(),
-            projectid, data_format
+            project.id, data_format
         )
         token = QSettings().value('divi/token', None)
         #Add data to DIVI
         msgBar.setBoundries(60, 35)
         msgBar.setValue(60)
-        content = connector.sendPutRequest('/upload_gis/%s/new' % projectid,
+        content = connector.sendPutRequest('/upload_gis/%s/new' % project.id,
             {
                 'filename':data['filename'],
                 'format':data_format,
@@ -136,6 +137,12 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
             },
             params={'token':token})
         result = json.loads(content)
+        msgBar.setValue(95)
+        #Refresh list
+        self.plugin.dockwidget.tvData.model().sourceModel().addProjectLayers(
+            project,
+            [ connector.diviGetLayer(layerid) for layerid in result['uploaded'] ]
+        )
         msgBar.setValue(100)
         msgBar.close()
         msgBar = None

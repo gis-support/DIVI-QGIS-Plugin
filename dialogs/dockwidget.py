@@ -30,7 +30,7 @@ from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis,\
     QgsApplication
 from qgis.gui import QgsMessageBar
 from ..utils.connector import DiviConnector
-from ..utils.model import DiviModel, LeafFilterProxyModel, LayerItem, TableItem, \
+from ..utils.model import DiviModel, DiviProxyModel, LayerItem, TableItem, \
     ProjectItem
 from ..utils.widgets import ProgressMessageBar
 
@@ -55,9 +55,11 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.token = QSettings().value('divi/token', None)
         self.user = QSettings().value('divi/email', None)
         self.setupUi(self)
-        proxyModel = LeafFilterProxyModel()
+        proxyModel = DiviProxyModel()
         proxyModel.setSourceModel( DiviModel() )
+        proxyModel.setDynamicSortFilter( True )
         self.tvData.setModel( proxyModel )
+        self.tvData.setSortingEnabled(True)
         self.setLogginStatus(bool(self.token))
         if self.token:
             self.diviConnection(True, auto_login=False)
@@ -120,7 +122,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             layers = [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]
         for layer in layers:
             item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
-            layerItem = self.findLayerItem(layer.customProperty('DiviId'), item_type=item_type)
+            layerItem = self.tvData.model().sourceModel().findItem(layer.customProperty('DiviId'), item_type=item_type)
             if layerItem is not None:
                 layerItem.items.append(layer)
     
@@ -214,7 +216,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             layer = QgsMapLayerRegistry.instance().mapLayer(lid)
             QgsMessageLog.logMessage(self.trUtf8('Usuwanie warstwy %s')%layer.name(), 'DIVI')
             item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
-            layerItem = self.findLayerItem(layer.customProperty('DiviId'), item_type=item_type)
+            layerItem = self.tvData.model().sourceModel().findItem(layer.customProperty('DiviId'), item_type=item_type)
             if layerItem is not None and layer in layerItem.items:
                 layerItem.items.remove(layer)
                 if not layer.isReadOnly():
@@ -263,22 +265,3 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             idx = self.iface.legendInterface().addGroup(item.name, True)
             for layer in layers:
                 self.iface.legendInterface().moveLayer(layer, idx)
-    
-    #OTHERS
-    
-    def findLayerItem(self, lid, item_type='layer', as_model=False):
-        if lid is None:
-            return
-        model = self.tvData.model().sourceModel()
-        layers = model.match(
-            model.index(0,0),
-            Qt.UserRole+1,
-            '%s@%s' % (item_type, lid),
-            1,
-            Qt.MatchRecursive
-        )
-        if layers:
-            if as_model:
-                return layers[0]
-            else:
-                return layers[0].data(role=Qt.UserRole)
