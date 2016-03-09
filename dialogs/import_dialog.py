@@ -27,7 +27,8 @@ import tempfile
 
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import QSettings, Qt, QFile, QIODevice
-from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorFileWriter
+from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorFileWriter,\
+    QgsCoordinateReferenceSystem
 from ..utils.connector import DiviConnector
 from ..utils.widgets import ProgressMessageBar, DiviJsonEncoder
 
@@ -103,7 +104,7 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         file_name = '%s.sqlite' % layer.name()
         out_file = os.path.join(tempfile.gettempdir(), file_name)
         QgsVectorFileWriter.writeAsVectorFormat(layer, out_file,
-            'UTF-8', layer.crs(), 'SpatiaLite')
+            'UTF-8', QgsCoordinateReferenceSystem(4326), 'SpatiaLite')
         data_file = QFile(out_file)
         data_file.open(QIODevice.ReadOnly)
         data = data_file.readAll()
@@ -118,7 +119,6 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
             projectid, data_format
         )
         token = QSettings().value('divi/token', None)
-        srs = layer.crs().authid().split(':')[1]
         #Add data to DIVI
         msgBar.setBoundries(60, 35)
         msgBar.setValue(60)
@@ -130,7 +130,7 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
                 'layers':[{
                     'display_name':self.eLayerName.text(),
                     'name':data['layers'][0]['name'],
-                    'srs':srs,
+                    'srs':4326,
                     'fields':data['layers'][0]['fields']
                 }]
             },
