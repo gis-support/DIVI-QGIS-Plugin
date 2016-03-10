@@ -120,11 +120,14 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     def getLoadedDiviLayers(self, layers=None):
         if layers is None:
             layers = [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]
+        model = self.tvData.model().sourceModel()
         for layer in layers:
             item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
-            layerItem = self.tvData.model().sourceModel().findItem(layer.customProperty('DiviId'), item_type=item_type)
+            layerIndex = model.findItem(layer.customProperty('DiviId'), item_type, True)
+            layerItem = layerIndex.data(role=Qt.UserRole)
             if layerItem is not None:
                 layerItem.items.append(layer)
+                model.dataChanged.emit(layerIndex, layerIndex)
     
     #SLOTS
     
@@ -168,7 +171,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 self.plugin.msgBar.setValue(100)
                 self.plugin.msgBar.close()
                 self.plugin.msgBar = None
-        self.tvData.model().sourceModel().dataChanged.emit(index, index)
+        index.model().dataChanged.emit(index, index)
         self.plugin.setLoading(False)
         return addedData
     
@@ -212,6 +215,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     
     def layersRemoved(self, layers):
         removed_ids = set([])
+        model = self.tvData.model().sourceModel()
         for lid in layers:
             layer = QgsMapLayerRegistry.instance().mapLayer(lid)
             divi_id = layer.customProperty('DiviId')
@@ -219,7 +223,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 continue
             QgsMessageLog.logMessage(self.trUtf8('Usuwanie warstwy %s')%layer.name(), 'DIVI')
             item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
-            layerItem = self.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
+            layerIndex = model.findItem(divi_id, item_type, True)
+            layerItem = layerIndex.data(role=Qt.UserRole)
             if layerItem is not None and layer in layerItem.items:
                 layerItem.items.remove(layer)
                 if not layer.isReadOnly():
@@ -228,6 +233,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                         layer.committedFeaturesAdded.disconnect(self.plugin.onFeaturesAdded)
                     except TypeError:
                         pass
+                model.dataChanged.emit(layerIndex, layerIndex)
     
     def searchData(self, text):
         self.tvData.model().setFilterRegExp(QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString))
@@ -249,7 +255,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                     duration = 3
                 )
                 item.name = name
-                self.tvData.model().sourceModel().dataChanged.emit(index, index)
+                index.model().dataChanged.emit(index, index)
             else:
                 self.iface.messageBar().pushMessage('DIVI',
                     self.trUtf8(u'Wystąpił błąd podczas zmiany nazwy.'),
