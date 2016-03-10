@@ -124,8 +124,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         for layer in layers:
             item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
             layerIndex = model.findItem(layer.customProperty('DiviId'), item_type, True)
-            layerItem = layerIndex.data(role=Qt.UserRole)
-            if layerItem is not None:
+            if layerIndex is not None:
+                layerItem = layerIndex.data(role=Qt.UserRole)
                 layerItem.items.append(layer)
                 model.dataChanged.emit(layerIndex, layerIndex)
     
@@ -224,8 +224,10 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             QgsMessageLog.logMessage(self.trUtf8('Usuwanie warstwy %s')%layer.name(), 'DIVI')
             item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
             layerIndex = model.findItem(divi_id, item_type, True)
+            if layerIndex is None:
+                continue
             layerItem = layerIndex.data(role=Qt.UserRole)
-            if layerItem is not None and layer in layerItem.items:
+            if layer in layerItem.items:
                 layerItem.items.remove(layer)
                 if not layer.isReadOnly():
                     try:
