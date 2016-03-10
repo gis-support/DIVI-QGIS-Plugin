@@ -237,9 +237,9 @@ class DiviPlugin(QObject):
         return True
     
     def loadLayer(self, mapLayer, node=None, add_empty=False):
-        if not self.setLoading(True):
-            return
         divi_id = mapLayer.customProperty('DiviId')
+        if divi_id is None or not self.setLoading(True):
+            return
         layer_meta = None
         if divi_id is not None:
             self.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%mapLayer.name(), 5, 5)
