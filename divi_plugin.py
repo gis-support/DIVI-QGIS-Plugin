@@ -319,7 +319,8 @@ class DiviPlugin(QObject):
             records_list.append(r)
             if self.msgBar is not None:
                 self.msgBar.setProgress(i/count)
-        return self.registerLayer(layer=table, features=records_list, layerid=tableid, permissions={}, addToMap=True)
+        return self.registerLayer(layer=table, features=records_list, layerid=tableid,
+            permissions={}, addToMap=True, fields=fields)
     
     def addFeatures(self, layerid, features, fields, points=None, lines=None, polygons=None, permissions={}, add_empty=False):
         """ Add DIVI layer to QGIS """
@@ -371,25 +372,20 @@ class DiviPlugin(QObject):
                 self.msgBar.setProgress(i/count)
         #Add only layers that have features
         result = []
-        register = partial(self.registerLayer, layerid=layerid, permissions=permissions, addToMap=True)
+        register = partial(self.registerLayer, layerid=layerid, permissions=permissions,
+            addToMap=True, fields=fields)
         if points is not None and (points_list or add_empty):
             result.append(register(layer=points, features=points_list))
             self.ids_map[points.id()] = dict(zip(points.allFeatureIds(), points_ids))
-            for i, field in enumerate(fields):
-                points.addAttributeAlias(i, field['name'])
         if lines is not None and (lines_list or add_empty):
             result.append(register(layer=lines, features=lines_list))
             self.ids_map[lines.id()] = dict(zip(lines.allFeatureIds(), lines_ids))
-            for i, field in enumerate(fields):
-                lines.addAttributeAlias(i, field['name'])
         if polygons is not None and (polygons_list or add_empty):
             result.append(register(layer=polygons, features=polygons_list))
             self.ids_map[polygons.id()] = dict(zip(polygons.allFeatureIds(), polygons_ids))
-            for i, field in enumerate(fields):
-                polygons.addAttributeAlias(i, field['name'])
         return result
     
-    def registerLayer(self, layer, layerid, features, permissions, addToMap):
+    def registerLayer(self, layer, layerid, features, permissions, addToMap, fields=[]):
         layer.dataProvider().addFeatures(features)
         layer.setCustomProperty('DiviId', layerid)
         if int(QSettings().value('divi/status', 3)) > 2:
@@ -397,6 +393,11 @@ class DiviPlugin(QObject):
         if not layer.isReadOnly():
             layer.beforeCommitChanges.connect(self.onLayerCommit)
             layer.committedFeaturesAdded.connect(self.onFeaturesAdded)
+        for i, field in enumerate(fields):
+            layer.addAttributeAlias(i, field['name'])
+            if field['type'] == 'dropdown':
+                layer.setEditorWidgetV2(i, 'ValueMap')
+                layer.setEditorWidgetV2Config(i, { value:value for value in field['valuelist'].split(',') })
         if addToMap:
             QgsMapLayerRegistry.instance().addMapLayer(layer)
         return layer
