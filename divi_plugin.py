@@ -214,6 +214,10 @@ class DiviPlugin(QObject):
         
         QgsProject.instance().readMapLayer.disconnect(self.loadLayer)
         QgsMapLayerRegistry.instance().layersWillBeRemoved.disconnect( self.dockwidget.layersRemoved )
+        
+        #Disconnect layers signal
+        for layer in [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]:
+            self.unregisterLayer(layer)
 
         for action in self.actions:
             self.iface.removePluginWebMenu(
@@ -393,6 +397,8 @@ class DiviPlugin(QObject):
         if not layer.isReadOnly():
             layer.beforeCommitChanges.connect(self.onLayerCommit)
             layer.committedFeaturesAdded.connect(self.onFeaturesAdded)
+            layer.editingStarted.connect(self.onStartEditing )
+            layer.editingStopped.connect(self.onStopEditing)
         for i, field in enumerate(fields):
             layer.addAttributeAlias(i, field['name'])
             if field['type'] == 'dropdown':
@@ -401,6 +407,13 @@ class DiviPlugin(QObject):
         if addToMap:
             QgsMapLayerRegistry.instance().addMapLayer(layer)
         return layer
+    
+    def unregisterLayer(self, layer):
+        if not layer.isReadOnly():
+            layer.beforeCommitChanges.disconnect(self.onLayerCommit)
+            layer.committedFeaturesAdded.disconnect(self.onFeaturesAdded)
+            layer.editingStarted.disconnect(self.onStartEditing)
+            layer.editingStopped.disconnect(self.onStopEditing)
     
     def onLayerCommit(self):
         layer = self.sender()
@@ -497,6 +510,14 @@ class DiviPlugin(QObject):
             )
         else:
             self.ids_map[layerid].update({ qgis_id:divi_id for qgis_id,divi_id in zip(ids, result['inserted']) })
+    
+    def onStartEditing(self):
+        layer = self.sender()
+        QgsMessageLog.logMessage('Start editing layer %s' % layer.name(), 'DIVI')
+    
+    def onStopEditing(self):
+        layer = self.sender()
+        QgsMessageLog.logMessage('Stop editing layer %s' % layer.name(), 'DIVI')
     
     def importDialog(self):
         self.dlg = DiviPluginImportDialog(self)

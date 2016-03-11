@@ -122,10 +122,12 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             layers = [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]
         model = self.tvData.model().sourceModel()
         for layer in layers:
+            divi_id = layer.customProperty('DiviId')
             item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
-            layerIndex = model.findItem(layer.customProperty('DiviId'), item_type, True)
+            layerIndex = model.findItem(divi_id, item_type, True)
             if layerIndex is not None:
                 layerItem = layerIndex.data(role=Qt.UserRole)
+                self.plugin.registerLayer(layer, divi_id, [], {}, False, layerItem.fields)
                 layerItem.items.append(layer)
                 model.dataChanged.emit(layerIndex, layerIndex)
     
@@ -186,9 +188,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             return
         for lyr in layers:
             lyr.dataProvider().deleteFeatures(lyr.allFeatureIds())
-            #We must disconnect signal because loadLayer will connect them again
-            lyr.beforeCommitChanges.disconnect()
-            lyr.committedFeaturesAdded.disconnect()
+            self.plugin.unregisterLayer(lyr)
             layer_meta = self.plugin.loadLayer(lyr)
             lyr.triggerRepaint()
         item.items = layers[:]
@@ -229,12 +229,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             layerItem = layerIndex.data(role=Qt.UserRole)
             if layer in layerItem.items:
                 layerItem.items.remove(layer)
-                if not layer.isReadOnly():
-                    try:
-                        layer.beforeCommitChanges.disconnect(self.plugin.onLayerCommit)
-                        layer.committedFeaturesAdded.disconnect(self.plugin.onFeaturesAdded)
-                    except TypeError:
-                        pass
+                self.plugin.unregisterLayer(layer)
                 model.dataChanged.emit(layerIndex, layerIndex)
     
     def searchData(self, text):
