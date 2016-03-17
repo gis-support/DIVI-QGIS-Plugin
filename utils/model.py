@@ -114,6 +114,7 @@ class LayerItem(TreeItem):
         self.icon = QIcon(':/plugins/DiviPlugin/images/layer.png')
         self.items = []
         self.fields_mapper = {}
+        self.transaction = None
     
     def updateData(self, data):
         for key in ['fields', 'name', 'abstract']:
@@ -133,6 +134,7 @@ class TableItem(TreeItem):
         
         self.icon = QIcon(':/plugins/DiviPlugin/images/table.png')
         self.items = []
+        self.transaction = None
 
 class DiviModel(QAbstractItemModel):
     

@@ -421,6 +421,7 @@ class DiviPlugin(QObject):
         divi_id = layer.customProperty('DiviId')
         QgsMessageLog.logMessage(self.tr('Zapisywanie warstwy %s') % layer.name(), 'DIVI')
         editBuffer = layer.editBuffer()
+        #TODO: po restarcie wtyczki ids_map może być nieznane
         ids_map = self.ids_map[layerid]
         item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
         item = self.dockwidget.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
@@ -449,7 +450,7 @@ class DiviPlugin(QObject):
                     'name':field.name(),
                     'type':_type
                 })
-            response = connector.updateLayer(divi_id, {'fields':fields})
+            response = connector.updateLayer(divi_id, {'fields':fields}, item.transaction)
             updated_layer = response.get('layer')
             if updated_layer:
                 for new, old in zip(updated_layer['fields'], fields):
@@ -460,7 +461,7 @@ class DiviPlugin(QObject):
         deleted = editBuffer.deletedFeatureIds()
         if deleted:
             fids = [ ids_map[fid] for fid in deleted ]
-            result = connector.deleteFeatures(divi_id, fids)
+            result = connector.deleteFeatures(divi_id, fids, item.transaction)
             deleted_ids = result['deleted']
             if len(set(fids).symmetric_difference(set(deleted_ids))):
                 self.iface.messageBar().pushMessage('BŁĄD',
@@ -484,7 +485,7 @@ class DiviPlugin(QObject):
                 geojson['properties'] = self.map_attributes(geojson['properties'], item.fields_mapper)
                 geojson['id'] = ids_map[f.id()]
                 data.append(geojson)
-            result = connector.changeFeatures(divi_id, data)
+            result = connector.changeFeatures(divi_id, data, item.transaction)
     
     def onFeaturesAdded(self, layerid, features):
         layer = QgsMapLayerRegistry.instance().mapLayer(layerid)
@@ -501,7 +502,7 @@ class DiviPlugin(QObject):
             ids.append(feature.id())
         addedFeatures = {u'type': u'FeatureCollection', u'features': geojson_features }
         connector = DiviConnector()
-        result = connector.addNewFeatures(divi_id, addedFeatures)
+        result = connector.addNewFeatures(divi_id, addedFeatures, item.transaction)
         if len(ids) != len(result['inserted']):
             self.iface.messageBar().pushMessage('BŁĄD',
                 self.trUtf8(u'Podczas dodawania nowych obiektów wystąpił błąd. Nie wszystkie obiekty zostały dodane'),
@@ -513,11 +514,36 @@ class DiviPlugin(QObject):
     
     def onStartEditing(self):
         layer = self.sender()
+        divi_id = layer.customProperty('DiviId')
+        if divi_id is None:
+            return
+        item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
+        item = self.dockwidget.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
+        if item.transaction is not None:
+            return
         QgsMessageLog.logMessage('Start editing layer %s' % layer.name(), 'DIVI')
+        connector = DiviConnector(self.iface)
+        result = connector.startTransaction(item_type+'s', divi_id)
+        if result is None:
+            QgsMessageLog.logMessage('Edycja zablokowana', 'DIVI')
+            layer.rollBack()
+            return
+        item.transaction = result['inserted']
     
     def onStopEditing(self):
         layer = self.sender()
+        divi_id = layer.customProperty('DiviId')
+        if divi_id is None:
+            return
+        item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
+        item = self.dockwidget.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
+        #Check if other geometries for this DIVI layer are edited
+        if any( lyr.isEditable() for lyr in item.items if lyr is not layer ):
+            return
         QgsMessageLog.logMessage('Stop editing layer %s' % layer.name(), 'DIVI')
+        connector = DiviConnector()
+        result = connector.stopTransaction(item_type+'s', item.transaction)
+        item.transaction = None
     
     def importDialog(self):
         self.dlg = DiviPluginImportDialog(self)

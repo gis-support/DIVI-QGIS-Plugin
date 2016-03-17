@@ -70,13 +70,14 @@ class DiviConnector(QObject):
         manager.sslErrors.connect(self._sslError)
         reply = send(params)
         content = unicode(reply.readAll())
+        status_code = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
         if reply.error() == QNetworkReply.ConnectionRefusedError:
             if self.iface is not None:
                 self.iface.messageBar().pushMessage(self.trUtf8("Błąd"),
                     self.trUtf8("Serwer odrzucił żądanie"),
                     level=QgsMessageBar.CRITICAL, duration=3)
             return
-        elif reply.attribute(QNetworkRequest.HttpStatusCodeAttribute) == 403:
+        elif status_code == 403:
             if not self.auto_login:
                 return
             #Invalid token, try to login and fetch data again
@@ -87,37 +88,46 @@ class DiviConnector(QObject):
             params['token'] = result
             reply = send(params)
             content = unicode(reply.readAll())
-        elif reply.error() == QNetworkReply.ContentNotFoundError:
+        elif status_code == 404:
             if self.iface is not None:
                 self.iface.messageBar().pushMessage(self.trUtf8("Błąd"),
                     self.trUtf8("Błąd 404: nie znaleziono żądanego zasobu"),
                     level=QgsMessageBar.CRITICAL, duration=3)
             return
+        elif status_code == 423:
+            if self.iface is not None:
+                self.iface.messageBar().pushMessage(self.trUtf8("Błąd"),
+                    self.trUtf8("Błąd 423: żądany zasób jest zablokowany do edycji"),
+                    level=QgsMessageBar.CRITICAL, duration=3)
+            return
         return content
     
-    def sendPostRequest(self, endpoint, data, params={}):
+    def sendPostRequest(self, endpoint, data, params={}, headers={}):
+        headers.update({"Content-Type":"application/json", "User-Agent":"Divi QGIS Plugin"})
         return self.sendRequest( endpoint, params,
                 'post',
                 json.dumps(data),
-                {"Content-Type":"application/json", "User-Agent":"Divi QGIS Plugin"},
+                headers=headers
             )
     
-    def sendPutRequest(self, endpoint, data, params={}):
+    def sendPutRequest(self, endpoint, data, params={}, headers={}):
+        headers.update({"Content-Type":"application/json", "User-Agent":"Divi QGIS Plugin"})
         return self.sendRequest( endpoint, params,
                 'put',
                 json.dumps(data),
-                {"Content-Type":"application/json", "User-Agent":"Divi QGIS Plugin"},
+                headers=headers
             )
     
-    def sendDeleteRequest(self, endpoint, data, params={}):
+    def sendDeleteRequest(self, endpoint, data={}, params={}, headers={}):
         buff = QBuffer()
         buff.open(QBuffer.ReadWrite)
         buff.write(json.dumps(data).decode('utf-8'))
         buff.seek(0)
+        headers.update({"Content-Type":"application/json", "User-Agent":"Divi QGIS Plugin"})
         content = self.sendRequest( endpoint, params,
             'delete',
             buff,
-            {"Content-Type":"application/json", "User-Agent":"Divi QGIS Plugin"},
+            headers=headers
         )
         buff.close()
         return content
@@ -225,25 +235,40 @@ class DiviConnector(QObject):
         )
         return json.loads(content)
     
+    def startTransaction(self, data_type, layerid):
+        QgsMessageLog.logMessage('Starting transaction for %s' % layerid, 'DIVI')
+        content = self.sendPostRequest('/transactions/%s'%data_type, {'feature': layerid}, params={'token':self.token})
+        if content:
+            return self.getJson(content)
+    
+    def stopTransaction(self, data_type, transaction):
+        QgsMessageLog.logMessage('Stopping transaction %s' % transaction, 'DIVI')
+        content = self.sendDeleteRequest('/transactions/%s/%s'%(data_type, transaction), params={'token':self.token})
+        return self.getJson(content)
+    
     #Edit data
     
-    def addNewFeatures(self, layerid, data):
-        content = self.sendPostRequest('/features/%s'%layerid, data, params={'token':self.token})
+    def addNewFeatures(self, layerid, data, transaction):
+        content = self.sendPostRequest('/features/%s'%layerid, data,
+            params={'token':self.token}, headers={'X-Transaction-Id':transaction})
         return self.getJson(content)
     
-    def deleteFeatures(self, layerid, fids):
+    def deleteFeatures(self, layerid, fids, transaction):
         QgsMessageLog.logMessage('Removing objects: '+str(fids), 'DIVI')
-        content = self.sendDeleteRequest('/features/%s'%layerid, {'features':fids}, params={'token':self.token})
+        content = self.sendDeleteRequest('/features/%s'%layerid, data={'features':fids},
+            params={'token':self.token}, headers={'X-Transaction-Id':transaction})
         return self.getJson(content)
     
-    def changeFeatures(self, layerid, data):
+    def changeFeatures(self, layerid, data, transaction):
         QgsMessageLog.logMessage('Saving changed objects', 'DIVI')
-        content = self.sendPutRequest('/features/%s'%layerid, {'features':data}, params={'token':self.token})
+        content = self.sendPutRequest('/features/%s'%layerid, {'features':data},
+            params={'token':self.token}, headers={'X-Transaction-Id':transaction})
         return self.getJson(content)
     
-    def updateLayer(self, layerid, data):
+    def updateLayer(self, layerid, data, transaction):
         QgsMessageLog.logMessage('Saving changed layer %s' % layerid, 'DIVI')
-        content = self.sendPutRequest('/layers/%s'%layerid, data, params={'token':self.token})
+        content = self.sendPutRequest('/layers/%s'%layerid, data,
+            params={'token':self.token}, headers={'X-Transaction-Id':transaction})
         return self.getJson(content)
     
     #Helpers
