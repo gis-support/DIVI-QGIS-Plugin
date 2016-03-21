@@ -10,7 +10,7 @@
 name=DIVI QGIS Plugin
 qgisMinimumVersion=2.0
 description=Integracja QGIS z platformą DIVI firmy GIS Support sp. z o. o.
-version=0.7
+version=0.8
 author=Piotr Pociask, GIS Support sp. z o. o.
 email=info@gis-support.pl
 
@@ -23,7 +23,13 @@ repository=https://github.com/gis-support/DIVI-QGIS-Plugin
 # Recommended items:
 
 # Uncomment the following line and add your changelog:
-changelog=0.7
+changelog=0.8
+  - starting layer edit will block DIVI layer for editign by other users
+  - set dropdown DIVI fields to ValueMap widget in QGIS
+  - fix problems with signals managment for layers
+  - fix problem with refreshing tree view
+  - fix problem with error message on project loading
+  0.7
   - upload layers from QGIS to DIVI
   - add icons to centext menu in tree view
   - fix error on removing layers from QGIS
