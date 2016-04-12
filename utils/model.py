@@ -79,7 +79,7 @@ class LoadingItem(TreeItem):
     
     def __init__(self, parent=None):
         super(LoadingItem, self).__init__(self, parent)
-        self.name = self.trUtf8(u'Pobieranie danych...')
+        self.name = self.tr(u'Downloading data...')
         
         self.icon = QIcon(':/plugins/DiviPlugin/images/downloading.png')
 
@@ -182,7 +182,7 @@ class DiviModel(QAbstractItemModel):
     
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole and section == 0:
-            return self.tr('Dane')
+            return self.tr('Data')
         return None
     
     def showLoading(self):

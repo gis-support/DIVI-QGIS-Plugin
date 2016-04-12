@@ -102,7 +102,7 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         layer = self.cmbLayers.itemData(self.cmbLayers.currentIndex())
         project = self.cmbProjects.itemData(self.cmbProjects.currentIndex())
         data_format = '{"driver":"SQLite","name":"SpatiaLite","layer_options":["srs"],"allowed_ext":".sqlite,.db"}'
-        msgBar = ProgressMessageBar(self.iface, self.trUtf8(u"Wysyłanie warstwy '%s'...")%layer.name(), 5, 5)
+        msgBar = ProgressMessageBar(self.iface, self.tr(u"Uploading layer '%s'...")%layer.name(), 5, 5)
         msgBar.setValue(5)
         msgBar.setBoundries(5, 25)
         file_name = '%s.sqlite' % layer.name()

@@ -10,6 +10,9 @@
     <height>377</height>
    </rect>
   </property>
+  <property name="locale">
+   <locale language="English" country="UnitedStates"/>
+  </property>
   <property name="windowTitle">
    <string>DIVI QGIS Plugin</string>
   </property>
@@ -40,7 +43,7 @@
       <item>
        <widget class="QToolButton" name="btnConnect">
         <property name="text">
-         <string>Połącz</string>
+         <string>Connect</string>
         </property>
         <property name="checkable">
          <bool>true</bool>
@@ -52,7 +55,7 @@
     <item>
      <widget class="QLineEdit" name="eSearch">
       <property name="placeholderText">
-       <string>Szukaj...</string>
+       <string>Search...</string>
       </property>
      </widget>
     </item>

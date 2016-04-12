@@ -199,7 +199,7 @@ class DiviPlugin(QObject):
         
         self.add_action(
             QgsApplication.getThemeIcon('/mActionSharingImport.svg'),
-            text=self.trUtf8(u'Importuj warstwę'),
+            text=self.tr(u'Upload layer'),
             callback = self.importDialog,
             parent=self.iface.mainWindow())
         
@@ -232,7 +232,7 @@ class DiviPlugin(QObject):
     def setLoading(self, isLoading):
         if isLoading and self.loading:
             self.iface.messageBar().pushMessage('BŁĄD',
-                self.trUtf8(u'Załadowanie nowej warstwy będzie możliwe dopiero po zakończeniu trwającej operacji.'),
+                self.tr('Loading new layer will be possible after current operation.'),
                 self.iface.messageBar().CRITICAL,
                 duration = 3
             )
@@ -246,7 +246,7 @@ class DiviPlugin(QObject):
             return
         layer_meta = None
         if divi_id is not None:
-            self.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%mapLayer.name(), 5, 5)
+            self.msgBar = ProgressMessageBar(self.iface, self.tr(u"Downloading layer '%s'...")%mapLayer.name(), 5, 5)
             connector = DiviConnector()
             connector.downloadingProgress.connect(self.updateDownloadProgress)
             self.msgBar.progress.setValue(5)
@@ -419,7 +419,7 @@ class DiviPlugin(QObject):
         layer = self.sender()
         layerid = layer.id()
         divi_id = layer.customProperty('DiviId')
-        QgsMessageLog.logMessage(self.tr('Zapisywanie warstwy %s') % layer.name(), 'DIVI')
+        QgsMessageLog.logMessage(self.tr('Saving layer %s') % layer.name(), 'DIVI')
         editBuffer = layer.editBuffer()
         #TODO: po restarcie wtyczki ids_map może być nieznane
         ids_map = self.ids_map[layerid]
@@ -431,9 +431,8 @@ class DiviPlugin(QObject):
         removed_fields = editBuffer.deletedAttributeIds()
         if added_fields or removed_fields:
             if len(item.items) > 1:
-                self.iface.messageBar().pushMessage(self.trUtf8("Uwaga:"),
-                    self.trUtf8("Zmieniono strukturę jednej warstwy z wczytanych %d powiązanych z wybraną warstwą DIVI. "
-                        "Wczytaj ponownie warstwy aby zaktualizować ich strukturę.") % (len(item.items),),
+                self.iface.messageBar().pushMessage(self.tr("Warning:"),
+                    self.tr("Table schema was changed. You need to reload layers that are related to changed layer."),
                     level=self.iface.messageBar().WARNING)
             fields = item.fields[:]
             for fid in sorted(removed_fields, reverse=True):
@@ -465,7 +464,7 @@ class DiviPlugin(QObject):
             deleted_ids = result['deleted']
             if len(set(fids).symmetric_difference(set(deleted_ids))):
                 self.iface.messageBar().pushMessage('BŁĄD',
-                    self.trUtf8(u'Podczas usuwania obiektów wystąpił błąd. Nie wszystkie obiekty zostały usunięcte'),
+                    self.tr('Error occured while removing features. Not all features where deleted.'),
                     self.iface.messageBar().CRITICAL,
                     duration = 3
                 )
@@ -489,7 +488,7 @@ class DiviPlugin(QObject):
     
     def onFeaturesAdded(self, layerid, features):
         layer = QgsMapLayerRegistry.instance().mapLayer(layerid)
-        QgsMessageLog.logMessage(self.tr('Zapisywanie obiektów do warstwy %s') % layer.name(), 'DIVI')
+        QgsMessageLog.logMessage(self.tr('Saving features to layer %s') % layer.name(), 'DIVI')
         divi_id = layer.customProperty('DiviId')
         item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
         item = self.dockwidget.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
@@ -505,7 +504,7 @@ class DiviPlugin(QObject):
         result = connector.addNewFeatures(divi_id, addedFeatures, item.transaction)
         if len(ids) != len(result['inserted']):
             self.iface.messageBar().pushMessage('BŁĄD',
-                self.trUtf8(u'Podczas dodawania nowych obiektów wystąpił błąd. Nie wszystkie obiekty zostały dodane'),
+                self.tr('Error occured while adding new features. Not all features where added.'),
                 self.iface.messageBar().CRITICAL,
                 duration = 3
             )
@@ -551,7 +550,7 @@ class DiviPlugin(QObject):
             self.dlg.show()
         else:
             self.iface.messageBar().pushMessage('DIVI',
-                self.trUtf8(u'Brak wczytanych warstw wektorowych.'),
+                self.trUtf8('No vector layers.'),
                 self.iface.messageBar().CRITICAL,
                 duration = 3
             )

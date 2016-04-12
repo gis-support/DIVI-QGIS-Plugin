@@ -100,13 +100,13 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     
     def setLogginStatus(self, logged):
         if logged:
-            self.lblStatus.setText(self.tr('Zalogowany: %s' % self.user))
-            self.btnConnect.setText(self.trUtf8(u'Rozłącz'))
+            self.lblStatus.setText(self.tr('Logged: %s' % self.user))
+            self.btnConnect.setText(self.tr('Disconnect'))
             self.btnConnect.setChecked(True)
         else:
             self.tvData.model().sourceModel().removeAll()
-            self.lblStatus.setText(self.tr('Niezalogowany'))
-            self.btnConnect.setText(self.trUtf8(u'Połącz'))
+            self.lblStatus.setText(self.tr('Not logged'))
+            self.btnConnect.setText(self.tr('Connect'))
             self.btnConnect.setChecked(False)
             self.token = None
         QgsMessageLog.logMessage(str(self.token), 'DIVI')
@@ -139,7 +139,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         item = index.data(role=Qt.UserRole)
         addedData = []
         if isinstance(item, LayerItem):
-            self.plugin.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie warstwy '%s'...")%item.name)
+            self.plugin.msgBar = ProgressMessageBar(self.iface, self.tr("Downloading layer '%s'...")%item.name)
             self.plugin.msgBar.setValue(10)
             connector = self.getConnector()
             connector.downloadingProgress.connect(self.plugin.updateDownloadProgress)
@@ -155,12 +155,12 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         elif isinstance(item, TableItem):
             if QGis.QGIS_VERSION_INT < 21400:
                 self.iface.messageBar().pushMessage('DIVI',
-                    self.trUtf8(u'Aby dodać tabelę musisz posiadać QGIS w wersji 2.14 lub nowszej.'),
+                    self.tr(u'QGIS 2.14 or later is required for loading DIVI tables.').
                     QgsMessageBar.CRITICAL,
                     duration = 3
                 )
             else:
-                self.plugin.msgBar = ProgressMessageBar(self.iface, self.tr(u"Pobieranie tabeli '%s'...")%item.name)
+                self.plugin.msgBar = ProgressMessageBar(self.iface, self.tr("Downloading table '%s'...")%item.name)
                 self.plugin.msgBar.setValue(10)
                 connector = self.getConnector()
                 connector.downloadingProgress.connect(self.plugin.updateDownloadProgress)
@@ -181,7 +181,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         layers = item.items[:]
         if any( l.isEditable() for l in layers ):
             self.iface.messageBar().pushMessage('DIVI',
-                self.trUtf8(u'Jedna z powiązanych warstw jest w trybie edycji. Zakończ edycję aby kontynuować.'),
+                self.tr(u'One of related layers is in edit mode. End edit mode of that layer to continue.'),
+                #self.trUtf8(u'Jedna z powiązanych warstw jest w trybie edycji. Zakończ edycję aby kontynuować.'),
                 self.iface.messageBar().CRITICAL,
                 duration = 3
             )
@@ -200,17 +201,17 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         menu = QtGui.QMenu(self)
         if isinstance(item, LayerItem):
             #Layer menu
-            menu.addAction(QgsApplication.getThemeIcon('/mActionAddMap.png'), self.trUtf8(u'Dodaj warstwę'), lambda: self.addLayer(index))
-            open_as_menu = menu.addMenu(QgsApplication.getThemeIcon('/mActionAddOgrLayer.svg'), self.trUtf8(u"Dodaj warstwę jako..."))
+            menu.addAction(QgsApplication.getThemeIcon('/mActionAddMap.png'), self.tr('Add layer'), lambda: self.addLayer(index))
+            open_as_menu = menu.addMenu(QgsApplication.getThemeIcon('/mActionAddOgrLayer.svg'), self.tr("Add layer as..."))
             load_layer_as = partial(self.plugin.loadLayerType, item=item)
-            open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPointLayer.svg'), self.tr('Punkty'), lambda: load_layer_as(geom_type='MultiPoint'))
-            open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconLineLayer.svg'), self.tr('Linie'), lambda: load_layer_as(geom_type='MultiLineString'))
-            open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPolygonLayer.svg'), self.tr('Poligony'), lambda: load_layer_as(geom_type='MultiPolygon'))
-            menu.addAction(QgsApplication.getThemeIcon('/mActionToggleEditing.svg'), self.trUtf8(u'Zmień nazwę warstwy...'), lambda: self.editLayerName(index))
+            open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPointLayer.svg'), self.tr('Points'), lambda: load_layer_as(geom_type='MultiPoint'))
+            open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconLineLayer.svg'), self.tr('Linestring'), lambda: load_layer_as(geom_type='MultiLineString'))
+            open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPolygonLayer.svg'), self.tr('Polygons'), lambda: load_layer_as(geom_type='MultiPolygon'))
+            menu.addAction(QgsApplication.getThemeIcon('/mActionToggleEditing.svg'), self.tr('Change layer name...'), lambda: self.editLayerName(index))
             if item.items:
-                menu.addAction(QgsApplication.getThemeIcon('/mActionDraw.svg'), self.trUtf8(u'Odśwież dane'), lambda: self.refreshData(item))
+                menu.addAction(QgsApplication.getThemeIcon('/mActionDraw.svg'), self.tr('Reload data'), lambda: self.refreshData(item))
         elif isinstance(item, ProjectItem):
-            menu.addAction(QgsApplication.getThemeIcon('/mActionAddGroup.png'), self.trUtf8(u'Dodaj warstwy z projektu'), lambda: self.addProjectData(index))
+            menu.addAction(QgsApplication.getThemeIcon('/mActionAddGroup.png'), self.tr(u'Add all layers from project'), lambda: self.addProjectData(index))
         menu.popup(self.tvData.viewport().mapToGlobal(point))
     
     def layersRemoved(self, layers):
@@ -221,7 +222,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             divi_id = layer.customProperty('DiviId')
             if divi_id is None:
                 continue
-            QgsMessageLog.logMessage(self.trUtf8('Usuwanie warstwy %s')%layer.name(), 'DIVI')
+            QgsMessageLog.logMessage(self.tr('Removing layer %s')%layer.name(), 'DIVI')
             item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
             layerIndex = model.findItem(divi_id, item_type, True)
             if layerIndex is None:
@@ -241,21 +242,21 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     
     def editLayerName(self, index):
         item = index.data(role=Qt.UserRole)
-        name, status = QtGui.QInputDialog.getText(self, self.trUtf8(u'Zmień nazwę'),
-            self.trUtf8(u'Podaj nową nazwę dla warstwy %s') % item.name,
+        name, status = QtGui.QInputDialog.getText(self, self.tr('Change name'),
+            self.tr('Enter new layer name for %s') % item.name,
             text = item.name)
         if status and name != item.name:
             result = self.editLayerMetadata(item.id, {'name':name})
             if result['layer']['name'] == name:
                 self.iface.messageBar().pushMessage('DIVI',
-                    self.trUtf8(u'Zmieniono nazwę warstwy %s na %s.') % (item.name, name),
+                    self.tr('Name of layer %s was changed to %s.') % (item.name, name),
                     duration = 3
                 )
                 item.name = name
                 index.model().dataChanged.emit(index, index)
             else:
                 self.iface.messageBar().pushMessage('DIVI',
-                    self.trUtf8(u'Wystąpił błąd podczas zmiany nazwy.'),
+                    self.tr('Error occured while changing name.'),
                     self.iface.messageBar().CRITICAL,
                     duration = 3
                 )

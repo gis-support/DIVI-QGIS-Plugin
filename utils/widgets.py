@@ -45,7 +45,7 @@ class ProgressMessageBar(QObject):
         try:
             progress = self.minValue+int(self.delta*value)
             if self.iface is not None:
-                self.iface.mainWindow().statusBar().showMessage( self.trUtf8("Ładowanie warstwy {} %").format(progress) )
+                self.iface.mainWindow().statusBar().showMessage( self.tr("Loading layer {} %").format(progress) )
                 self.progress.setValue(progress)
         except RuntimeError:
             pass
@@ -53,7 +53,7 @@ class ProgressMessageBar(QObject):
     def setValue(self, value):
         try:
             if self.iface is not None:
-                self.iface.mainWindow().statusBar().showMessage( self.trUtf8("Ładowanie warstwy {} %").format(value) )
+                self.iface.mainWindow().statusBar().showMessage( self.tr("Loading layer {} %").format(value) )
                 self.progress.setValue(value)
         except RuntimeError:
             pass

@@ -13,13 +13,16 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
+  <property name="locale">
+   <locale language="English" country="UnitedStates"/>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QFormLayout" name="formLayout">
      <item row="0" column="0">
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Warstwa:</string>
+        <string>Layer:</string>
        </property>
       </widget>
      </item>
@@ -36,7 +39,7 @@
      <item row="2" column="0">
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>Konto:</string>
+        <string>Account:</string>
        </property>
       </widget>
      </item>
@@ -46,7 +49,7 @@
      <item row="3" column="0">
       <widget class="QLabel" name="label_3">
        <property name="text">
-        <string>Projekt:</string>
+        <string>Project:</string>
        </property>
       </widget>
      </item>
@@ -56,7 +59,7 @@
      <item row="4" column="0">
       <widget class="QLabel" name="label_4">
        <property name="text">
-        <string>Nazwa warstwy:</string>
+        <string>Layer name:</string>
        </property>
       </widget>
      </item>
@@ -96,7 +99,7 @@
      <item>
       <widget class="QPushButton" name="btnCancel">
        <property name="text">
-        <string>Anuluj</string>
+        <string>Cancel</string>
        </property>
       </widget>
      </item>

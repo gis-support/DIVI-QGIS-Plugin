@@ -73,8 +73,8 @@ class DiviConnector(QObject):
         status_code = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
         if reply.error() == QNetworkReply.ConnectionRefusedError:
             if self.iface is not None:
-                self.iface.messageBar().pushMessage(self.trUtf8("Błąd"),
-                    self.trUtf8("Serwer odrzucił żądanie"),
+                self.iface.messageBar().pushMessage(self.tr("Error"),
+                    self.trUtf8("Server rejected request"),
                     level=QgsMessageBar.CRITICAL, duration=3)
             return
         elif status_code == 403:
@@ -90,14 +90,14 @@ class DiviConnector(QObject):
             content = unicode(reply.readAll())
         elif status_code == 404:
             if self.iface is not None:
-                self.iface.messageBar().pushMessage(self.trUtf8("Błąd"),
-                    self.trUtf8("Błąd 404: nie znaleziono żądanego zasobu"),
+                self.iface.messageBar().pushMessage(self.tr("Error"),
+                    self.tr("Error 404: requested resource could not be found "),
                     level=QgsMessageBar.CRITICAL, duration=3)
             return
         elif status_code == 423:
             if self.iface is not None:
-                self.iface.messageBar().pushMessage(self.trUtf8("Błąd"),
-                    self.trUtf8("Błąd 423: żądany zasób jest zablokowany do edycji"),
+                self.iface.messageBar().pushMessage(self.tr("Error"),
+                    self.tr("Error 423: requested resource is locked"),
                     level=QgsMessageBar.CRITICAL, duration=3)
             return
         return content
