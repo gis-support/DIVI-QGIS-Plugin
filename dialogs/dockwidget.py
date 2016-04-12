@@ -100,7 +100,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     
     def setLogginStatus(self, logged):
         if logged:
-            self.lblStatus.setText(self.tr('Logged: %s' % self.user))
+            self.lblStatus.setText(self.tr('Logged: %s') % self.user)
             self.btnConnect.setText(self.tr('Disconnect'))
             self.btnConnect.setChecked(True)
         else:
@@ -182,7 +182,6 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         if any( l.isEditable() for l in layers ):
             self.iface.messageBar().pushMessage('DIVI',
                 self.tr(u'One of related layers is in edit mode. End edit mode of that layer to continue.'),
-                #self.trUtf8(u'Jedna z powiązanych warstw jest w trybie edycji. Zakończ edycję aby kontynuować.'),
                 self.iface.messageBar().CRITICAL,
                 duration = 3
             )

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0" language="pl_PL" sourcelanguage="en">
+<!DOCTYPE TS><TS version="2.0" language="pl_PL" sourcelanguage="en">
 <context>
     <name>Dialog</name>
     <message>
@@ -93,42 +92,42 @@
         <translation>Załadowanie nowej warstwy będzie możliwe dopiero po zakończeniu trwającej operacji.</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="250"/>
+        <location filename="../divi_plugin.py" line="249"/>
         <source>Downloading layer &apos;%s&apos;...</source>
         <translation>Pobieranie warstwy &apos;%s&apos;...</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="423"/>
+        <location filename="../divi_plugin.py" line="422"/>
         <source>Saving layer %s</source>
         <translation>Zapisywanie warstwy &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="470"/>
+        <location filename="../divi_plugin.py" line="466"/>
         <source>Error occured while removing features. Not all features where deleted.</source>
         <translation>Podczas usuwania obiektów wystąpił błąd. Nie wszystkie obiekty zostały usunięte.</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="496"/>
+        <location filename="../divi_plugin.py" line="491"/>
         <source>Saving features to layer %s</source>
         <translation>Zapisywanie obiektów do warstwy &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="511"/>
+        <location filename="../divi_plugin.py" line="506"/>
         <source>Error occured while adding new features. Not all features where added.</source>
         <translation>Podczas dodawania nowych obiektów wystąpił. Nie wszystkie obiekty zostały dodane.</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="558"/>
+        <location filename="../divi_plugin.py" line="552"/>
         <source>No vector layers.</source>
         <translation>Brak warstw wektorowych.</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="435"/>
+        <location filename="../divi_plugin.py" line="434"/>
         <source>Warning:</source>
         <translation>Uwaga:</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="435"/>
+        <location filename="../divi_plugin.py" line="434"/>
         <source>Table schema was changed. You need to reload layers that are related to changed layer.</source>
         <translation>Zmieniono strukturę warstwy powiązanej z innymi wczytanymi warstwami DIVI.  Wczytaj ponownie warstwy aby zaktualizować ich strukturę.</translation>
     </message>
@@ -176,67 +175,67 @@
         <translation>Jedna z powiązanych warstw jest w trybie edycji. Zakończ edycję aby kontynuować.</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="204"/>
+        <location filename="../dialogs/dockwidget.py" line="203"/>
         <source>Add layer</source>
         <translation>Dodaj warstwę</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="205"/>
+        <location filename="../dialogs/dockwidget.py" line="204"/>
         <source>Add layer as...</source>
         <translation>Dodaj warstwę jako...</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="210"/>
+        <location filename="../dialogs/dockwidget.py" line="209"/>
         <source>Change layer name...</source>
         <translation>Zmień nazwę warstwy...</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="212"/>
+        <location filename="../dialogs/dockwidget.py" line="211"/>
         <source>Reload data</source>
         <translation>Pobierz ponownie</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="214"/>
+        <location filename="../dialogs/dockwidget.py" line="213"/>
         <source>Add all layers from project</source>
         <translation>Dodaj warstwy z projektu</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="225"/>
+        <location filename="../dialogs/dockwidget.py" line="224"/>
         <source>Removing layer %s</source>
         <translation>Usuń warstwę &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="245"/>
+        <location filename="../dialogs/dockwidget.py" line="244"/>
         <source>Change name</source>
         <translation>Zmień nazwę</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="245"/>
+        <location filename="../dialogs/dockwidget.py" line="244"/>
         <source>Enter new layer name for %s</source>
         <translation>Podaj nową nazwę dla warstwy &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="251"/>
+        <location filename="../dialogs/dockwidget.py" line="250"/>
         <source>Name of layer %s was changed to %s.</source>
         <translation>Nazwa warstwy &apos;%s&apos; została zmieniona na&apos;%s&apos;. </translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="258"/>
+        <location filename="../dialogs/dockwidget.py" line="257"/>
         <source>Error occured while changing name.</source>
         <translation>Wystąpił błąd podczas zmiany nazwy.</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="207"/>
+        <location filename="../dialogs/dockwidget.py" line="206"/>
         <source>Points</source>
         <translation>Punkty</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="208"/>
+        <location filename="../dialogs/dockwidget.py" line="207"/>
         <source>Linestring</source>
         <translation>Linie</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="209"/>
+        <location filename="../dialogs/dockwidget.py" line="208"/>
         <source>Polygons</source>
         <translation>Poligony</translation>
     </message>
