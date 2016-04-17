@@ -28,9 +28,12 @@ MOŻLIWOŚCI
 ++++++++++
 
 - Wyświetlanie dostępnych kont, projektów oraz warstw i tabel w formie listy.
-- Dodawanie warstw DIVI do QGIS, każdy typ geometrii (punkt, linia, poligon) wczytywany jest jako osobna warstwa.
+- Dodawanie warstw i tabel DIVI do QGIS, każdy typ geometrii warstw (punkt, linia, poligon) wczytywany jest jako osobna warstwa.
 - Wymuszenie załadowania warstwy DIVI dla danego typu geometrii.
+- Wczytanie wszystkich warstw z danego projektu.
 - Edycja danych przestrzennych: dodawanie/usuwanie obiektów, edycja geometrii i atrybutów, dodawanie/usuwanie pól w tabeli atrybutów. Edycja odbywa się standardowymi narzędziami GIS.
+- Zmiana nazwy warstwy/tabeli DIVI.
+- Przesyłanie warstw QGIS bezpośrednio do DIVI jako nowe warstwy.
 - Odświeżenie wczytanych danych poprzez ponowne ich pobranie z systemu DIVI.
 
 

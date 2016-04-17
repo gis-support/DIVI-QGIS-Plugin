@@ -16,7 +16,9 @@ FEATURES
 - Show assigned accounts, projects, layers and tables in list.
 - Load DIVI layers and tables to QGIS.
 - Load DIVI layers only for specified geometry type.
+- Load all layers from DIVI project.
 - Edit spatial data using standard QGIS tools: add/remove features, edit geometries and attributes, add/remove fields.
+- Edit DIVI layers/tables names.
 - Upload layers from QGIS directly to DIVI.
 
 LICENSE
