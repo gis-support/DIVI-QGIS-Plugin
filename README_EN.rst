@@ -5,7 +5,7 @@
 DESCRIPTION
 +++++++++++
 
-DIVI QGIS Plugin is extension for QGIS written in Python. It allows to view and edit data from DIVI system created by GIS Support sp. z o. o.
+DIVI QGIS Plugin is extension for QGIS written in Python. It allows to view and edit data from `DIVI system <http://divi.pl>`_ created by GIS Support sp. z o. o.
 Plugin is still in developement and is marked as experimental. It's in open for beta tests by DIVI users.
 
 Plugin was created by `GIS Support sp. z o. o. <http://www.gis-support.com>`_

@@ -5,7 +5,7 @@
 OPIS
 ++++
 
-DIVI QGIS Plugin jest wtyczką do aplikacji QGIS, która służy do zarządzania danymi w systemie DIVI firmy GIS Support sp. z o. o. Pozwala ona na przeglądać i edytować dane przestrzenne bezpośrednio w QGIS.
+DIVI QGIS Plugin jest wtyczką do aplikacji QGIS, która służy do zarządzania danymi w systemie `DIVI <http://divi.pl>`_ firmy GIS Support sp. z o. o. Pozwala ona na przeglądać i edytować dane przestrzenne bezpośrednio w QGIS.
 Aktualnie DIVI QGIS Plugin znajduje się w fazie beta.
 
 Wtyczka została stworzona przez `GIS Support sp. z o. o. <http://www.gis-support.pl>`_
@@ -33,7 +33,7 @@ MOŻLIWOŚCI
 - Wczytanie wszystkich warstw z danego projektu.
 - Edycja danych przestrzennych: dodawanie/usuwanie obiektów, edycja geometrii i atrybutów, dodawanie/usuwanie pól w tabeli atrybutów. Edycja odbywa się standardowymi narzędziami GIS.
 - Zmiana nazwy warstwy/tabeli DIVI.
-- Przesyłanie warstw QGIS bezpośrednio do DIVI jako nowe warstwy.
+- Tworzenie nowych warstw DIVI poprzez przesłanie warstw QGIS.
 - Odświeżenie wczytanych danych poprzez ponowne ich pobranie z systemu DIVI.
 
 

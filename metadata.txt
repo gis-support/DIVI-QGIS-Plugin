@@ -9,12 +9,36 @@
 [general]
 name=DIVI QGIS Plugin
 qgisMinimumVersion=2.0
-description=Integracja QGIS z platformą DIVI firmy GIS Support sp. z o. o.
+description=QGIS integration with DIVI system by GIS Support sp. z o.o.
+description[pl]=Integracja QGIS z platformą DIVI firmy GIS Support sp. z o. o.
 version=0.8
 author=Piotr Pociask, GIS Support sp. z o. o.
 email=info@gis-support.pl
 
-about=Integracja QGIS z platformą DIVI (https://divi.io)
+about=DIVI QGIS Plugin is extension for QGIS written in Python. It allows to view and edit data from DIVI system (http://divi.pl) created by GIS Support sp. z o. o.
+    Plugin is still in developement and is marked as experimental. It's in open for beta tests by DIVI users.
+    Plugin was created by GIS Support sp. z o. o. (http://www.gis-support.com)
+    FEATURES:
+    - Show assigned accounts, projects, layers and tables in list.
+    - Load DIVI layers and tables to QGIS.
+    - Load DIVI layers only of specified geometry type.
+    - Load all layers from DIVI project.
+    - Edit spatial data using standard QGIS tools: add/remove features, edit geometries and attributes, add/remove fields.
+    - Edit DIVI layers/tables names.
+    - Upload layers from QGIS directly to DIVI.
+
+about[pl]=DIVI QGIS Plugin jest wtyczką do aplikacji QGIS, która służy do zarządzania danymi w systemie DIVI (http://divi.pl) firmy GIS Support sp. z o. o. Pozwala ona na przeglądać i edytować dane przestrzenne bezpośrednio w QGIS.
+    Aktualnie DIVI QGIS Plugin znajduje się w fazie beta.
+    Wtyczka została stworzona przez GIS Support sp. z o. o. (http://www.gis-support.pl)
+    MOŻLIWOŚCI:
+    - Wyświetlanie dostępnych kont, projektów oraz warstw i tabel w formie listy.
+    - Dodawanie warstw i tabel DIVI do QGIS, każdy typ geometrii warstw (punkt, linia, poligon) wczytywany jest jako osobna warstwa.
+    - Wymuszenie załadowania warstwy DIVI dla danego typu geometrii.
+    - Wczytanie wszystkich warstw z danego projektu.
+    - Edycja danych przestrzennych: dodawanie/usuwanie obiektów, edycja geometrii i atrybutów, dodawanie/usuwanie pól w tabeli atrybutów. Edycja odbywa się standardowymi narzędziami GIS.
+    - Zmiana nazwy warstwy/tabeli DIVI.
+    - Tworzenie nowych warstw DIVI poprzez przesłanie warstw QGIS.
+    - Odświeżenie wczytanych danych poprzez ponowne ich pobranie z systemu DIVI.
 
 tracker=https://github.com/gis-support/DIVI-QGIS-Plugin/issues
 repository=https://github.com/gis-support/DIVI-QGIS-Plugin
