@@ -6,16 +6,16 @@ DESCRIPTION
 +++++++++++
 
 DIVI QGIS Plugin is extension for QGIS written in Python. It allows to view and edit data from DIVI system created by GIS Support sp. z o. o.
-Plugin is still in developing and is marked as experimental. It's in open beta tests for DIVI users.
+Plugin is still in developement and is marked as experimental. It's in open for beta tests by DIVI users.
 
-Plugin was created by `GIS Support sp. z o. o. <http://www.gis-support.pl>`_
+Plugin was created by `GIS Support sp. z o. o. <http://www.gis-support.com>`_
 
 FEATURES
 ++++++++
 
 - Show assigned accounts, projects, layers and tables in list.
 - Load DIVI layers and tables to QGIS.
-- Load DIVI layers only for specified geometry type.
+- Load DIVI layers only of specified geometry type.
 - Load all layers from DIVI project.
 - Edit spatial data using standard QGIS tools: add/remove features, edit geometries and attributes, add/remove fields.
 - Edit DIVI layers/tables names.
