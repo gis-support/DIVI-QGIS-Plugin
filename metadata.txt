@@ -9,8 +9,7 @@
 [general]
 name=DIVI QGIS Plugin
 qgisMinimumVersion=2.0
-description=QGIS integration with DIVI system by GIS Support sp. z o.o.
-description[pl]=Integracja QGIS z platformą DIVI firmy GIS Support sp. z o. o.
+description=QGIS integration with DIVI system by GIS Support sp. z o.o. / Integracja QGIS z platformą DIVI firmy GIS Support sp. z o. o.
 version=0.9
 author=Piotr Pociask, GIS Support sp. z o. o.
 email=info@gis-support.pl
@@ -26,8 +25,8 @@ about=DIVI QGIS Plugin is extension for QGIS written in Python. It allows to vie
     - Edit spatial data using standard QGIS tools: add/remove features, edit geometries and attributes, add/remove fields.
     - Edit DIVI layers/tables names.
     - Upload layers from QGIS directly to DIVI.
-
-about[pl]=DIVI QGIS Plugin jest wtyczką do aplikacji QGIS, która służy do zarządzania danymi w systemie DIVI (http://divi.pl) firmy GIS Support sp. z o. o. Pozwala ona na przeglądać i edytować dane przestrzenne bezpośrednio w QGIS.
+    ----
+    DIVI QGIS Plugin jest wtyczką do aplikacji QGIS, która służy do zarządzania danymi w systemie DIVI (http://divi.pl) firmy GIS Support sp. z o. o. Pozwala ona na przeglądać i edytować dane przestrzenne bezpośrednio w QGIS.
     Aktualnie DIVI QGIS Plugin znajduje się w fazie beta.
     Wtyczka została stworzona przez GIS Support sp. z o. o. (http://www.gis-support.pl)
     MOŻLIWOŚCI:
