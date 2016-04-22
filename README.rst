@@ -2,47 +2,43 @@
 |logo| DIVI QGIS Plugin
 ========================
 
-OPIS
-++++
+DESCRIPTION
++++++++++++
 
-DIVI QGIS Plugin jest wtyczką do aplikacji QGIS, która służy do zarządzania danymi w systemie `DIVI <http://divi.pl>`_ firmy GIS Support sp. z o. o. Pozwala ona na przeglądać i edytować dane przestrzenne bezpośrednio w QGIS.
-Aktualnie DIVI QGIS Plugin znajduje się w fazie beta.
+DIVI QGIS Plugin is extension for QGIS written in Python. It allows to view and edit data from `DIVI system <https://divi.io>`_ created by GIS Support sp. z o. o.
+Plugin is still in developement and is marked as experimental. It's in open for beta tests by DIVI users.
 
-Wtyczka została stworzona przez `GIS Support sp. z o. o. <http://www.gis-support.pl>`_
+Plugin was created by `GIS Support sp. z o. o. <http://www.gis-support.com>`_
 
-
-INSTALACJA
-++++++++++
-
-Wtyczka DIVI QGIS Plugin dostępna jest w repozytorium GIS Support. Aby dodać repozytorium do listy należy:
-
-1) W menu *Wtyczki* wybrać pozycję *Zarządzaj wtyczkami...*;
-2) Przejść na zakładkę *Ustawienia*;
-3) Kliknąć przycisk *Dodaj...*;
-4) W oknie dialogowym wpisać nazwę (może być dowolna np. GIS Support) i URL do repozytorium: https://plugins.gis-support.pl/plugins.xml i kliknąć *OK*;
-
-Wtyczka jest w fazie beta. W związku z tym, aby ją wyświetlić na liście wtyczke należy zaznaczyć opcję *Pokazuj wtyczki eksperymentalne*.
-
-
-MOŻLIWOŚCI
-++++++++++
-
-- Wyświetlanie dostępnych kont, projektów oraz warstw i tabel w formie listy.
-- Dodawanie warstw i tabel DIVI do QGIS, każdy typ geometrii warstw (punkt, linia, poligon) wczytywany jest jako osobna warstwa.
-- Wymuszenie załadowania warstwy DIVI dla danego typu geometrii.
-- Wczytanie wszystkich warstw z danego projektu.
-- Edycja danych przestrzennych: dodawanie/usuwanie obiektów, edycja geometrii i atrybutów, dodawanie/usuwanie pól w tabeli atrybutów. Edycja odbywa się standardowymi narzędziami GIS.
-- Zmiana nazwy warstwy/tabeli DIVI.
-- Tworzenie nowych warstw DIVI poprzez przesłanie warstw QGIS.
-- Odświeżenie wczytanych danych poprzez ponowne ich pobranie z systemu DIVI.
-
-
-LICENCJA
+FEATURES
 ++++++++
 
-DIVI QGIS Plugin jest darmowym oprogramowaniem udostępnianym na licencji GNU General Public License w wersji 2 lub nowszej (wg potrzeb). Aplikację można dowolnie rozprzestrzeniać oraz modyfikować zgodnie z zapisami licencji. Tekst licencji dostępny jest w pliku LICENSE załączonym do repozytorium wtyczki oraz pod adresami:
+- Show assigned accounts, projects, layers and tables in list.
+- Load DIVI layers and tables to QGIS.
+- Load DIVI layers only of specified geometry type.
+- Load all layers from DIVI project.
+- Edit spatial data using standard QGIS tools: add/remove features, edit geometries and attributes, add/remove fields.
+- Edit DIVI layers/tables names.
+- Upload layers from QGIS directly to DIVI.
 
-- GNU General Public License Version 2 - http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-- GNU General Public License Version 3 - http://www.gnu.org/licenses/gpl-3.0.txt
+LINKS
++++++
+
+- `Code repository <https://github.com/gis-support/DIVI-QGIS-Plugin>`_
+- `Bug tracker <https://github.com/gis-support/DIVI-QGIS-Plugin/issues>`_
+- `DIVI homepage <https://divi.io>`_
+- `GIS Support homepage <http://gis-support.com>`_
+
+INSTALATION
++++++++++++
+
+DIVI QGIS Plugin is available in official QGIS plugins repository. It's marked as experimental, so you need to check *Show also experimental plugins* in Settings.
+
+LICENSE
++++++++
+
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 .. |logo| image:: ./images/icon.png
