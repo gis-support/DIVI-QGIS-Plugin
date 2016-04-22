@@ -109,7 +109,7 @@ changelog=0.9
 # Tags are comma separated with spaces allowed
 tags=network, web, webservice,divi
 
-homepage=
+homepage=https://divi.io
 category=Web
 icon=images/icon.png
 # experimental flag
