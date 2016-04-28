@@ -10,14 +10,13 @@
 name=DIVI QGIS Plugin
 qgisMinimumVersion=2.0
 description=QGIS integration with DIVI system by GIS Support sp. z o.o. / Integracja QGIS z platformą DIVI firmy GIS Support sp. z o. o.
-version=0.9
+version=1.0
 author=Piotr Pociask, GIS Support sp. z o. o.
 email=info@gis-support.pl
 homepage=https://divi.io
 category=Web
 
 about=DIVI QGIS Plugin is extension for QGIS written in Python. It allows to view and edit data from DIVI system (http://divi.pl) created by GIS Support sp. z o. o.
-    Plugin is still in developement and is marked as experimental. It's in open for beta tests by DIVI users.
     Plugin was created by GIS Support sp. z o. o. (http://www.gis-support.com)
     FEATURES:
     - Show assigned accounts, projects, layers and tables in list.
@@ -29,7 +28,6 @@ about=DIVI QGIS Plugin is extension for QGIS written in Python. It allows to vie
     - Upload layers from QGIS directly to DIVI.
     ----
     DIVI QGIS Plugin jest wtyczką do aplikacji QGIS, która służy do zarządzania danymi w systemie DIVI (http://divi.pl) firmy GIS Support sp. z o. o. Pozwala ona na przeglądać i edytować dane przestrzenne bezpośrednio w QGIS.
-    Aktualnie DIVI QGIS Plugin znajduje się w fazie beta.
     Wtyczka została stworzona przez GIS Support sp. z o. o. (http://www.gis-support.pl)
     MOŻLIWOŚCI:
     - Wyświetlanie dostępnych kont, projektów oraz warstw i tabel w formie listy.
@@ -48,7 +46,9 @@ repository=https://github.com/gis-support/DIVI-QGIS-Plugin
 # Recommended items:
 
 # Uncomment the following line and add your changelog:
-changelog=0.9
+changelog=1.0
+  - official release
+  0.9
   - English translation
   0.8
   - starting layer edit will block DIVI layer for editign by other users
@@ -113,7 +113,7 @@ homepage=https://divi.io
 category=Web
 icon=images/icon.png
 # experimental flag
-experimental=True
+experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
