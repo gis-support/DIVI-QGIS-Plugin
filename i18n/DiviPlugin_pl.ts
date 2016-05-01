@@ -41,22 +41,22 @@
 <context>
     <name>DiviConnector</name>
     <message>
-        <location filename="../utils/connector.py" line="99"/>
+        <location filename="../utils/connector.py" line="97"/>
         <source>Error</source>
         <translation>Błąd</translation>
     </message>
     <message>
-        <location filename="../utils/connector.py" line="76"/>
+        <location filename="../utils/connector.py" line="74"/>
         <source>Server rejected request</source>
         <translation>Serwer odrzucił żądanie</translation>
     </message>
     <message>
-        <location filename="../utils/connector.py" line="93"/>
+        <location filename="../utils/connector.py" line="91"/>
         <source>Error 404: requested resource could not be found </source>
         <translation>Błąd 404: nie znaleziono zasobu</translation>
     </message>
     <message>
-        <location filename="../utils/connector.py" line="99"/>
+        <location filename="../utils/connector.py" line="97"/>
         <source>Error 423: requested resource is locked</source>
         <translation>Błąd 423: żądany zasób jest zablokowany do edycji</translation>
     </message>

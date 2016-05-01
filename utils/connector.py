@@ -146,7 +146,8 @@ class DiviConnector(QObject):
             return
         content = self.sendPostRequest('/authenticate', {
                 'email': email,
-                'password' : password
+                'password' : password,
+                'remember': True
             })
         try:
             data = json.loads(content)
