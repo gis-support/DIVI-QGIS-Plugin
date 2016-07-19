@@ -175,7 +175,7 @@ class DiviConnector(QObject):
     
     def diviGetLayerFeatures(self, layerid):
         QgsMessageLog.logMessage('Fecthing layer %s features' % layerid, 'DIVI')
-        layer = self.sendGetRequest('/features/%s'%layerid, {'token':self.token, 'geometry':'wkt'})
+        layer = self.sendGetRequest('/features/%s'%layerid, {'token':self.token, 'geometry':'base64'})
         return self.getJson(layer)
     
     def diviGetTableRecords(self, tableid):

@@ -34,6 +34,7 @@ from dialogs.dockwidget import DiviPluginDockWidget
 from dialogs.import_dialog import DiviPluginImportDialog
 import os.path
 from functools import partial
+from base64 import b64decode
 
 from .utils.connector import DiviConnector
 from .utils.widgets import ProgressMessageBar
@@ -356,7 +357,9 @@ class DiviPlugin(QObject):
         lines_ids = []
         polygons_ids = []
         for i, feature in enumerate(features, start=1):
-            geom = QgsGeometry.fromWkt(feature['geometry'])
+            #Geometria w formacie WKB zakodowanym przez base64
+            geom = QgsGeometry()
+            geom.fromWkb(b64decode(feature['geometry']))
             f = QgsFeature()
             f.setGeometry(geom)
             f.setAttributes([ feature['properties'].get(field['key']) for field in fields ])

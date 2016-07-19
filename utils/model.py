@@ -176,7 +176,8 @@ class DiviModel(QAbstractItemModel):
             font.setBold(bool(item.items))
             return font
         elif role == Qt.ToolTipRole:
-            return item.abstract
+            if isinstance(item, LayerItem):
+                return item.abstract
         elif role == Qt.UserRole:
             #Return item itself
             return item
