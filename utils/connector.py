@@ -234,6 +234,28 @@ class DiviConnector(QObject):
         )
         return json.loads(content)
     
+    def sendRaster(self, data, filename, projectid, crs):
+        multi_part = QHttpMultiPart(QHttpMultiPart.FormDataType)
+        name_part = QHttpPart()
+        name_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="name"')
+        name_part.setBody(filename)
+        crs_part = QHttpPart()
+        crs_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="crs"')
+        crs_part.setBody(str(crs))
+        file_part = QHttpPart()
+        file_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="file[0]"; filename="%s.tiff"' % filename)
+        file_part.setHeader(QNetworkRequest.ContentTypeHeader, "application/octet-stream")
+        file_part.setBody(data)
+        multi_part.append(name_part)
+        multi_part.append(crs_part)
+        multi_part.append(file_part)
+        content = self.sendRequest( '/rasters/%s' % projectid, {'token':self.token},
+            'post',
+            multi_part,
+            {"User-Agent":"Divi QGIS Plugin"}
+        )
+        return json.loads(content)
+    
     def startTransaction(self, data_type, layerid):
         QgsMessageLog.logMessage('Starting transaction for %s' % layerid, 'DIVI')
         content = self.sendPostRequest('/transactions/%s'%data_type, {'feature': layerid}, params={'token':self.token})
@@ -264,10 +286,13 @@ class DiviConnector(QObject):
             params={'token':self.token}, headers={'X-Transaction-Id':transaction})
         return self.getJson(content)
     
-    def updateLayer(self, layerid, data, transaction):
+    def updateLayer(self, layerid, data, transaction=None):
         QgsMessageLog.logMessage('Saving changed layer %s' % layerid, 'DIVI')
+        headers = {}
+        if transaction is not None:
+            headers['X-Transaction-Id'] = transaction
         content = self.sendPutRequest('/layers/%s'%layerid, data,
-            params={'token':self.token}, headers={'X-Transaction-Id':transaction})
+            params={'token':self.token}, headers=headers)
         return self.getJson(content)
     
     #Helpers

@@ -21,7 +21,7 @@
  ***************************************************************************/
 """
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt,\
-    QVariant, QObject, QPyNullVariant
+    QVariant, QObject, QPyNullVariant, QDateTime
 from PyQt4.QtGui import QAction, QIcon
 from qgis.core import QgsProject, QGis, QgsVectorLayer, QgsMessageLog,\
     QgsMapLayerRegistry, QgsField, QgsFeature, QgsGeometry, QgsFeatureRequest,\
@@ -423,7 +423,7 @@ class DiviPlugin(QObject):
         editBuffer = layer.editBuffer()
         #TODO: po restarcie wtyczki ids_map może być nieznane
         ids_map = self.ids_map[layerid]
-        item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
+        item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'vector'
         item = self.dockwidget.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
         connector = DiviConnector()
         #Added/removed fields
@@ -490,7 +490,7 @@ class DiviPlugin(QObject):
         layer = QgsMapLayerRegistry.instance().mapLayer(layerid)
         QgsMessageLog.logMessage(self.tr('Saving features to layer %s') % layer.name(), 'DIVI')
         divi_id = layer.customProperty('DiviId')
-        item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
+        item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'vector'
         item = self.dockwidget.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
         geojson_features = []
         ids = []
@@ -516,13 +516,18 @@ class DiviPlugin(QObject):
         divi_id = layer.customProperty('DiviId')
         if divi_id is None:
             return
-        item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
+        if layer.geometryType()==QGis.NoGeometry:
+            item_type = 'table'
+            layer_type = 'tables'
+        else:
+            item_type = 'vector'
+            layer_type = 'layers'
         item = self.dockwidget.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
         if item.transaction is not None:
             return
         QgsMessageLog.logMessage('Start editing layer %s' % layer.name(), 'DIVI')
         connector = DiviConnector(self.iface)
-        result = connector.startTransaction(item_type+'s', divi_id)
+        result = connector.startTransaction(layer_type, divi_id)
         if result is None:
             QgsMessageLog.logMessage('Edycja zablokowana', 'DIVI')
             layer.rollBack()
@@ -534,14 +539,19 @@ class DiviPlugin(QObject):
         divi_id = layer.customProperty('DiviId')
         if divi_id is None:
             return
-        item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
+        if layer.geometryType()==QGis.NoGeometry:
+            item_type = 'table'
+            layer_type = 'tables'
+        else:
+            item_type = 'vector'
+            layer_type = 'layers'
         item = self.dockwidget.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
         #Check if other geometries for this DIVI layer are edited
         if any( lyr.isEditable() for lyr in item.items if lyr is not layer ):
             return
         QgsMessageLog.logMessage('Stop editing layer %s' % layer.name(), 'DIVI')
         connector = DiviConnector()
-        result = connector.stopTransaction(item_type+'s', item.transaction)
+        result = connector.stopTransaction(layer_type, item.transaction)
         item.transaction = None
     
     def importDialog(self):
@@ -568,6 +578,12 @@ class DiviPlugin(QObject):
                 key = fields_mapper[key]
             if isinstance(value, QPyNullVariant):
                 new_attributes[key] = None
+            elif isinstance(value, QDateTime):
+                print value, value.isNull(), value.isValid()
+                if value.isNull() or not value.isValid():
+                    new_attributes[key] = None
+                else:
+                    new_attributes[key] = value.toString('yyyy-MM-dd hh:mm:ss')
             else:
                 new_attributes[key] = value
         return new_attributes

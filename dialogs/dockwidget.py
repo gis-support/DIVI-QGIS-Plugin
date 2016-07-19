@@ -31,7 +31,7 @@ from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis,\
 from qgis.gui import QgsMessageBar
 from ..utils.connector import DiviConnector
 from ..utils.model import DiviModel, DiviProxyModel, LayerItem, TableItem, \
-    ProjectItem
+    ProjectItem, VectorItem
 from ..utils.widgets import ProgressMessageBar
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -123,7 +123,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         model = self.tvData.model().sourceModel()
         for layer in layers:
             divi_id = layer.customProperty('DiviId')
-            item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
+            item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'vector'
             layerIndex = model.findItem(divi_id, item_type, True)
             if layerIndex is not None:
                 layerItem = layerIndex.data(role=Qt.UserRole)
@@ -138,7 +138,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             return
         item = index.data(role=Qt.UserRole)
         addedData = []
-        if isinstance(item, LayerItem):
+        #TODO: Add loading rasters
+        if isinstance(item, VectorItem):
             self.plugin.msgBar = ProgressMessageBar(self.iface, self.tr("Downloading layer '%s'...")%item.name)
             self.plugin.msgBar.setValue(10)
             connector = self.getConnector()
@@ -200,12 +201,13 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         menu = QtGui.QMenu(self)
         if isinstance(item, LayerItem):
             #Layer menu
-            menu.addAction(QgsApplication.getThemeIcon('/mActionAddMap.png'), self.tr('Add layer'), lambda: self.addLayer(index))
-            open_as_menu = menu.addMenu(QgsApplication.getThemeIcon('/mActionAddOgrLayer.svg'), self.tr("Add layer as..."))
-            load_layer_as = partial(self.plugin.loadLayerType, item=item)
-            open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPointLayer.svg'), self.tr('Points'), lambda: load_layer_as(geom_type='MultiPoint'))
-            open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconLineLayer.svg'), self.tr('Linestring'), lambda: load_layer_as(geom_type='MultiLineString'))
-            open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPolygonLayer.svg'), self.tr('Polygons'), lambda: load_layer_as(geom_type='MultiPolygon'))
+            if isinstance(item, VectorItem):
+                menu.addAction(QgsApplication.getThemeIcon('/mActionAddMap.png'), self.tr('Add layer'), lambda: self.addLayer(index))
+                open_as_menu = menu.addMenu(QgsApplication.getThemeIcon('/mActionAddOgrLayer.svg'), self.tr("Add layer as..."))
+                load_layer_as = partial(self.plugin.loadLayerType, item=item)
+                open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPointLayer.svg'), self.tr('Points'), lambda: load_layer_as(geom_type='MultiPoint'))
+                open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconLineLayer.svg'), self.tr('Linestring'), lambda: load_layer_as(geom_type='MultiLineString'))
+                open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPolygonLayer.svg'), self.tr('Polygons'), lambda: load_layer_as(geom_type='MultiPolygon'))
             menu.addAction(QgsApplication.getThemeIcon('/mActionToggleEditing.svg'), self.tr('Change layer name...'), lambda: self.editLayerName(index))
             if item.items:
                 menu.addAction(QgsApplication.getThemeIcon('/mActionDraw.svg'), self.tr('Reload data'), lambda: self.refreshData(item))
@@ -222,7 +224,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             if divi_id is None:
                 continue
             QgsMessageLog.logMessage(self.tr('Removing layer %s')%layer.name(), 'DIVI')
-            item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'layer'
+            item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'vector'
             layerIndex = model.findItem(divi_id, item_type, True)
             if layerIndex is None:
                 continue

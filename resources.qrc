@@ -3,12 +3,15 @@
         <file>images/icon.png</file>
     </qresource>
     <qresource prefix="/plugins/DiviPlugin" >
-        <file>images/layer.png</file>
+        <file>images/vector.png</file>
     </qresource>
     <qresource prefix="/plugins/DiviPlugin" >
         <file>images/table.png</file>
     </qresource>
     <qresource prefix="/plugins/DiviPlugin" >
         <file>images/downloading.png</file>
+    </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/raster.png</file>
     </qresource>
 </RCC>

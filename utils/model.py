@@ -109,17 +109,30 @@ class LayerItem(TreeItem):
         self.id_accounts = data.get('id_accounts')
         self.id_projects = data.get('id_projects')
         self.abstract = data.get('abstract')
-        self.fields = data.get('fields')
+        self.data_type = data.get('data_type')
         
-        self.icon = QIcon(':/plugins/DiviPlugin/images/layer.png')
         self.items = []
-        self.fields_mapper = {}
-        self.transaction = None
     
     def updateData(self, data):
         for key in ['fields', 'name', 'abstract']:
             if key in data:
                 setattr(self, key, data[key])
+
+class VectorItem(LayerItem):
+    def __init__(self, data, parent=None):
+        super(VectorItem, self).__init__(data, parent)
+        self.fields = data.get('fields')
+        
+        self.fields_mapper = {}
+        self.transaction = None
+        
+        self.icon = QIcon(':/plugins/DiviPlugin/images/vector.png')
+
+class RasterItem(LayerItem):
+    def __init__(self, data, parent=None):
+        super(RasterItem, self).__init__(data, parent)
+        
+        self.icon = QIcon(':/plugins/DiviPlugin/images/raster.png')
 
 class TableItem(TreeItem):
     
@@ -169,8 +182,10 @@ class DiviModel(QAbstractItemModel):
             return item
         elif role == Qt.UserRole+1:
             #Required for finding item
-            if isinstance(item,LayerItem):
-                return 'layer@%s' % item.id
+            if isinstance(item,VectorItem):
+                return 'vector@%s' % item.id
+            elif isinstance(item,RasterItem):
+                return 'raster@%s' % item.id
             elif isinstance(item,TableItem):
                 return 'table@%s' % item.id
             elif isinstance(item,ProjectItem):
@@ -212,7 +227,10 @@ class DiviModel(QAbstractItemModel):
     
     def addLayers(self, layers):
         for layer in layers:
-            item = LayerItem(layer, self.projects_map[layer['id_projects']] )
+            if layer['data_type']=='vector':
+                item = VectorItem(layer, self.projects_map[layer['id_projects']] )
+            else:
+                item = RasterItem(layer, self.projects_map[layer['id_projects']] )
     
     def addTables(self, tables):
         for table in tables:
@@ -275,7 +293,7 @@ class DiviModel(QAbstractItemModel):
         parentItem = parent.internalPointer() if parent.isValid() else self.rootItem
         return parentItem.childCount() > 0
     
-    def findItem(self, oid, item_type='layer', as_model=False):
+    def findItem(self, oid, item_type='vector', as_model=False):
         if oid is None:
             return
         indexes = self.match(
