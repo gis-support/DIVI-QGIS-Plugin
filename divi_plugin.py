@@ -404,6 +404,13 @@ class DiviPlugin(QObject):
             if field['type'] == 'dropdown':
                 layer.setEditorWidgetV2(i, 'ValueMap')
                 layer.setEditorWidgetV2Config(i, { value:value for value in field['valuelist'].split(',') })
+            elif field['type'] == 'calendar':
+                layer.setEditorWidgetV2(i, 'DateTime')
+                layer.setEditorWidgetV2Config(i, 
+                    {u'display_format': u'yyyy-MM-dd HH:mm:ss',
+                    u'allow_null': True,
+                    u'field_format': u'yyyy-MM-dd HH:mm:ss',
+                    u'calendar_popup': True} )
         if addToMap:
             QgsMapLayerRegistry.instance().addMapLayer(layer)
         return layer
