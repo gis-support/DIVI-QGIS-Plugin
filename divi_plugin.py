@@ -324,8 +324,11 @@ class DiviPlugin(QObject):
             records_list.append(r)
             if self.msgBar is not None:
                 self.msgBar.setProgress(i/count)
-        return self.registerLayer(layer=table, features=records_list, layerid=tableid,
+        #Map layer ids to db ids
+        result = self.registerLayer(layer=table, features=records_list, layerid=tableid,
             permissions={}, addToMap=True, fields=fields)
+        self.ids_map[table.id()] = dict(zip(table.allFeatureIds(), records_ids))
+        return result
     
     def addFeatures(self, layerid, features, fields, points=None, lines=None, polygons=None, permissions={}, add_empty=False):
         """ Add DIVI layer to QGIS """
@@ -470,7 +473,7 @@ class DiviPlugin(QObject):
         deleted = editBuffer.deletedFeatureIds()
         if deleted:
             fids = [ ids_map[fid] for fid in deleted ]
-            result = connector.deleteFeatures(divi_id, fids, item.transaction)
+            result = connector.deleteFeatures(divi_id, fids, item.transaction, item_type)
             deleted_ids = result['deleted']
             if len(set(fids).symmetric_difference(set(deleted_ids))):
                 self.iface.messageBar().pushMessage('BŁĄD',
@@ -489,11 +492,11 @@ class DiviPlugin(QObject):
         if fids:
             data = []
             request = QgsFeatureRequest().setFilterFids(fids)
-            for f in layer.getFeatures(request):
-                geojson = f.__geo_interface__
-                geojson['properties'] = self.map_attributes(geojson['properties'], item.fields_mapper)
-                geojson['id'] = ids_map[f.id()]
-                data.append(geojson)
+            features = layer.getFeatures(request)
+            if item_type == 'vector':
+                data, _ = self.features2geojson(item, features, ids_map)
+            else:
+                data, _ = self.records2tabson(layer, features, ids_map)
             result = connector.changeFeatures(divi_id, data, item.transaction)
     
     def onFeaturesAdded(self, layerid, features):
@@ -502,15 +505,12 @@ class DiviPlugin(QObject):
         divi_id = layer.customProperty('DiviId')
         item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'vector'
         item = self.dockwidget.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
-        geojson_features = []
-        ids = []
-        for feature in features:
-            geojson = feature.__geo_interface__
-            geojson['properties'] = self.map_attributes(geojson['properties'], item.fields_mapper)
-            geojson_features.append(geojson)
-            ids.append(feature.id())
-        addedFeatures = {u'type': u'FeatureCollection', u'features': geojson_features }
         connector = DiviConnector()
+        if item_type=='vector':
+            geojson_features, ids = self.features2geojson(item, features)
+            addedFeatures = {u'type': u'FeatureCollection', u'features': geojson_features }
+        else:
+            addedFeatures, ids = self.records2tabson(layer, features)
         result = connector.addNewFeatures(divi_id, addedFeatures, item.transaction)
         if len(ids) != len(result['inserted']):
             self.iface.messageBar().pushMessage('BŁĄD',
@@ -520,6 +520,45 @@ class DiviPlugin(QObject):
             )
         else:
             self.ids_map[layerid].update({ qgis_id:divi_id for qgis_id,divi_id in zip(ids, result['inserted']) })
+    
+    def records2tabson(self, layer, features, ids_map=None):
+        """ Format QgsFeature objects to tabson
+        if ids_map is None the features are added
+        otherwise features are updated
+        """
+        if ids_map is not None:
+            #On update we need to pass database id (first attribute)
+            header = ['_dbid']
+        else:
+            header = []
+        header += [ field.name() for field in layer.fields() ]
+        data = []
+        ids = []
+        for feature in features:
+            if ids_map is not None:
+                attributes = [ ids_map[feature.id()] ]
+            else:
+                ids.append(feature.id())
+                attributes = []
+            data.append( attributes + [ self.fix_value(value) for value in feature.attributes() ] )
+        return {'header':header, 'data':data}, ids
+    
+    def features2geojson(self, item, features, ids_map=None):
+        """ Format QgsFeature objects to GeoJSON
+        if ids_map is None the features are added
+        otherwise features are updated
+        """
+        geojson_features = []
+        ids = []
+        for feature in features:
+            geojson = feature.__geo_interface__
+            geojson['properties'] = self.map_attributes(geojson['properties'], item.fields_mapper)
+            if ids_map is not None:
+                geojson['id'] = ids_map[feature.id()]
+            else:
+                ids.append(feature.id())
+            geojson_features.append(geojson)
+        return geojson_features, ids
     
     def onStartEditing(self):
         layer = self.sender()
@@ -580,20 +619,21 @@ class DiviPlugin(QObject):
         if self.msgBar is not None:
             self.msgBar.setProgress(value)
     
-    @staticmethod
-    def map_attributes(attributes, fields_mapper):
+    def map_attributes(self, attributes, fields_mapper):
         new_attributes = {}
         for key, value in attributes.iteritems():
             if key in fields_mapper:
                 key = fields_mapper[key]
-            if isinstance(value, QPyNullVariant):
-                new_attributes[key] = None
-            elif isinstance(value, QDateTime):
-                print value, value.isNull(), value.isValid()
-                if value.isNull() or not value.isValid():
-                    new_attributes[key] = None
-                else:
-                    new_attributes[key] = value.toString('yyyy-MM-dd hh:mm:ss')
-            else:
-                new_attributes[key] = value
+            new_attributes[key] = self.fix_value(value)
         return new_attributes
+    
+    @staticmethod
+    def fix_value(value):
+        if isinstance(value, QPyNullVariant):
+            return None
+        elif isinstance(value, QDateTime):
+            if value.isNull() or not value.isValid():
+                return None
+            else:
+                return value.toString('yyyy-MM-dd hh:mm:ss')
+        return value

@@ -270,19 +270,32 @@ class DiviConnector(QObject):
     #Edit data
     
     def addNewFeatures(self, layerid, data, transaction):
-        content = self.sendPostRequest('/features/%s'%layerid, data,
+        if 'features' in data:
+            url = '/features/%s'%layerid
+        else:
+            url = '/records/%s'%layerid
+        content = self.sendPostRequest(url, data,
             params={'token':self.token}, headers={'X-Transaction-Id':transaction})
         return self.getJson(content)
     
-    def deleteFeatures(self, layerid, fids, transaction):
+    def deleteFeatures(self, layerid, fids, transaction, item_type):
+        if item_type == 'vector':
+            url = '/features/%s' % layerid
+        else:
+            url = '/records/%s' % layerid
         QgsMessageLog.logMessage('Removing objects: '+str(fids), 'DIVI')
-        content = self.sendDeleteRequest('/features/%s'%layerid, data={'features':fids},
+        content = self.sendDeleteRequest(url, data={'features':fids},
             params={'token':self.token}, headers={'X-Transaction-Id':transaction})
         return self.getJson(content)
     
     def changeFeatures(self, layerid, data, transaction):
+        if 'header' in data:
+            url = '/records/%s'%layerid
+        else:
+            url = '/features/%s'%layerid
+            data = {'features':data}
         QgsMessageLog.logMessage('Saving changed objects', 'DIVI')
-        content = self.sendPutRequest('/features/%s'%layerid, {'features':data},
+        content = self.sendPutRequest(url, data,
             params={'token':self.token}, headers={'X-Transaction-Id':transaction})
         return self.getJson(content)
     
