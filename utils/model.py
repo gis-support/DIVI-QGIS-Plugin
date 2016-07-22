@@ -110,7 +110,6 @@ class LayerItem(TreeItem):
         self.id_projects = data.get('id_projects')
         self.abstract = data.get('abstract')
         self.data_type = data.get('data_type')
-        
         self.items = []
     
     def updateData(self, data):
@@ -118,37 +117,26 @@ class LayerItem(TreeItem):
             if key in data:
                 setattr(self, key, data[key])
 
-class VectorItem(LayerItem):
+class TableItem(LayerItem):
+    
+    def __init__(self, data, parent=None):
+        super(TableItem, self).__init__(data, parent)
+        self.fields = data.get('fields')
+        self.fields_mapper = {}
+        self.icon = QIcon(':/plugins/DiviPlugin/images/table.png')
+        self.transaction = None
+
+class VectorItem(TableItem):
+    
     def __init__(self, data, parent=None):
         super(VectorItem, self).__init__(data, parent)
-        self.fields = data.get('fields')
-        
-        self.fields_mapper = {}
-        self.transaction = None
-        
         self.icon = QIcon(':/plugins/DiviPlugin/images/vector.png')
 
 class RasterItem(LayerItem):
-    def __init__(self, data, parent=None):
-        super(RasterItem, self).__init__(data, parent)
-        
-        self.icon = QIcon(':/plugins/DiviPlugin/images/raster.png')
-
-class TableItem(TreeItem):
     
     def __init__(self, data, parent=None):
-        super(TableItem, self).__init__(self, parent)
-        self.name = data.get('name')
-        self.id = data.get('id')
-        self.id_accounts = data.get('id_accounts')
-        self.id_projects = data.get('id_projects')
-        self.abstract = data.get('abstract')
-        self.fields = data.get('fields')
-        
-        self.fields_mapper = {}
-        self.icon = QIcon(':/plugins/DiviPlugin/images/table.png')
-        self.items = []
-        self.transaction = None
+        super(RasterItem, self).__init__(data, parent)
+        self.icon = QIcon(':/plugins/DiviPlugin/images/raster.png')
 
 class DiviModel(QAbstractItemModel):
     
