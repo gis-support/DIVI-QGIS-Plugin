@@ -240,7 +240,7 @@ class DiviConnector(QObject):
         name_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="name"')
         name_part.setBody(filename)
         crs_part = QHttpPart()
-        crs_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="crs"')
+        crs_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="srs"')
         crs_part.setBody(str(crs))
         file_part = QHttpPart()
         file_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="file[0]"; filename="%s.tiff"' % filename)

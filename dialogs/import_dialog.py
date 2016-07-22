@@ -159,8 +159,6 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
     
     def uploadRasterLayer(self, layer):
         """ Upload raster layers """
-        print 'geotiff' in layer.metadata().lower()
-        print os.path.exists(layer.source())
         if 'geotiff' in layer.metadata().lower() and os.path.exists(layer.source()):
             #If source file is GeoTIFF than we can send it directly
             data = self.readFile( layer.source() )
