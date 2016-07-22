@@ -145,6 +145,7 @@ class TableItem(TreeItem):
         self.abstract = data.get('abstract')
         self.fields = data.get('fields')
         
+        self.fields_mapper = {}
         self.icon = QIcon(':/plugins/DiviPlugin/images/table.png')
         self.items = []
         self.transaction = None

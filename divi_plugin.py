@@ -462,7 +462,7 @@ class DiviPlugin(QObject):
                     'name':field.name(),
                     'type':_type
                 })
-            response = connector.updateLayer(divi_id, {'fields':fields}, item.transaction)
+            response = connector.updateLayer(divi_id, {'fields':fields}, item.transaction, item_type)
             updated_layer = response.get('layer')
             if updated_layer:
                 for new, old in zip(updated_layer['fields'], fields):
@@ -496,7 +496,7 @@ class DiviPlugin(QObject):
             if item_type == 'vector':
                 data, _ = self.features2geojson(item, features, ids_map)
             else:
-                data, _ = self.records2tabson(layer, features, ids_map)
+                data, _ = self.records2tabson(item, layer, features, ids_map)
             result = connector.changeFeatures(divi_id, data, item.transaction)
     
     def onFeaturesAdded(self, layerid, features):
@@ -510,7 +510,7 @@ class DiviPlugin(QObject):
             geojson_features, ids = self.features2geojson(item, features)
             addedFeatures = {u'type': u'FeatureCollection', u'features': geojson_features }
         else:
-            addedFeatures, ids = self.records2tabson(layer, features)
+            addedFeatures, ids = self.records2tabson(item, layer, features)
         result = connector.addNewFeatures(divi_id, addedFeatures, item.transaction)
         if len(ids) != len(result['inserted']):
             self.iface.messageBar().pushMessage('BŁĄD',
@@ -521,7 +521,7 @@ class DiviPlugin(QObject):
         else:
             self.ids_map[layerid].update({ qgis_id:divi_id for qgis_id,divi_id in zip(ids, result['inserted']) })
     
-    def records2tabson(self, layer, features, ids_map=None):
+    def records2tabson(self, item, layer, features, ids_map=None):
         """ Format QgsFeature objects to tabson
         if ids_map is None the features are added
         otherwise features are updated
@@ -531,7 +531,7 @@ class DiviPlugin(QObject):
             header = ['_dbid']
         else:
             header = []
-        header += [ field.name() for field in layer.fields() ]
+        header += [ field.name() if field.name() not in item.fields_mapper else item.fields_mapper[field.name()] for field in layer.fields() ]
         data = []
         ids = []
         for feature in features:

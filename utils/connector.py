@@ -299,12 +299,17 @@ class DiviConnector(QObject):
             params={'token':self.token}, headers={'X-Transaction-Id':transaction})
         return self.getJson(content)
     
-    def updateLayer(self, layerid, data, transaction=None):
-        QgsMessageLog.logMessage('Saving changed layer %s' % layerid, 'DIVI')
+    def updateLayer(self, layerid, data, transaction=None, item_type='vector'):
+        if item_type=='vector':
+            QgsMessageLog.logMessage('Saving changed layer %s' % layerid, 'DIVI')
+            url = '/layers/%s'%layerid
+        else:
+            QgsMessageLog.logMessage('Saving changed table %s' % layerid, 'DIVI')
+            url = '/tables/%s'%layerid
         headers = {}
         if transaction is not None:
             headers['X-Transaction-Id'] = transaction
-        content = self.sendPutRequest('/layers/%s'%layerid, data,
+        content = self.sendPutRequest(url, data,
             params={'token':self.token}, headers=headers)
         return self.getJson(content)
     
