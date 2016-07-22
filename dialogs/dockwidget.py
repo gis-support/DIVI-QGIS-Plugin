@@ -31,7 +31,7 @@ from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis,\
 from qgis.gui import QgsMessageBar
 from ..utils.connector import DiviConnector
 from ..utils.model import DiviModel, DiviProxyModel, LayerItem, TableItem, \
-    ProjectItem, VectorItem
+    ProjectItem, VectorItem, RasterItem
 from ..utils.widgets import ProgressMessageBar
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -201,13 +201,14 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         menu = QtGui.QMenu(self)
         if isinstance(item, LayerItem):
             #Layer menu
-            if isinstance(item, VectorItem):
+            if isinstance(item, TableItem):
                 menu.addAction(QgsApplication.getThemeIcon('/mActionAddMap.png'), self.tr('Add layer'), lambda: self.addLayer(index))
-                open_as_menu = menu.addMenu(QgsApplication.getThemeIcon('/mActionAddOgrLayer.svg'), self.tr("Add layer as..."))
-                load_layer_as = partial(self.plugin.loadLayerType, item=item)
-                open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPointLayer.svg'), self.tr('Points'), lambda: load_layer_as(geom_type='MultiPoint'))
-                open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconLineLayer.svg'), self.tr('Linestring'), lambda: load_layer_as(geom_type='MultiLineString'))
-                open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPolygonLayer.svg'), self.tr('Polygons'), lambda: load_layer_as(geom_type='MultiPolygon'))
+                if type(item) is VectorItem:
+                    open_as_menu = menu.addMenu(QgsApplication.getThemeIcon('/mActionAddOgrLayer.svg'), self.tr("Add layer as..."))
+                    load_layer_as = partial(self.plugin.loadLayerType, item=item)
+                    open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPointLayer.svg'), self.tr('Points'), lambda: load_layer_as(geom_type='MultiPoint'))
+                    open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconLineLayer.svg'), self.tr('Linestring'), lambda: load_layer_as(geom_type='MultiLineString'))
+                    open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPolygonLayer.svg'), self.tr('Polygons'), lambda: load_layer_as(geom_type='MultiPolygon'))
             menu.addAction(QgsApplication.getThemeIcon('/mActionToggleEditing.svg'), self.tr('Change layer name...'), lambda: self.editLayerName(index))
             if item.items:
                 menu.addAction(QgsApplication.getThemeIcon('/mActionDraw.svg'), self.tr('Reload data'), lambda: self.refreshData(item))
@@ -247,7 +248,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             self.tr('Enter new layer name for %s') % item.name,
             text = item.name)
         if status and name != item.name:
-            result = self.editLayerMetadata(item.id, {'name':name})
+            result = self.editLayerMetadata(item, {'name':name})
             if result['layer']['name'] == name:
                 self.iface.messageBar().pushMessage('DIVI',
                     self.tr('Name of layer %s was changed to %s.') % (item.name, name),
@@ -262,9 +263,13 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                     duration = 3
                 )
     
-    def editLayerMetadata(self, layerid, data):
+    def editLayerMetadata(self, item, data):
         connector = self.getConnector()
-        return connector.updateLayer(layerid, data)
+        if type(item) is TableItem:
+            item_type = 'table'
+        else:
+            item_type = 'vector'
+        return connector.updateLayer(item.id, data, item_type=item_type)
     
     def addProjectData(self, index):
         item = index.data( role=Qt.UserRole )
