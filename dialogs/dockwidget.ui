@@ -53,11 +53,7 @@
      </layout>
     </item>
     <item>
-     <widget class="QLineEdit" name="eSearch">
-      <property name="placeholderText">
-       <string>Search...</string>
-      </property>
-     </widget>
+     <layout class="QVBoxLayout" name="editLayout"/>
     </item>
     <item>
      <widget class="QTreeView" name="tvData">

@@ -28,7 +28,7 @@ from PyQt4 import QtGui, uic
 from PyQt4.QtCore import pyqtSignal, QSettings, Qt, QRegExp
 from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis,\
     QgsApplication
-from qgis.gui import QgsMessageBar
+from qgis.gui import QgsMessageBar, QgsFilterLineEdit
 from ..utils.connector import DiviConnector
 from ..utils.model import DiviModel, DiviProxyModel, LayerItem, TableItem, \
     ProjectItem, VectorItem, RasterItem
@@ -55,6 +55,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.token = QSettings().value('divi/token', None)
         self.user = QSettings().value('divi/email', None)
         self.setupUi(self)
+        self.initGui()
         proxyModel = DiviProxyModel()
         proxyModel.setSourceModel( DiviModel() )
         proxyModel.setDynamicSortFilter( True )
@@ -69,6 +70,12 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.tvData.doubleClicked.connect(self.addLayer)
         self.tvData.customContextMenuRequested.connect(self.showMenu)
         QgsMapLayerRegistry.instance().layersWillBeRemoved.connect( self.layersRemoved )
+    
+    def initGui(self):
+        self.eSearch = QgsFilterLineEdit(self.dockWidgetContents)
+        self.eSearch.setObjectName(u"eSearch")
+        self.eSearch.setPlaceholderText(self.tr("Search..."))
+        self.editLayout.addWidget(self.eSearch)
     
     def getConnector(self, auto_login=True):
         connector = DiviConnector(iface=self.iface, auto_login=auto_login)
