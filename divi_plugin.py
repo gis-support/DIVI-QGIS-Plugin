@@ -88,6 +88,7 @@ class DiviPlugin(QObject):
         self.msgBar = None
         self.ids_map = {}
         self.loading = False
+        self.cache = {}
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -187,7 +188,7 @@ class DiviPlugin(QObject):
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
         
-        QgsProject.instance().readMapLayer.connect(self.loadLayer)
+        self.iface.projectRead.connect(self.loadLayers)
         
         icon_path = ':/plugins/DiviPlugin/images/icon.png'
         self.dockwidget = DiviPluginDockWidget(self)
@@ -213,7 +214,7 @@ class DiviPlugin(QObject):
 
         #print "** UNLOAD DiviPlugin"
         
-        QgsProject.instance().readMapLayer.disconnect(self.loadLayer)
+        self.iface.projectRead.disconnect(self.loadLayers)
         QgsMapLayerRegistry.instance().layersWillBeRemoved.disconnect( self.dockwidget.layersRemoved )
         
         #Disconnect layers signal
@@ -241,7 +242,16 @@ class DiviPlugin(QObject):
         self.loading = isLoading
         return True
     
-    def loadLayer(self, mapLayer, node=None, add_empty=False):
+    def loadLayers(self):
+        """ Load DIVI layers after openig project """
+        #Cache is used for storing data while reading project to prevent multiple connections for one layer with many geometry types
+        self.cache = {}
+        for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues():
+            self.loadLayer(layer)
+        #Clear cache
+        self.cache = {}
+    
+    def loadLayer(self, mapLayer, add_empty=False):
         divi_id = mapLayer.customProperty('DiviId')
         if divi_id is None or not self.setLoading(True):
             return
@@ -262,9 +272,18 @@ class DiviPlugin(QObject):
                     self.msgBar.setBoundries(50, 50)
                     self.addRecords(divi_id, data['header'], data['data'], fields=layer_meta['fields'], table=mapLayer, permissions=permissions)
             else:
-                layer_meta = connector.diviGetLayer(divi_id)
-                self.msgBar.setBoundries(10, 35)
-                data = connector.diviGetLayerFeatures(divi_id)
+                self.msgBar.progress.setValue(10)
+                if divi_id in self.cache:
+                    #Read data from cache
+                    layer_meta = self.cache[divi_id]['meta']
+                    data = self.cache[divi_id]['data']
+                    self.msgBar.progress.setValue(35)
+                else:
+                    #Download data
+                    layer_meta = connector.diviGetLayer(divi_id)
+                    self.msgBar.setBoundries(10, 35)
+                    data = connector.diviGetLayerFeatures(divi_id)
+                    self.cache[divi_id] = {'data':data, 'meta':layer_meta}
                 if data:
                     if mapLayer.geometryType() == QGis.Point:
                         layer = {'points':mapLayer}
@@ -275,7 +294,12 @@ class DiviPlugin(QObject):
                     else:
                         return
                     self.msgBar.setBoundries(45, 5)
-                    permissions = connector.getUserPermissions('layers')
+                    if 'permissions' in self.cache[divi_id]:
+                        #Read permissions from cache
+                        permissions = self.cache[divi_id]['permissions']
+                    else:
+                        permissions = connector.getUserPermissions('layers')
+                        self.cache[divi_id]['permissions'] = permissions
                     self.msgBar.setBoundries(50, 50)
                     self.addFeatures(divi_id, data['features'], fields=layer_meta['fields'],permissions=permissions,add_empty=add_empty,**layer)
             self.msgBar.progress.setValue(100)
