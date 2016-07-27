@@ -134,9 +134,10 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             layerIndex = model.findItem(divi_id, item_type, True)
             if layerIndex is not None:
                 layerItem = layerIndex.data(role=Qt.UserRole)
-                self.plugin.registerLayer(layer, divi_id, [], {}, False, layerItem.fields)
-                layerItem.items.append(layer)
-                model.dataChanged.emit(layerIndex, layerIndex)
+                if layer not in layerItem.items:
+                    self.plugin.registerLayer(layer, divi_id, [], {}, False, layerItem.fields)
+                    layerItem.items.append(layer)
+                    model.dataChanged.emit(layerIndex, layerIndex)
     
     #SLOTS
     
@@ -304,4 +305,4 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         else:
             layers, tables = connector.diviGetProjectItems(projectid=item.id)
             model.addProjectItems(item, layers, tables)
-
+        self.getLoadedDiviLayers()
