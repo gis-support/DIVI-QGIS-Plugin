@@ -32,9 +32,8 @@ class TreeItem(QObject):
     it's parents and/or children
     '''
     def __init__(self, item, parentItem):
-        super(TreeItem, self).__init__()
+        super(TreeItem, self).__init__(parentItem)
         self.itemData = item
-        self.parentItem = parentItem
         self.childItems = []
         
         if parentItem:
@@ -42,6 +41,7 @@ class TreeItem(QObject):
 
     def appendChild(self, item):
         self.childItems.append(item)
+        self.connect(item, SIGNAL("itemRemoved"), self.childRemoved)
 
     def child(self, row):
         return self.childItems[row]
@@ -58,15 +58,15 @@ class TreeItem(QObject):
     def itemChanged(self):
         self.emit( SIGNAL("itemChanged"), self )
     
+    def itemRemoved(self):
+        self.emit(SIGNAL("itemRemoved"), self)
+    
     def data(self, column):
         return "" if column == 0 else None
-
-    def parent(self):
-        return self.parentItem
     
     def row(self):
-        if self.parentItem:
-            return self.parentItem.childItems.index(self)
+        if self.parent():
+            return self.parent().childItems.index(self)
         return 0
     
     def removeChild(self, row):
@@ -74,6 +74,10 @@ class TreeItem(QObject):
             self.childItems[row].itemData.deleteLater()
             self.disconnect(self.childItems[row], SIGNAL("itemRemoved"), self.childRemoved)
             del self.childItems[row]
+    
+    def removeChilds(self):
+        for i in reversed(range(self.childCount())):
+            self.removeChild(i)
 
 class LoadingItem(TreeItem):
     
@@ -90,6 +94,9 @@ class AccountItem(TreeItem):
         self.name = data.get('name')
         self.id = data.get('id')
         self.abstract = data.get('description')
+    
+    def identifier(self):
+        return 'account@%s' % self.id
 
 class ProjectItem(TreeItem):
     
@@ -99,6 +106,9 @@ class ProjectItem(TreeItem):
         self.id = data.get('id')
         self.id_accounts = data.get('id_accounts')
         self.abstract = data.get('description')
+    
+    def identifier(self):
+        return 'project@%s' % self.id
 
 class LayerItem(TreeItem):
     
@@ -125,26 +135,32 @@ class TableItem(LayerItem):
         self.fields_mapper = {}
         self.icon = QIcon(':/plugins/DiviPlugin/images/table.png')
         self.transaction = None
+    
+    def identifier(self):
+        return 'table@%s' % self.id
 
 class VectorItem(TableItem):
     
     def __init__(self, data, parent=None):
         super(VectorItem, self).__init__(data, parent)
         self.icon = QIcon(':/plugins/DiviPlugin/images/vector.png')
+    
+    def identifier(self):
+        return 'vector@%s' % self.id
 
 class RasterItem(LayerItem):
     
     def __init__(self, data, parent=None):
         super(RasterItem, self).__init__(data, parent)
         self.icon = QIcon(':/plugins/DiviPlugin/images/raster.png')
+    
+    def identifier(self):
+        return 'raster@%s' % self.id
 
 class DiviModel(QAbstractItemModel):
     
     def __init__(self, parent=None):
         super(DiviModel, self).__init__(parent)
-        
-        self.accounts_map = {}
-        self.projects_map = {}
         
         self.rootItem = TreeItem(None, None)
     
@@ -165,23 +181,12 @@ class DiviModel(QAbstractItemModel):
             font.setBold(bool(item.items))
             return font
         elif role == Qt.ToolTipRole:
-            if isinstance(item, LayerItem):
-                return item.abstract
+            return item.abstract
         elif role == Qt.UserRole:
             #Return item itself
             return item
         elif role == Qt.UserRole+1:
-            #Required for finding item
-            if isinstance(item,VectorItem):
-                return 'vector@%s' % item.id
-            elif isinstance(item,RasterItem):
-                return 'raster@%s' % item.id
-            elif isinstance(item,TableItem):
-                return 'table@%s' % item.id
-            elif isinstance(item,ProjectItem):
-                return 'project@%s' % item.id
-            elif isinstance(item,AccountItem):
-                return 'account@%s' % item.id
+            return item.identifier()
         elif role == Qt.UserRole+2:
             return item.metaObject().className()
     
@@ -192,7 +197,7 @@ class DiviModel(QAbstractItemModel):
     
     def showLoading(self):
         self.removeAll()
-        self.beginInsertRows(QModelIndex(), 0, 1)
+        self.beginInsertRows(QModelIndex(), 0, 0)
         item = LoadingItem( self.rootItem )
         self.endInsertRows()
     
@@ -208,56 +213,59 @@ class DiviModel(QAbstractItemModel):
     def addAccounts(self, accounts):
         for account in accounts:
             item = AccountItem(account, self.rootItem )
-            self.accounts_map[item.id] = item
     
     def addProjects(self, projects):
         for project in projects:
-            item = ProjectItem(project, self.accounts_map[project['id_accounts']] )
-            self.projects_map[item.id] = item
+            account = self.findItem(project['id_accounts'], 'account')
+            item = ProjectItem(project, account )
     
     def addLayers(self, layers):
         for layer in layers:
+            project = self.findItem(layer['id_projects'], 'project')
             if layer['data_type']=='vector':
-                item = VectorItem(layer, self.projects_map[layer['id_projects']] )
+                item = VectorItem(layer, project )
             else:
-                item = RasterItem(layer, self.projects_map[layer['id_projects']] )
+                item = RasterItem(layer, project )
     
     def addTables(self, tables):
         for table in tables:
-            item = TableItem(table, self.projects_map[table['id_projects']] )
+            project = self.findItem(table['id_projects'], 'project')
+            item = TableItem(table, project )
     
-    def addProjectLayers(self, project, layers):
+    def addProjectItems(self, project, layers=[], tables=[]):
         parent = self.findItem(project.id, 'project', True)
         count = len(project.childItems)
-        self.beginInsertRows(parent, count, count+len(layers)-1)
+        self.beginInsertRows(parent, count, count+len(layers)+len(tables)-1)
         self.addLayers(layers)
+        self.addTables(tables)
+        self.endInsertRows()
+    
+    def addAccountItems(self, account, projects=[], layers=[], tables=[]):
+        parent = self.findItem(account.id, 'account', True)
+        count = len(account.childItems)
+        self.beginInsertRows(parent, count, count+len(projects)-1)
+        self.addProjects(projects)
+        self.addLayers(layers)
+        self.addTables(tables)
         self.endInsertRows()
     
     def removeAll(self):
-        rows_count = self.rootItem.childCount()
-        if not rows_count:
-            return
-        for row in reversed(range(rows_count)):
-            #Remove child items
-            index = self.index(row,0)
-            item = index.internalPointer()
-            self.removeRows(0,item.childCount(),index)
-            #Remove root element (account)
-            item.itemData.deleteLater()
-            del self.rootItem.childItems[row]
+        item = self.index(0,0).data(Qt.UserRole)
+        self.removeRows(0, self.rootItem.childCount(), self.index(0,0).parent())
     
     def removeRows(self, row, count, parent):
+        if not parent.isValid():
+            item = self.rootItem
+        else:
+            item = parent.data(Qt.UserRole)
         self.beginRemoveRows(parent, row, count+row-1)
-        item = parent.internalPointer()
-        for i in range(row, count+row):
-            item.removeChild(row)
+        item.removeChilds()
         self.endRemoveRows()
     
     def index(self, row, column, parent=QModelIndex()):
         if not self.hasIndex(row, column, parent):
             return QModelIndex()
-
-        parentItem = parent.internalPointer() if parent.isValid() else self.rootItem
+        parentItem = parent.data(Qt.UserRole) if parent.isValid() else self.rootItem
         childItem = parentItem.child(row)
         if childItem:
             return self.createIndex(row, column, childItem)
@@ -267,7 +275,7 @@ class DiviModel(QAbstractItemModel):
         if not index.isValid():
             return QModelIndex()
 
-        childItem = index.internalPointer()
+        childItem = index.data(Qt.UserRole)
         parentItem = childItem.parent()
 
         if parentItem == self.rootItem:
@@ -276,11 +284,11 @@ class DiviModel(QAbstractItemModel):
         return self.createIndex(parentItem.row(), 0, parentItem)
 
     def rowCount(self, parent):
-        parentItem = parent.internalPointer() if parent.isValid() else self.rootItem
+        parentItem = parent.data(Qt.UserRole) if parent.isValid() else self.rootItem
         return parentItem.childCount()
 
     def hasChildren(self, parent):
-        parentItem = parent.internalPointer() if parent.isValid() else self.rootItem
+        parentItem = parent.data(Qt.UserRole) if parent.isValid() else self.rootItem
         return parentItem.childCount() > 0
     
     def findItem(self, oid, item_type='vector', as_model=False):

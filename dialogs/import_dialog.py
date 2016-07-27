@@ -152,9 +152,9 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
             params={'token':token})
         result = json.loads(content)
         #Refresh list
-        self.plugin.dockwidget.tvData.model().sourceModel().addProjectLayers(
+        self.plugin.dockwidget.tvData.model().sourceModel().addProjecItems(
             project,
-            [ self.connector.diviGetLayer(layerid) for layerid in result['uploaded'] ]
+            layers = [ self.connector.diviGetLayer(layerid) for layerid in result['uploaded'] ]
         )
     
     def uploadRasterLayer(self, layer):

@@ -34,7 +34,9 @@ class DiviConnector(QObject):
     downloadingProgress = pyqtSignal(float)
     uploadingProgress = pyqtSignal(float)
     
-    DIVI_HOST = 'https://divi.io'
+    #DIVI_HOST = 'https://divi.io'
+    #DIVI_HOST = 'http://dev.apps.divi.pl'
+    DIVI_HOST = 'http://0.0.0.0:5034'
     
     def __init__(self, iface=None, auto_login=True):
         QObject.__init__(self)
@@ -169,9 +171,26 @@ class DiviConnector(QObject):
         if not accounts:
             return
         projects = self.getJson(self.sendGetRequest('/projects', {'token':self.token}))
-        layers = self.getJson(self.sendGetRequest('/layers', {'token':self.token}))
-        tables = self.getJson(self.sendGetRequest('/tables', {'token':self.token}))
-        return accounts['data'], projects['data'], layers['data'], tables['data']
+        layers, tables = self.diviGetProjectItems()
+        return accounts['data'], projects['data'], layers, tables
+    
+    def diviGetAccountItems(self, accountid):
+        params = {'token':self.token}
+        if accountid is not None:
+            params['account'] = accountid
+        projects = self.getJson(self.sendGetRequest('/projects', params))
+        layers, tables = self.diviGetProjectItems(accountid=accountid)
+        return projects['data'], layers, tables
+        
+    def diviGetProjectItems(self, projectid=None, accountid=None):
+        params = {'token':self.token}
+        if projectid is not None:
+            params['project'] = projectid
+        elif accountid is not None:
+            params['account'] = accountid
+        layers = self.getJson(self.sendGetRequest('/layers', params))
+        tables = self.getJson(self.sendGetRequest('/tables', params))
+        return layers['data'], tables['data']
     
     def diviGetLayerFeatures(self, layerid):
         QgsMessageLog.logMessage('Fecthing layer %s features' % layerid, 'DIVI')

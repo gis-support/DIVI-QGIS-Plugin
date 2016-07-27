@@ -31,7 +31,7 @@ from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis,\
 from qgis.gui import QgsMessageBar, QgsFilterLineEdit
 from ..utils.connector import DiviConnector
 from ..utils.model import DiviModel, DiviProxyModel, LayerItem, TableItem, \
-    ProjectItem, VectorItem, RasterItem
+    ProjectItem, VectorItem, RasterItem, AccountItem
 from ..utils.widgets import ProgressMessageBar
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -221,6 +221,9 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 menu.addAction(QgsApplication.getThemeIcon('/mActionDraw.svg'), self.tr('Reload data'), lambda: self.refreshData(item))
         elif isinstance(item, ProjectItem):
             menu.addAction(QgsApplication.getThemeIcon('/mActionAddGroup.png'), self.tr(u'Add all layers from project'), lambda: self.addProjectData(index))
+            menu.addAction(QgsApplication.getThemeIcon('/mActionDraw.svg'), self.tr(u'Refresh items'), lambda: self.refreshItems(index))
+        elif isinstance(item, AccountItem):
+            menu.addAction(QgsApplication.getThemeIcon('/mActionDraw.svg'), self.tr(u'Refresh items'), lambda: self.refreshItems(index))
         menu.popup(self.tvData.viewport().mapToGlobal(point))
     
     def layersRemoved(self, layers):
@@ -288,3 +291,17 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             idx = self.iface.legendInterface().addGroup(item.name, True)
             for layer in reversed(layers):
                 self.iface.legendInterface().moveLayer(layer, idx)
+    
+    def refreshItems(self, index):
+        index = self.tvData.model().mapToSource(index)
+        item = index.data( role=Qt.UserRole )
+        connector = self.getConnector()
+        model = self.tvData.model().sourceModel()
+        model.removeRows(0, item.childCount(),index)
+        if isinstance(item, AccountItem):
+            projects, layers, tables = connector.diviGetAccountItems(item.id)
+            model.addAccountItems(item, projects, layers, tables)
+        else:
+            layers, tables = connector.diviGetProjectItems(projectid=item.id)
+            model.addProjectItems(item, layers, tables)
+
