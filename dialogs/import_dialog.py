@@ -28,7 +28,7 @@ import tempfile
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import QSettings, Qt, QFile, QIODevice
 from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorFileWriter,\
-    QgsCoordinateReferenceSystem, QgsVectorLayer, QgsRasterFileWriter
+    QgsCoordinateReferenceSystem, QgsVectorLayer, QgsRasterFileWriter, QGis
 from ..utils.connector import DiviConnector
 from ..utils.widgets import ProgressMessageBar, DiviJsonEncoder
 
@@ -109,7 +109,10 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         self.connector = DiviConnector()
         self.connector.uploadingProgress.connect(self.updateDownloadProgress)
         if isinstance(layer, QgsVectorLayer):
-            self.uploadVectorLayer(layer)
+            if layer.geometryType()==QGis.NoGeometry:
+                self.uploadTable(layer)
+            else:
+                self.uploadVectorLayer(layer)
         else:
             self.uploadRasterLayer(layer)
         self.msgBar.setValue(95)
@@ -118,6 +121,23 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         self.msgBar = None
         self.connector = None
         self.close()
+    
+    def uploadTable(self, table):
+        """ Upload non-spatial tables """
+        project = self.cmbProjects.itemData(self.cmbProjects.currentIndex())
+        account = self.cmbAccounts.itemData(self.cmbAccounts.currentIndex())
+        fields = [ field.name() for field in table.fields() ]
+        data = [ feature.attributes() for feature in table.getFeatures() ]
+        token = QSettings().value('divi/token', None)
+        content = self.connector.sendPostRequest('/tables_tabular', 
+            {'header':fields, 'data':data, 'project':project.id, 'name':self.eLayerName.text()},
+            params={'token':token, 'account':account})
+        result = json.loads(content)
+        #Refresh list
+        self.plugin.dockwidget.tvData.model().sourceModel().addProjectItems(
+            project,
+            tables = [ self.connector.diviGetTable(result['inserted']) ]
+        )
     
     def uploadVectorLayer(self, layer):
         """ Upload vector layers """
@@ -152,7 +172,7 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
             params={'token':token})
         result = json.loads(content)
         #Refresh list
-        self.plugin.dockwidget.tvData.model().sourceModel().addProjecItems(
+        self.plugin.dockwidget.tvData.model().sourceModel().addProjectItems(
             project,
             layers = [ self.connector.diviGetLayer(layerid) for layerid in result['uploaded'] ]
         )
