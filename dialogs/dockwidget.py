@@ -298,6 +298,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         item = index.data( role=Qt.UserRole )
         connector = self.getConnector()
         model = self.tvData.model().sourceModel()
+        self.unregisterLayers(item)
         model.removeRows(0, item.childCount(),index)
         if isinstance(item, AccountItem):
             projects, layers, tables = connector.diviGetAccountItems(item.id)
@@ -306,3 +307,12 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             layers, tables = connector.diviGetProjectItems(projectid=item.id)
             model.addProjectItems(item, layers, tables)
         self.getLoadedDiviLayers()
+    
+    def unregisterLayers(self, item):
+        if isinstance(item, AccountItem):
+            for project in item.childItems:
+                self.unregisterLayers(project)
+        else:
+            for child in item.childItems:
+                for layer in child.items:
+                    self.plugin.unregisterLayer(layer)
