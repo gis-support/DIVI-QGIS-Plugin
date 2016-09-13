@@ -97,6 +97,10 @@ class AccountItem(TreeItem):
     
     def identifier(self):
         return 'account@%s' % self.id
+    
+    def loadedChilds(self):
+        """ True if any layer/table from this account is loaded """
+        return any( child.loadedChilds() for child in self.childItems )
 
 class ProjectItem(TreeItem):
     
@@ -109,6 +113,10 @@ class ProjectItem(TreeItem):
     
     def identifier(self):
         return 'project@%s' % self.id
+    
+    def loadedChilds(self):
+        """ True if any layer/table from this project is loaded """
+        return any( bool(child.items) for child in self.childItems )
 
 class LayerItem(TreeItem):
     
@@ -176,9 +184,13 @@ class DiviModel(QAbstractItemModel):
             return item.name
         elif role == Qt.DecorationRole and hasattr(item, 'icon'):
             return item.icon
-        elif role == Qt.FontRole and hasattr(item, 'items'):
+        elif role == Qt.FontRole:
             font = QFont()
-            font.setBold(bool(item.items))
+            if isinstance(item, LayerItem):
+                font.setBold(bool(item.items))
+            elif isinstance(item, (AccountItem, ProjectItem)):
+                font.setItalic( item.loadedChilds() )
+                font.setUnderline( item.loadedChilds() )
             return font
         elif role == Qt.ToolTipRole:
             return item.abstract

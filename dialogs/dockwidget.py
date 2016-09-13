@@ -182,7 +182,9 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 self.plugin.msgBar.setValue(100)
                 self.plugin.msgBar.close()
                 self.plugin.msgBar = None
-        index.model().dataChanged.emit(index, index)
+        else:
+            return
+        index.model().dataChanged.emit(index.parent().parent(), index)
         self.plugin.setLoading(False)
         return addedData
     
