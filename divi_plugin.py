@@ -90,6 +90,9 @@ class DiviPlugin(QObject):
         self.ids_map = {}
         self.loading = False
         self.cache = {}
+        
+        self.toolbar = self.iface.addToolBar(self.tr(u'DIVI Toolbar'))
+        self.toolbar.setObjectName('DIVI')
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -174,7 +177,7 @@ class DiviPlugin(QObject):
             action.setWhatsThis(whats_this)
 
         if add_to_toolbar:
-            self.iface.addWebToolBarIcon(action)
+            self.toolbar.addAction(action)
 
         if add_to_menu:
             self.iface.addPluginToWebMenu(
@@ -226,9 +229,9 @@ class DiviPlugin(QObject):
             self.iface.removePluginWebMenu(
                 self.tr(u'&DIVI QGIS Plugin'),
                 action)
-            # remove icon from toolbar
-            self.iface.removeWebToolBarIcon(action)
         self.iface.removeDockWidget(self.dockwidget)
+        
+        del self.toolbar
 
     #--------------------------------------------------------------------------
     
