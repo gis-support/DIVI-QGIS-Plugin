@@ -24,10 +24,11 @@
 import os
 from functools import partial
 
-from PyQt4 import QtGui, uic
+from PyQt4 import uic
 from PyQt4.QtCore import pyqtSignal, QSettings, Qt, QRegExp
 from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis,\
     QgsApplication, QgsRasterLayer
+from PyQt4.QtGui import QDockWidget, QInputDialog, QMenu, QToolButton
 from qgis.gui import QgsMessageBar, QgsFilterLineEdit
 from ..utils.connector import DiviConnector
 from ..utils.model import DiviModel, DiviProxyModel, LayerItem, TableItem, \
@@ -38,7 +39,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'dockwidget.ui'))
 
 
-class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
+class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
 
@@ -67,8 +68,9 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         #Signals
         self.btnConnect.clicked.connect(self.diviConnection)
         self.eSearch.textChanged.connect(self.searchData)
-        self.tvData.doubleClicked.connect(self.addLayer)
+        self.tvData.activated.connect(self.addLayer)
         self.tvData.customContextMenuRequested.connect(self.showMenu)
+        self.tvData.selectionModel().currentChanged.connect(self.treeSelectionChanged)
         QgsMapLayerRegistry.instance().layersWillBeRemoved.connect( self.layersRemoved )
     
     def initGui(self):
@@ -76,6 +78,14 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.eSearch.setObjectName(u"eSearch")
         self.eSearch.setPlaceholderText(self.tr("Search..."))
         self.editLayout.addWidget(self.eSearch)
+        #Toolbar
+        self.btnAddLayer.setIcon( QgsApplication.getThemeIcon('/mActionAddMap.png') )
+        menu = QMenu()
+        menu.aboutToShow.connect(self.addMenuShow)
+        self.btnAddLayer.setMenu(menu)
+        self.btnAddLayer.clicked.connect( self.addItems )
+        self.btnRefresh.clicked.connect(lambda checked: self.refreshItems( self.tvData.selectedIndexes()[0] ))
+        self.btnRefresh.setIcon( QgsApplication.getThemeIcon('/mActionDraw.svg') )
     
     def getConnector(self, auto_login=True):
         connector = DiviConnector(iface=self.iface, auto_login=auto_login)
@@ -110,12 +120,12 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     
     def setLogginStatus(self, logged):
         if logged:
-            self.lblStatus.setText(self.tr('Logged: %s') % self.user)
+            self.setWindowTitle( 'DIVI QGIS Plugin - %s' % self.user )
             self.btnConnect.setText(self.tr('Disconnect'))
             self.btnConnect.setChecked(True)
         else:
             self.tvData.model().sourceModel().removeAll()
-            self.lblStatus.setText(self.tr('Not logged'))
+            self.setWindowTitle( 'DIVI QGIS Plugin' )
             self.btnConnect.setText(self.tr('Connect'))
             self.btnConnect.setChecked(False)
             self.token = None
@@ -147,7 +157,45 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     
     #SLOTS
     
-    def addLayer(self, index):
+    def addMenuShow(self):
+        menu = self.sender()
+        menu.clear()
+        indexes = self.tvData.selectedIndexes()
+        if not indexes:
+            return
+        item = indexes[0].data(Qt.UserRole)
+        add_text = self.tr('Add layer') if isinstance(item, LayerItem) else self.tr(u'Add all layers from project')
+        add = menu.addAction(QgsApplication.getThemeIcon('/mActionAddMap.png'), add_text, lambda: self.addLayer(indexes[0]))
+        f = add.font()
+        f.setBold(True)
+        add.setFont(f)
+        if not isinstance(item, VectorItem):
+            return
+        sep = menu.addSeparator()
+        sep.setText(self.tr('Add as...'))
+        sep.setEnabled(False)
+        load_layer_as = partial(self.plugin.loadLayerType, item=item)
+        menu.addAction(QgsApplication.getThemeIcon('/mIconPointLayer.svg'), self.tr('Points'), lambda: load_layer_as(geom_type='MultiPoint'))
+        menu.addAction(QgsApplication.getThemeIcon('/mIconLineLayer.svg'), self.tr('Linestring'), lambda: load_layer_as(geom_type='MultiLineString'))
+        menu.addAction(QgsApplication.getThemeIcon('/mIconPolygonLayer.svg'), self.tr('Polygons'), lambda: load_layer_as(geom_type='MultiPolygon'))
+    
+    def treeSelectionChanged(self, new, old):
+        item = new.data(Qt.UserRole)
+        self.btnAddLayer.setEnabled( isinstance(item, (LayerItem, ProjectItem)) )
+        self.btnRefresh.setEnabled(  not isinstance(item, LayerItem) )
+    
+    def addItems(self):
+        indexes = self.tvData.selectedIndexes()
+        if not indexes:
+            return
+        index = indexes[0]
+        item = index.data(Qt.UserRole)
+        if isinstance(item, LayerItem):
+            self.addLayer(index)
+        elif isinstance(item, ProjectItem):
+            self.addProjectData(index)
+    
+    def addLayer(self, index, old=None):
         if not self.plugin.setLoading(True):
             return
         item = index.data(role=Qt.UserRole)
@@ -228,7 +276,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     def showMenu(self, point):
         index = self.tvData.indexAt(point)
         item = index.data(role=Qt.UserRole)
-        menu = QtGui.QMenu(self)
+        menu = QMenu(self)
         if isinstance(item, LayerItem):
             #Layer menu
             if isinstance(item, TableItem):
@@ -277,7 +325,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     
     def editLayerName(self, index):
         item = index.data(role=Qt.UserRole)
-        name, status = QtGui.QInputDialog.getText(self, self.tr('Change name'),
+        name, status = QInputDialog.getText(self, self.tr('Change name'),
             self.tr('Enter new layer name for %s') % item.name,
             text = item.name)
         if status and name != item.name:
@@ -318,6 +366,8 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     def refreshItems(self, index):
         index = self.tvData.model().mapToSource(index)
         item = index.data( role=Qt.UserRole )
+        if isinstance(item, LayerItem):
+            return
         connector = self.getConnector()
         model = self.tvData.model().sourceModel()
         self.unregisterLayers(item)
