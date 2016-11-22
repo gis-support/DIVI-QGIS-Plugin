@@ -23,7 +23,8 @@
 
 from PyQt4.QtCore import QObject, QAbstractItemModel, Qt, QModelIndex, SIGNAL
 from PyQt4.QtGui import QIcon, QFont, QSortFilterProxyModel
-from qgis.core import QgsMessageLog
+from qgis.core import QgsMessageLog, QgsDataSourceURI
+from ..utils.connector import DiviConnector
 import locale
 
 class TreeItem(QObject):
@@ -164,6 +165,10 @@ class RasterItem(LayerItem):
     
     def identifier(self):
         return 'raster@%s' % self.id
+    
+    def getUri(self, token):
+        uri = 'url=%s/tiles/%s/%s/{z}/{x}/{y}.png?token=%s' % (DiviConnector.DIVI_HOST, self.parent().id, self.id, token)
+        return '%s&type=xyz&zmax=20' %  str(QgsDataSourceURI(uri).encodedUri())
 
 class DiviModel(QAbstractItemModel):
     

@@ -23,9 +23,10 @@
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt,\
     QVariant, QObject, QPyNullVariant, QDateTime
 from PyQt4.QtGui import QAction, QIcon
+from PyQt4.QtXml import QDomDocument, QDomElement
 from qgis.core import QgsProject, QGis, QgsVectorLayer, QgsMessageLog,\
     QgsMapLayerRegistry, QgsField, QgsFeature, QgsGeometry, QgsFeatureRequest,\
-    QgsApplication
+    QgsApplication, QgsRasterLayer
 # Initialize Qt resources from file resources.py
 import resources
 
@@ -256,7 +257,7 @@ class DiviPlugin(QObject):
         if divi_id is None or not self.setLoading(True):
             return
         layer_meta = None
-        if divi_id is not None:
+        if divi_id is not None and not isinstance(mapLayer, QgsRasterLayer):
             self.msgBar = ProgressMessageBar(self.iface, self.tr(u"Downloading layer '%s'...")%mapLayer.name(), 5, 5)
             connector = DiviConnector()
             connector.downloadingProgress.connect(self.updateDownloadProgress)
@@ -420,33 +421,35 @@ class DiviPlugin(QObject):
         return result
     
     def registerLayer(self, layer, layerid, features, permissions, addToMap, fields=[]):
-        layer.dataProvider().addFeatures(features)
         layer.setCustomProperty('DiviId', layerid)
-        if int(QSettings().value('divi/status', 3)) > 2:
-            layer.setReadOnly( not bool(permissions.get(layerid, False)) )
-        if not layer.isReadOnly():
-            layer.beforeCommitChanges.connect(self.onLayerCommit)
-            layer.committedFeaturesAdded.connect(self.onFeaturesAdded)
-            layer.editingStarted.connect(self.onStartEditing )
-            layer.editingStopped.connect(self.onStopEditing)
-        for i, field in enumerate(fields):
-            layer.addAttributeAlias(i, field['name'])
-            if field['type'] == 'dropdown':
-                layer.setEditorWidgetV2(i, 'ValueMap')
-                layer.setEditorWidgetV2Config(i, { value:value for value in field['valuelist'].split(',') })
-            elif field['type'] == 'calendar':
-                layer.setEditorWidgetV2(i, 'DateTime')
-                layer.setEditorWidgetV2Config(i, 
-                    {u'display_format': u'yyyy-MM-dd HH:mm:ss',
-                    u'allow_null': True,
-                    u'field_format': u'yyyy-MM-dd HH:mm:ss',
-                    u'calendar_popup': True} )
+        if isinstance(layer, QgsVectorLayer):
+            #Only vector layers
+            layer.dataProvider().addFeatures(features)
+            if int(QSettings().value('divi/status', 3)) > 2:
+                layer.setReadOnly( not bool(permissions.get(layerid, False)) )
+            if not layer.isReadOnly():
+                layer.beforeCommitChanges.connect(self.onLayerCommit)
+                layer.committedFeaturesAdded.connect(self.onFeaturesAdded)
+                layer.editingStarted.connect(self.onStartEditing )
+                layer.editingStopped.connect(self.onStopEditing)
+            for i, field in enumerate(fields):
+                layer.addAttributeAlias(i, field['name'])
+                if field['type'] == 'dropdown':
+                    layer.setEditorWidgetV2(i, 'ValueMap')
+                    layer.setEditorWidgetV2Config(i, { value:value for value in field['valuelist'].split(',') })
+                elif field['type'] == 'calendar':
+                    layer.setEditorWidgetV2(i, 'DateTime')
+                    layer.setEditorWidgetV2Config(i, 
+                        {u'display_format': u'yyyy-MM-dd HH:mm:ss',
+                        u'allow_null': True,
+                        u'field_format': u'yyyy-MM-dd HH:mm:ss',
+                        u'calendar_popup': True} )
         if addToMap:
             QgsMapLayerRegistry.instance().addMapLayer(layer)
         return layer
     
     def unregisterLayer(self, layer):
-        if not layer.isReadOnly():
+        if isinstance(layer, QgsVectorLayer) and not layer.isReadOnly():
             layer.beforeCommitChanges.disconnect(self.onLayerCommit)
             layer.committedFeaturesAdded.disconnect(self.onFeaturesAdded)
             layer.editingStarted.disconnect(self.onStartEditing)
@@ -460,7 +463,7 @@ class DiviPlugin(QObject):
         editBuffer = layer.editBuffer()
         #TODO: po restarcie wtyczki ids_map może być nieznane
         ids_map = self.ids_map[layerid]
-        item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'vector'
+        item_type = self.getItemType(layer)
         item = self.dockwidget.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
         connector = DiviConnector()
         #Added/removed fields
@@ -527,7 +530,7 @@ class DiviPlugin(QObject):
         layer = QgsMapLayerRegistry.instance().mapLayer(layerid)
         QgsMessageLog.logMessage(self.tr('Saving features to layer %s') % layer.name(), 'DIVI')
         divi_id = layer.customProperty('DiviId')
-        item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'vector'
+        item_type = self.getItemType(layer)
         item = self.dockwidget.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
         connector = DiviConnector()
         if item_type=='vector':
@@ -650,6 +653,35 @@ class DiviPlugin(QObject):
                 key = fields_mapper[key]
             new_attributes[key] = self.fix_value(value)
         return new_attributes
+    
+    def updateRasterToken(self, layer, uri):
+        """ http://gis.stackexchange.com/questions/62610/changing-data-source-of-layer-in-qgis """
+        XMLDocument = QDomDocument("style")
+        XMLMapLayers = QDomElement()
+        XMLMapLayers = XMLDocument.createElement("maplayers")
+        XMLMapLayer = QDomElement()
+        XMLMapLayer = XMLDocument.createElement("maplayer")
+        layer.writeLayerXML(XMLMapLayer,XMLDocument)
+
+        # modify DOM element with new layer reference
+        XMLMapLayer.firstChildElement("datasource").firstChild().setNodeValue( uri )
+        XMLMapLayers.appendChild(XMLMapLayer)
+        XMLDocument.appendChild(XMLMapLayers)
+
+        # reload layer definition
+        layer.readLayerXML(XMLMapLayer)
+        layer.reload()
+
+        # apply to canvas and legend
+        self.iface.actionDraw().trigger()
+        self.iface.legendInterface().refreshLayerSymbology(layer)
+    
+    @staticmethod
+    def getItemType(layer):
+        if isinstance(layer, QgsRasterLayer):
+            return 'raster'
+        else:
+            return 'table' if layer.geometryType()==QGis.NoGeometry else 'vector'
     
     @staticmethod
     def fix_value(value):

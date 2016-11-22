@@ -27,7 +27,7 @@ from functools import partial
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import pyqtSignal, QSettings, Qt, QRegExp
 from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis,\
-    QgsApplication
+    QgsApplication, QgsRasterLayer
 from qgis.gui import QgsMessageBar, QgsFilterLineEdit
 from ..utils.connector import DiviConnector
 from ..utils.model import DiviModel, DiviProxyModel, LayerItem, TableItem, \
@@ -130,14 +130,17 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
         model = self.tvData.model().sourceModel()
         for layer in layers:
             divi_id = layer.customProperty('DiviId')
-            item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'vector'
+            item_type = self.plugin.getItemType(layer)
             layerIndex = model.findItem(divi_id, item_type, True)
             if layerIndex is not None:
                 layerItem = layerIndex.data(role=Qt.UserRole)
                 if layer not in layerItem.items:
-                    self.plugin.registerLayer(layer, divi_id, [], {}, False, layerItem.fields)
+                    fields = [] if isinstance(layer, QgsRasterLayer) else layerItem.fields
+                    self.plugin.registerLayer(layer, divi_id, [], {}, False, fields)
                     layerItem.items.append(layer)
                     model.dataChanged.emit(layerIndex, layerIndex)
+                    if isinstance(layer, QgsRasterLayer):
+                        self.plugin.updateRasterToken( layer, layerItem.getUri(self.token) )
     
     #SLOTS
     
@@ -146,7 +149,6 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             return
         item = index.data(role=Qt.UserRole)
         addedData = []
-        #TODO: Add loading rasters
         if isinstance(item, VectorItem):
             self.plugin.msgBar = ProgressMessageBar(self.iface, self.tr("Downloading layer '%s'...")%item.name)
             self.plugin.msgBar.setValue(10)
@@ -182,6 +184,21 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 self.plugin.msgBar.setValue(100)
                 self.plugin.msgBar.close()
                 self.plugin.msgBar = None
+        elif isinstance(item, RasterItem):
+            if QGis.QGIS_VERSION_INT < 21800:
+                self.iface.messageBar().pushMessage('DIVI',
+                    self.tr(u'QGIS 2.18 or later is required for loading DIVI rasters.'),
+                    QgsMessageBar.CRITICAL,
+                    duration = 3
+                )
+            else:
+                uri = item.getUri(self.token)
+                QgsMessageLog.logMessage( uri, 'DIVI')
+                r = QgsRasterLayer(uri, item.name, 'wms')
+                r.setCustomProperty('DiviId', item.id)
+                addedData.append( r )
+                item.items.extend( addedData )
+                QgsMapLayerRegistry.instance().addMapLayer(r)
         else:
             return
         index.model().dataChanged.emit(index.parent().parent(), index)
@@ -238,7 +255,7 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
             if divi_id is None:
                 continue
             QgsMessageLog.logMessage(self.tr('Removing layer %s')%layer.name(), 'DIVI')
-            item_type = 'table' if layer.geometryType()==QGis.NoGeometry else 'vector'
+            item_type = self.plugin.getItemType(layer)
             layerIndex = model.findItem(divi_id, item_type, True)
             if layerIndex is None:
                 continue

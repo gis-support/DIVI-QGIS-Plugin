@@ -199,7 +199,7 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         content = self.connector.sendRaster(data, self.eLayerName.text(), project.id, layer.crs().postgisSrid() )
         result = content
         #Refresh list
-        self.plugin.dockwidget.tvData.model().sourceModel().addProjectLayers(
+        self.plugin.dockwidget.tvData.model().sourceModel().addProjectItems(
             project,
             [ self.connector.diviGetLayer( result['inserted'] ) ]
         )
