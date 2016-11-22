@@ -88,18 +88,21 @@ class DiviPluginDockWidget(QtGui.QDockWidget, FORM_CLASS):
     
     def diviConnection(self, checked, auto_login=True):
         model = self.tvData.model().sourceModel()
+        connector = self.getConnector(auto_login)
         if checked:
             #Connect
             model.showLoading()
-            connector = self.getConnector(auto_login)
             data = connector.diviFeatchData()
             if data is not None:
                 model.addData( *data )
                 self.setLogginStatus(True)
                 self.getLoadedDiviLayers()
-                return
             else:
                 model.removeAll()
+            return
+        else:
+            #Disconnect
+            connector.diviLogout()
         QSettings().remove('divi/token')
         QSettings().remove('divi/id')
         QSettings().remove('divi/status')

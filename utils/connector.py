@@ -161,6 +161,10 @@ class DiviConnector(QObject):
         self.diviLogged.emit(email, self.token)
         return self.token
     
+    def diviLogout(self):
+        self.sendGetRequest('/signout', {'token':self.token})
+        QgsMessageLog.logMessage('Disconnected', 'DIVI')
+    
     #Fetching data from server
     
     def diviFeatchData(self):
