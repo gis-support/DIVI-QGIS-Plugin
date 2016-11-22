@@ -206,18 +206,26 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             connector = self.getConnector()
             connector.downloadingProgress.connect(self.plugin.updateDownloadProgress)
             data = connector.diviGetLayerFeatures(item.id)
+            layers = []
             if data:
                 permissions = connector.getUserPermission(item.id, 'layer')
                 self.plugin.msgBar.setBoundries(50, 50)
-                addedData.extend( self.plugin.addLayer(data['features'], item, permissions) )
+                layers = self.plugin.addLayer(data['features'], item, permissions)
+                addedData.extend( layers )
                 item.items.extend( addedData )
             self.plugin.msgBar.setValue(100)
             self.plugin.msgBar.close()
             self.plugin.msgBar = None
+            if not layers:
+                self.iface.messageBar().pushMessage('Warning',
+                    self.tr(u"Layer '%s' is empty. To open it in QGIS you need to select geometry type.") % item.name,
+                    QgsMessageBar.WARNING,
+                    duration = 5
+                )
         elif isinstance(item, TableItem):
             if QGis.QGIS_VERSION_INT < 21400:
                 self.iface.messageBar().pushMessage('DIVI',
-                    self.tr(u'QGIS 2.14 or later is required for loading DIVI tables.').
+                    self.tr(u'QGIS 2.14 or later is required for loading DIVI tables.'),
                     QgsMessageBar.CRITICAL,
                     duration = 3
                 )
