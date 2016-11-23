@@ -31,8 +31,10 @@ from qgis.core import QgsProject, QGis, QgsVectorLayer, QgsMessageLog,\
 import resources
 
 # Import the code for the DockWidget
+from dialogs.activities_dock import DiviPluginActivitiesPanel
 from dialogs.dockwidget import DiviPluginDockWidget
 from dialogs.import_dialog import DiviPluginImportDialog
+from tools.identifyTool import DiviIdentifyTool
 import os.path
 from functools import partial
 from base64 import b64decode
@@ -121,7 +123,8 @@ class DiviPlugin(QObject):
         add_to_toolbar=True,
         status_tip=None,
         whats_this=None,
-        parent=None):
+        parent=None,
+        checkable=True):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -169,6 +172,7 @@ class DiviPlugin(QObject):
         if callback is not None:
             action.triggered.connect(callback)
         action.setEnabled(enabled_flag)
+        action.setCheckable(checkable)
 
         if status_tip is not None:
             action.setStatusTip(status_tip)
@@ -196,6 +200,7 @@ class DiviPlugin(QObject):
         
         icon_path = ':/plugins/DiviPlugin/images/icon.png'
         self.dockwidget = DiviPluginDockWidget(self)
+        self.activities_dock = DiviPluginActivitiesPanel(self)
         
         self.add_action(
             icon_path,
@@ -204,12 +209,29 @@ class DiviPlugin(QObject):
             parent=self.iface.mainWindow())
         
         self.add_action(
+            icon_path,
+            text=self.tr(u'DIVI activities panel'),
+            action = self.activities_dock.toggleViewAction(),
+            parent=self.iface.mainWindow())
+        
+        self.identifyTool = DiviIdentifyTool(self)
+        self.identifyAction = self.add_action(
+            QgsApplication.getThemeIcon('mActionSelect.svg'),
+            self.tr('Get activities'),
+            callback = self.identifyTool.toggleMapTool,
+            parent=self.iface.mainWindow() )
+        self.identifyTool.setAction( self.identifyAction )
+        self.identifyTool.on_feature.connect( self.activities_dock.tvActivities.model().sourceModel().setCurrentFeature )
+        self.identifyTool.on_activities.connect( self.activities_dock.tvActivities.model().sourceModel().addActivities )
+        
+        self.add_action(
             QgsApplication.getThemeIcon('/mActionSharingImport.svg'),
             text=self.tr(u'Upload layer'),
             callback = self.importDialog,
             parent=self.iface.mainWindow())
         
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
+        self.iface.addDockWidget(Qt.RightDockWidgetArea, self.activities_dock)
 
     #--------------------------------------------------------------------------
     
@@ -230,6 +252,7 @@ class DiviPlugin(QObject):
                 self.tr(u'&DIVI QGIS Plugin'),
                 action)
         self.iface.removeDockWidget(self.dockwidget)
+        self.iface.removeDockWidget(self.activities_dock)
         
         del self.toolbar
 

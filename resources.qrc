@@ -14,4 +14,22 @@
     <qresource prefix="/plugins/DiviPlugin" >
         <file>images/raster.png</file>
     </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/attachments.png</file>
+    </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/attachment_add.png</file>
+    </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/attachment_remove.png</file>
+    </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/attachment_download.png</file>
+    </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/comments.png</file>
+    </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/comment_add.png</file>
+    </qresource>
 </RCC>
