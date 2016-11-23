@@ -639,7 +639,7 @@ class DiviPlugin(QObject):
             self.dlg.show()
         else:
             self.iface.messageBar().pushMessage('DIVI',
-                self.trUtf8('No vector layers.'),
+                self.tr('No vector layers.'),
                 self.iface.messageBar().CRITICAL,
                 duration = 3
             )

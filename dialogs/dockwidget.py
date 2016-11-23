@@ -107,12 +107,14 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                 model.addData( *data )
                 self.setLogginStatus(True)
                 self.getLoadedDiviLayers()
+                return
             else:
                 model.removeAll()
-            return
         else:
             #Disconnect
             connector.diviLogout()
+            self.btnAddLayer.setEnabled(False)
+            self.btnRefresh.setEnabled(False)
         QSettings().remove('divi/token')
         QSettings().remove('divi/id')
         QSettings().remove('divi/status')
