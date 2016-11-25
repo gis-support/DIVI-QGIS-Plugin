@@ -130,6 +130,10 @@ class CommentItem(BaseActivityItem):
         self.displayDate = self.date.strftime('%Y-%m-%d %H:%M:%S')
     
     @property
+    def tooltip(self):
+        return self.comment
+    
+    @property
     def name(self):
         return u'<b>{}</b><br/><i>{}</i><br/>{}'.format( self.user, self.displayDate, self.comment )
 
