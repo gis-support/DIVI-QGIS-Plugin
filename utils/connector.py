@@ -303,6 +303,29 @@ class DiviConnector(QObject):
     def getFiles(self, featureid):
         return self.sendGetRequest('/download_files', {'token':self.token, 'ids':str([featureid])}, as_unicode=False)
     
+    def addComment(self, featureid, text):
+        return self.getJson(
+            self.sendPostRequest('/comments/%s'%featureid, {'content': text}, params={'token':self.token})
+        )
+    
+    def sendAttachments(self, featureid, files):
+        multi_part = QHttpMultiPart(QHttpMultiPart.FormDataType)
+        for fileName, fileData in files.iteritems():
+            file_part = QHttpPart()
+            file_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="filedata"; filename="%s"' % fileName)
+            file_part.setHeader(QNetworkRequest.ContentTypeHeader, "application/octet-stream")
+            file_part.setBody(fileData)
+            multi_part.append(file_part)
+        content = self.sendRequest( '/upload/%s' % featureid, {'token':self.token},
+            'post',
+            multi_part,
+            {"User-Agent":"Divi QGIS Plugin"}
+        )
+        return json.loads(content)
+    
+    def removeAttachment(self, featureid, fileName):
+        return self.getJson( self.sendDeleteRequest('/files/%s/%s'%(featureid, fileName), params={'token':self.token}) )
+    
     #Edit data
     
     def addNewFeatures(self, layerid, data, transaction):

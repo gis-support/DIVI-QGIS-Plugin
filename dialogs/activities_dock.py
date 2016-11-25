@@ -23,10 +23,13 @@
 
 from PyQt4 import uic
 from PyQt4.QtCore import Qt, QSettings
-from PyQt4.QtGui import QDockWidget, QIcon, QFileDialog
+from PyQt4.QtGui import QDockWidget, QIcon, QFileDialog, QInputDialog, \
+    QMessageBox, QMenu
 import os.path as op
 from ..models.ActivitiesModel import ActivitiesModel, ActivitiesProxyModel, \
     AttachmentItem
+from ..utils.files import readFile
+import os.path as op
 
 FORM_CLASS, _ = uic.loadUiType(op.join(
     op.dirname(__file__), 'activities_dock.ui'))
@@ -52,10 +55,16 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
         self.btnRemoveAttachment.setIcon( QIcon(':/plugins/DiviPlugin/images/attachment_remove.png') )
         self.btnDownloadAttachment.setIcon( QIcon(':/plugins/DiviPlugin/images/attachment_download.png') )
         self.btnAddComment.setIcon( QIcon(':/plugins/DiviPlugin/images/comment_add.png') )
+        menu = QMenu()
+        menu.aboutToShow.connect(self.downloadMenuShow)
+        self.btnDownloadAttachment.setMenu(menu)
         #Signals
         self.tvActivities.activated.connect( self.itemActivated )
         self.tvActivities.selectionModel().currentChanged.connect(self.treeSelectionChanged)
         self.btnDownloadAttachment.clicked.connect( self.downloadFiles )
+        self.btnAddAttachment.clicked.connect( self.addAttachment )
+        self.btnRemoveAttachment.clicked.connect( self.removeAttachment )
+        self.btnAddComment.clicked.connect( self.addComment )
     
     def itemActivated(self, index):
         item = index.data(Qt.UserRole)
@@ -65,6 +74,18 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
     def treeSelectionChanged(self, new, old):
         item = new.data(Qt.UserRole)
         self.btnRemoveAttachment.setEnabled( isinstance(item, AttachmentItem) )
+    
+    def downloadMenuShow(self):
+        menu = self.sender()
+        menu.clear()
+        parent_item = self.tvActivities.model().sourceModel().findItem('attachments')
+        if not parent_item.childCount():
+            menu.addAction( self.tr('No attachments') ).setEnabled( False )
+            return
+        menu.addAction( self.tr('Download all'), lambda: self.saveFile( 'attachments.zip', True ) )
+        menu.addSeparator()
+        for child in parent_item.childItems:
+            action = menu.addAction( child.icon, child.name, lambda: self.saveFile( self.sender().text() ) )
     
     def downloadFiles(self):
         indexes = self.tvActivities.selectedIndexes()
@@ -93,3 +114,40 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
             fileData = connector.getFile( featureid, fileName )
         with open(filePath, 'wb') as f:
                 f.write(fileData)
+
+    def addAttachment(self):
+        settings = QSettings()
+        defaultDir = settings.value('divi/last_dir', '')
+        files = QFileDialog.getOpenFileNames(self, self.tr('Select attachment(s)'), defaultDir)
+        to_send = { op.basename(f):readFile(f) for f in files }
+        connector = self.plugin.dockwidget.getConnector()
+        fid = self.tvActivities.model().sourceModel().currentFeature
+        connector.sendAttachments( fid, to_send )
+        attachments = connector.getAttachments( str(fid) )
+        self.plugin.identifyTool.on_activities.emit( {'attachments':attachments.get('data', [])} )
+    
+    def removeAttachment(self):
+        indexes = self.tvActivities.selectedIndexes()
+        if not indexes:
+            return
+        item = indexes[0].data(Qt.UserRole)
+        if not isinstance(item, AttachmentItem):
+            return
+        result = QMessageBox.question(self, 'DIVI QGIS Plugin', self.tr("Remove attachment '%s'?")%item.name, 
+            QMessageBox.Yes | QMessageBox.No)
+        if result == QMessageBox.No:
+            return
+        fid = self.tvActivities.model().sourceModel().currentFeature
+        connector = self.plugin.dockwidget.getConnector()
+        connector.removeAttachment( fid, item.name )
+        attachments = connector.getAttachments( str(fid) )
+        self.plugin.identifyTool.on_activities.emit( {'attachments':attachments.get('data', [])} )
+    
+    def addComment(self):
+        text, _ = QInputDialog.getText(self, 'DIVI QGIS Plugin', self.tr('Add new comment'))
+        if not text:
+            return
+        connector = self.plugin.dockwidget.getConnector()
+        fid = self.tvActivities.model().sourceModel().currentFeature
+        comments = connector.getComments( str(fid) )
+        self.plugin.identifyTool.on_activities.emit( {'comments':comments.get('data', [])} )

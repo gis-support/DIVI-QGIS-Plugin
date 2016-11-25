@@ -26,10 +26,11 @@ import json
 import tempfile
 
 from PyQt4 import QtGui, uic
-from PyQt4.QtCore import QSettings, Qt, QFile, QIODevice
+from PyQt4.QtCore import QSettings, Qt
 from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorFileWriter,\
     QgsCoordinateReferenceSystem, QgsVectorLayer, QgsRasterFileWriter, QGis
 from ..utils.connector import DiviConnector
+from ..utils.files import readFile
 from ..utils.widgets import ProgressMessageBar, DiviJsonEncoder
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -144,7 +145,7 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         out_file = os.path.join(tempfile.gettempdir(), '%s.sqlite' % layer.name() )
         QgsVectorFileWriter.writeAsVectorFormat(layer, out_file,
             'UTF-8', QgsCoordinateReferenceSystem(4326), 'SpatiaLite')
-        data = self.readFile( out_file, True )
+        data = readFile( out_file, True )
         self.msgBar.setBoundries(30, 30)
         self.msgBar.setValue(30)
         project = self.cmbProjects.itemData(self.cmbProjects.currentIndex())
@@ -181,7 +182,7 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         """ Upload raster layers """
         if 'geotiff' in layer.metadata().lower() and os.path.exists(layer.source()):
             #If source file is GeoTIFF than we can send it directly
-            data = self.readFile( layer.source() )
+            data = readFile( layer.source() )
         else:
             #Copy raster to GeoTIFF
             #Show raster copy progress
@@ -192,7 +193,7 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
             writer.writeRaster( layer.pipe(), layer.width(), layer.height(), layer.dataProvider().extent(), layer.crs(), progress )
             del writer
             del progress
-            data = self.readFile( out_file, True )
+            data = readFile( out_file, True )
         self.msgBar.setBoundries(60, 35)
         self.msgBar.setValue(60)
         project = self.cmbProjects.itemData(self.cmbProjects.currentIndex())
@@ -203,13 +204,3 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
             project,
             [ self.connector.diviGetLayer( result['inserted'] ) ]
         )
-    
-    @staticmethod
-    def readFile(path, delete_after=False):
-        data_file = QFile( path )
-        data_file.open(QIODevice.ReadOnly)
-        data = data_file.readAll()
-        data_file.close()
-        if delete_after:
-            os.remove( path )
-        return data

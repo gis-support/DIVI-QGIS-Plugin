@@ -26,6 +26,7 @@ from PyQt4.QtCore import QObject, QAbstractItemModel, Qt, QModelIndex, SIGNAL, \
 from PyQt4.QtGui import QSortFilterProxyModel, QIcon, QFileIconProvider
 import os.path as op
 from tempfile import NamedTemporaryFile
+from datetime import datetime
 
 ICONS_CACHE = {}
 
@@ -106,6 +107,7 @@ class AttachmentItem(BaseActivityItem):
         super(AttachmentItem, self).__init__(self, parent)
         self.name = attachment['url']
         self.getIcon()
+        self.tooltip = self.tr('<b>Added by:</b> {username}<br/><b>Time:</b> {posted_at}').format( **attachment )
     
     def getIcon(self):
         ext = op.splitext(self.name)[-1]
@@ -118,7 +120,14 @@ class CommentItem(BaseActivityItem):
     
     def __init__(self, comment, parent):
         super(CommentItem, self).__init__(self, parent)
-        self.name = comment['content']
+        self.comment = comment['content']
+        self.user = comment['id_users']
+        self.date = datetime.utcfromtimestamp( comment['posted_at'] )
+        #({:%Y-%m-%d %H:%M:%S})
+    
+    @property
+    def name(self):
+        return '{}: {}'.format( self.user, self.comment )
 
 class ActivitiesModel(QAbstractItemModel):
     
@@ -142,6 +151,8 @@ class ActivitiesModel(QAbstractItemModel):
             return item.text()
         elif role == Qt.DecorationRole and hasattr(item, 'icon'):
             return item.icon
+        elif role == Qt.ToolTipRole and hasattr(item, 'tooltip'):
+            return item.tooltip
         elif role == Qt.UserRole:
             #Return item itself
             return item
@@ -192,13 +203,15 @@ class ActivitiesModel(QAbstractItemModel):
     
     def addActivities(self, data):
         #Add attachments
-        attachments = data.get('attachments')
-        attachment_index = self.findItem('attachments', as_model=True)
-        self.addItems(attachment_index, attachments, AttachmentItem)
+        if 'attachments' in data:
+            attachments = data['attachments']
+            attachment_index = self.findItem('attachments', as_model=True)
+            self.addItems(attachment_index, attachments, AttachmentItem)
         #Add comments
-        comments = data.get('comments')
-        comment_index = self.findItem('comments', as_model=True)
-        self.addItems(comment_index, comments, CommentItem)
+        if 'comments' in data:
+            comments = data['comments']
+            comment_index = self.findItem('comments', as_model=True)
+            self.addItems(comment_index, comments, CommentItem)
     
     def addItems(self, parent, data, model):
         parent_item = parent.data(Qt.UserRole)

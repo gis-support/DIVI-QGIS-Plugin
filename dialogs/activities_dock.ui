@@ -23,7 +23,7 @@
       <item>
        <widget class="QToolButton" name="btnAddAttachment">
         <property name="toolTip">
-         <string>Add attachment</string>
+         <string>Add attachment(s)</string>
         </property>
         <property name="text">
          <string/>
@@ -35,6 +35,9 @@
       </item>
       <item>
        <widget class="QToolButton" name="btnRemoveAttachment">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="toolTip">
          <string>Remove attachment</string>
         </property>
@@ -49,10 +52,13 @@
       <item>
        <widget class="QToolButton" name="btnDownloadAttachment">
         <property name="toolTip">
-         <string>Download attachment</string>
+         <string>Download attachment(s)</string>
         </property>
         <property name="text">
          <string/>
+        </property>
+        <property name="popupMode">
+         <enum>QToolButton::MenuButtonPopup</enum>
         </property>
         <property name="autoRaise">
          <bool>true</bool>
@@ -90,7 +96,7 @@
     <item>
      <widget class="QTreeView" name="tvActivities">
       <attribute name="headerVisible">
-       <bool>true</bool>
+       <bool>false</bool>
       </attribute>
      </widget>
     </item>
