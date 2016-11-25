@@ -27,7 +27,7 @@ from PyQt4.QtGui import QDockWidget, QIcon, QFileDialog, QInputDialog, \
     QMessageBox, QMenu
 import os.path as op
 from ..models.ActivitiesModel import ActivitiesModel, ActivitiesProxyModel, \
-    AttachmentItem
+    AttachmentItem, HTMLDelegate
 from ..utils.files import readFile
 import os.path as op
 
@@ -50,6 +50,7 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
         self.tvActivities.setModel( proxyModel )
         self.tvActivities.setSortingEnabled(True)
         self.tvActivities.expandAll()
+        self.tvActivities.setItemDelegate(HTMLDelegate())
         #Toolbar
         self.btnAddAttachment.setIcon( QIcon(':/plugins/DiviPlugin/images/attachment_add.png') )
         self.btnRemoveAttachment.setIcon( QIcon(':/plugins/DiviPlugin/images/attachment_remove.png') )
@@ -149,5 +150,6 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
             return
         connector = self.plugin.dockwidget.getConnector()
         fid = self.tvActivities.model().sourceModel().currentFeature
+        connector.addComment(fid, text)
         comments = connector.getComments( str(fid) )
         self.plugin.identifyTool.on_activities.emit( {'comments':comments.get('data', [])} )

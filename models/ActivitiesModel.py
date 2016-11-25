@@ -22,8 +22,10 @@
 """
 
 from PyQt4.QtCore import QObject, QAbstractItemModel, Qt, QModelIndex, SIGNAL, \
-    QFileInfo
-from PyQt4.QtGui import QSortFilterProxyModel, QIcon, QFileIconProvider
+    QFileInfo, QSize
+from PyQt4.QtGui import QSortFilterProxyModel, QIcon, QFileIconProvider, \
+    QStyledItemDelegate, QStyleOptionViewItemV4, QApplication, QTextDocument, \
+    QStyle, QAbstractTextDocumentLayout
 import os.path as op
 from tempfile import NamedTemporaryFile
 from datetime import datetime
@@ -118,16 +120,18 @@ class AttachmentItem(BaseActivityItem):
 
 class CommentItem(BaseActivityItem):
     
+    icon = QIcon(':/plugins/DiviPlugin/images/user.png')
+    
     def __init__(self, comment, parent):
         super(CommentItem, self).__init__(self, parent)
-        self.comment = comment['content']
+        self.comment = '<br/>'.join(comment['content'].splitlines())
         self.user = comment['id_users']
         self.date = datetime.utcfromtimestamp( comment['posted_at'] )
-        #({:%Y-%m-%d %H:%M:%S})
+        self.displayDate = self.date.strftime('%Y-%m-%d %H:%M:%S')
     
     @property
     def name(self):
-        return '{}: {}'.format( self.user, self.comment )
+        return u'<b>{}</b><br/><i>{}</i><br/>{}'.format( self.user, self.displayDate, self.comment )
 
 class ActivitiesModel(QAbstractItemModel):
     
@@ -243,3 +247,46 @@ class ActivitiesModel(QAbstractItemModel):
 
 class ActivitiesProxyModel(QSortFilterProxyModel):
     pass
+
+class HTMLDelegate(QStyledItemDelegate):
+    """ http://stackoverflow.com/a/5443112 """
+    def paint(self, painter, option, index):
+        options = QStyleOptionViewItemV4(option)
+        item = index.data(Qt.UserRole)
+        if isinstance(item, CommentItem):
+            options.decorationAlignment = Qt.AlignHCenter
+        self.initStyleOption(options,index)
+
+        if options.widget is None:
+            style = QApplication.style()
+        else:
+            style = options.widget.style()
+        
+        doc = QTextDocument()
+        doc.setHtml(options.text)
+        
+        options.text = ""
+        style.drawControl(QStyle.CE_ItemViewItem, options, painter)
+
+        ctx = QAbstractTextDocumentLayout.PaintContext()
+
+        # Highlighting text if item is selected
+        #if (optionV4.state & QStyle::State_Selected)
+            #ctx.palette.setColor(QPalette::Text, optionV4.palette.color(QPalette::Active, QPalette::HighlightedText))
+
+        textRect = style.subElementRect(QStyle.SE_ItemViewItemText, options)
+        painter.save()
+        painter.translate(textRect.topLeft())
+        painter.setClipRect(textRect.translated(-textRect.topLeft()))
+        doc.documentLayout().draw(painter, ctx)
+
+        painter.restore()
+
+    def sizeHint(self, option, index):
+        options = QStyleOptionViewItemV4(option)
+        self.initStyleOption(options,index)
+
+        doc = QTextDocument()
+        doc.setHtml(options.text)
+        doc.setTextWidth(options.rect.width())
+        return QSize(doc.idealWidth(), doc.size().height())
