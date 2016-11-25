@@ -22,7 +22,7 @@
 """
 
 from PyQt4 import uic
-from PyQt4.QtCore import Qt
+from PyQt4.QtCore import Qt, QSettings
 from PyQt4.QtGui import QDockWidget, QIcon, QFileDialog
 import os.path as op
 from ..models.ActivitiesModel import ActivitiesModel, ActivitiesProxyModel, \
@@ -54,17 +54,42 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
         self.btnAddComment.setIcon( QIcon(':/plugins/DiviPlugin/images/comment_add.png') )
         #Signals
         self.tvActivities.activated.connect( self.itemActivated )
-        #self.btnDownloadAttachment.clicked.connect( lambda: self.itemActivated() )
+        self.tvActivities.selectionModel().currentChanged.connect(self.treeSelectionChanged)
+        self.btnDownloadAttachment.clicked.connect( self.downloadFiles )
     
     def itemActivated(self, index):
         item = index.data(Qt.UserRole)
         if isinstance(item, AttachmentItem):
-            ext = op.splitext(item.name)[-1]
-            filePath = QFileDialog.getSaveFileName(self, self.tr('Save file to...'),
-                item.name, filter = '*%s' % ext)
-            if not filePath:
-                return
-            connector = self.plugin.dockwidget.getConnector()
-            fileData = connector.getFile( self.tvActivities.model().sourceModel().currentFeature, item.name )
-            with open(filePath, 'wb') as f:
+            self.saveFile( item.name )
+    
+    def treeSelectionChanged(self, new, old):
+        item = new.data(Qt.UserRole)
+        self.btnRemoveAttachment.setEnabled( isinstance(item, AttachmentItem) )
+    
+    def downloadFiles(self):
+        indexes = self.tvActivities.selectedIndexes()
+        if indexes:
+            index = indexes[0]
+            item = index.data(Qt.UserRole)
+            if isinstance(item, AttachmentItem):
+                return self.itemActivated(self, index)
+        self.saveFile( 'attachments.zip', True )
+    
+    def saveFile(self, fileName, allFiles=False):
+        ext = op.splitext(fileName)[-1]
+        settings = QSettings()
+        defaultDir = settings.value('divi/last_dir', '')
+        defaultPath = op.join(defaultDir, fileName)
+        filePath = QFileDialog.getSaveFileName(self, self.tr('Save file to...'),
+            defaultPath, filter = ext)
+        if not filePath:
+            return
+        settings.setValue('divi/last_dir', op.dirname(filePath))
+        connector = self.plugin.dockwidget.getConnector()
+        featureid = self.tvActivities.model().sourceModel().currentFeature
+        if allFiles:
+            fileData = connector.getFiles( featureid )
+        else:
+            fileData = connector.getFile( featureid, fileName )
+        with open(filePath, 'wb') as f:
                 f.write(fileData)

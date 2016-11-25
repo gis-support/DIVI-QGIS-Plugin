@@ -49,6 +49,8 @@ class DiviIdentifyTool(QgsMapToolIdentifyFeature):
         del self.connector
     
     def identifyFeature(self, feature):
+        if not self.parent.activities_dock.isVisible():
+            self.parent.activities_dock.show()
         fid = self.parent.ids_map[self.parent.iface.activeLayer().id()][feature.id()]
         attachments = self.connector.getAttachments( str(fid) )
         comments = self.connector.getComments( str(fid) )

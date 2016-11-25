@@ -44,7 +44,7 @@ class DiviConnector(QObject):
     
     #Sending requests to DIVI
     
-    def sendRequest(self, endpoint, params, method, data=None, headers={}):
+    def sendRequest(self, endpoint, params, method, data=None, headers={}, as_unicode=True):
         def send(params):
             url = self.formatUrl(endpoint, params)
             request = QNetworkRequest(url)
@@ -67,7 +67,7 @@ class DiviConnector(QObject):
         manager = QNetworkAccessManager()
         manager.sslErrors.connect(self._sslError)
         reply = send(params)
-        content = unicode(reply.readAll())
+        content = reply.readAll()
         status_code = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
         if reply.error() == QNetworkReply.ConnectionRefusedError:
             if self.iface is not None:
@@ -85,7 +85,7 @@ class DiviConnector(QObject):
             #Set new token
             params['token'] = result
             reply = send(params)
-            content = unicode(reply.readAll())
+            content = reply.readAll()
         elif status_code == 404:
             if self.iface is not None:
                 self.iface.messageBar().pushMessage(self.tr("Error"),
@@ -98,6 +98,8 @@ class DiviConnector(QObject):
                     self.tr("Error 423: requested resource is locked"),
                     level=QgsMessageBar.CRITICAL, duration=3)
             return
+        if as_unicode:
+            content = unicode(content)
         return content
     
     def sendPostRequest(self, endpoint, data, params={}, headers={}):
@@ -130,9 +132,10 @@ class DiviConnector(QObject):
         buff.close()
         return content
     
-    def sendGetRequest(self, endpoint, data):
+    def sendGetRequest(self, endpoint, data, as_unicode=True):
         return self.sendRequest(endpoint, data, 'get',
-                headers={"User-Agent":"Divi QGIS Plugin"}
+                headers={"User-Agent":"Divi QGIS Plugin"},
+                as_unicode = as_unicode
             )
     
     #Login
@@ -287,6 +290,18 @@ class DiviConnector(QObject):
         QgsMessageLog.logMessage('Stopping transaction %s' % transaction, 'DIVI')
         content = self.sendDeleteRequest('/transactions/%s/%s'%(data_type, transaction), params={'token':self.token})
         return self.getJson(content)
+    
+    def getAttachments(self, featureid):
+        return self.getJson(self.sendGetRequest('/files', {'token':self.token, 'feature':str(featureid)}))
+    
+    def getComments(self, featureid):
+        return self.getJson(self.sendGetRequest('/comments/%s' % featureid, {'token':self.token}))
+    
+    def getFile(self, featureid, fileName):
+        return self.sendGetRequest('/files/%s/%s' % (featureid, fileName), {'token':self.token}, as_unicode=False)
+    
+    def getFiles(self, featureid):
+        return self.sendGetRequest('/download_files', {'token':self.token, 'ids':str([featureid])}, as_unicode=False)
     
     #Edit data
     

@@ -112,8 +112,6 @@ class AttachmentItem(BaseActivityItem):
         if ext not in ICONS_CACHE:
             with NamedTemporaryFile(suffix=ext) as f:
                 ICONS_CACHE[ext] = QFileIconProvider().icon(QFileInfo(f.name))
-        else:
-            print 'hit cache', ext
         self.icon = ICONS_CACHE[ext]
 
 class CommentItem(BaseActivityItem):
