@@ -198,9 +198,11 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             self.addProjectData(index)
     
     def addLayer(self, index, old=None):
+        item = index.data(role=Qt.UserRole)
+        if not isinstance(item, LayerItem):
+            return
         if not self.plugin.setLoading(True):
             return
-        item = index.data(role=Qt.UserRole)
         addedData = []
         if isinstance(item, VectorItem):
             self.plugin.msgBar = ProgressMessageBar(self.iface, self.tr("Downloading layer '%s'...")%item.name)
