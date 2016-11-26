@@ -120,9 +120,13 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
         settings = QSettings()
         defaultDir = settings.value('divi/last_dir', '')
         files = QFileDialog.getOpenFileNames(self, self.tr('Select attachment(s)'), defaultDir)
+        if not files:
+            return
         to_send = { op.basename(f):readFile(f) for f in files }
         connector = self.plugin.dockwidget.getConnector()
         fid = self.tvActivities.model().sourceModel().currentFeature
+        if fid is None:
+            return
         connector.sendAttachments( fid, to_send )
         attachments = connector.getAttachments( str(fid) )
         self.plugin.identifyTool.on_activities.emit( {'attachments':attachments.get('data', [])} )
@@ -134,11 +138,13 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
         item = indexes[0].data(Qt.UserRole)
         if not isinstance(item, AttachmentItem):
             return
-        result = QMessageBox.question(self, 'DIVI QGIS Plugin', self.tr("Remove attachment '%s'?")%item.name, 
+        result = QMessageBox.question(self, 'DIVI QGIS Plugin', self.tr("Remove attachment '%s'?")%item.name,
             QMessageBox.Yes | QMessageBox.No)
         if result == QMessageBox.No:
             return
         fid = self.tvActivities.model().sourceModel().currentFeature
+        if fid is None:
+            return
         connector = self.plugin.dockwidget.getConnector()
         connector.removeAttachment( fid, item.name )
         attachments = connector.getAttachments( str(fid) )
@@ -150,6 +156,8 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
             return
         connector = self.plugin.dockwidget.getConnector()
         fid = self.tvActivities.model().sourceModel().currentFeature
+        if fid is None:
+            return
         connector.addComment(fid, text)
         comments = connector.getComments( str(fid) )
         self.plugin.identifyTool.on_activities.emit( {'comments':comments.get('data', [])} )
