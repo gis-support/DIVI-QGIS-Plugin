@@ -228,7 +228,8 @@ class DiviPlugin(QObject):
             QgsApplication.getThemeIcon('/mActionSharingImport.svg'),
             text=self.tr(u'Upload layer'),
             callback = self.importDialog,
-            parent=self.iface.mainWindow())
+            parent=self.iface.mainWindow(),
+            checkable=False)
         
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.activities_dock)
@@ -246,7 +247,9 @@ class DiviPlugin(QObject):
         #Disconnect layers signal
         for layer in [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]:
             self.unregisterLayer(layer)
-
+        
+        self.iface.mapCanvas().unsetMapTool( self.identifyTool )
+        
         for action in self.actions:
             self.iface.removePluginWebMenu(
                 self.tr(u'&DIVI QGIS Plugin'),
