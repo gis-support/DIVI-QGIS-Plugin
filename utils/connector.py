@@ -297,6 +297,9 @@ class DiviConnector(QObject):
     def getComments(self, featureid):
         return self.getJson(self.sendGetRequest('/comments/%s' % featureid, {'token':self.token}))
     
+    def getChanges(self, featureid):
+        return self.getJson(self.sendGetRequest('/changes', {'token':self.token, 'feature':str(featureid)}))
+    
     def getFile(self, featureid, fileName):
         return self.sendGetRequest('/files/%s/%s' % (featureid, fileName), {'token':self.token}, as_unicode=False)
     

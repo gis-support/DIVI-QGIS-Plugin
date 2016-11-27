@@ -31,7 +31,7 @@ from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis,\
 from PyQt4.QtGui import QDockWidget, QInputDialog, QMenu, QToolButton
 from qgis.gui import QgsMessageBar, QgsFilterLineEdit
 from ..utils.connector import DiviConnector
-from ..utils.model import DiviModel, DiviProxyModel, LayerItem, TableItem, \
+from ..models.DiviModel import DiviModel, DiviProxyModel, LayerItem, TableItem, \
     ProjectItem, VectorItem, RasterItem, AccountItem
 from ..utils.widgets import ProgressMessageBar
 

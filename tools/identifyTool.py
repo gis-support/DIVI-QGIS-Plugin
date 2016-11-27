@@ -79,10 +79,14 @@ class DiviIdentifyTool(QgsMapToolIdentifyFeature):
             #Selected layer is not from DIVI
             return
         fid = self.parent.ids_map[self.parent.iface.activeLayer().id()][feature.id()]
-        attachments = self.connector.getAttachments( str(fid) )
-        comments = self.connector.getComments( str(fid) )
+        attachments = self.connector.getAttachments( fid )
+        comments = self.connector.getComments( fid )
+        changes = self.connector.getChanges( fid )
         self.on_feature.emit( fid )
-        self.on_activities.emit( {'attachments':attachments.get('data', []), 'comments':comments.get('data', [])} )
+        self.on_activities.emit( {
+            'attachments':attachments.get('data', []),
+            'comments':comments.get('data', []),
+            'changes':changes.get('data', [])} )
     
     def toggleMapTool(self, state):
         if state:

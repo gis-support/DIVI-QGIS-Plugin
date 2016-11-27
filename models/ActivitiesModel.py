@@ -137,6 +137,26 @@ class CommentItem(BaseActivityItem):
     def name(self):
         return u'<b>{}</b><br/><i>{}</i><br/>{}'.format( self.user, self.displayDate, self.comment )
 
+class ChangeItem(BaseActivityItem):
+    
+    icon = QIcon(':/plugins/DiviPlugin/images/history.png')
+    
+    def __init__(self, change, parent):
+        super(ChangeItem, self).__init__(self, parent)
+        self.description = change['what']
+        self.user = change['realname']
+        #self.date = datetime.utcfromtimestamp( comment['posted_at'] )
+        #self.displayDate = self.date.strftime('%Y-%m-%d %H:%M:%S')
+        self.displayDate = change['when']
+    
+    @property
+    def tooltip(self):
+        return self.description
+    
+    @property
+    def name(self):
+        return u'<b>{}</b><br/><i>{}</i><br/>{}'.format( self.user, self.displayDate, self.description )
+
 class ActivitiesModel(QAbstractItemModel):
     
     def __init__(self, parent=None):
@@ -145,6 +165,7 @@ class ActivitiesModel(QAbstractItemModel):
         self.rootItem = TreeItem(None, None)
         ActivitiesItem('Attachments', self.rootItem)
         ActivitiesItem('Comments', self.rootItem)
+        ActivitiesItem('History', self.rootItem)
         
         self.setCurrentFeature(None)
     
@@ -220,6 +241,11 @@ class ActivitiesModel(QAbstractItemModel):
             comments = data['comments']
             comment_index = self.findItem('comments', as_model=True)
             self.addItems(comment_index, comments, CommentItem)
+        #Add history
+        if 'changes' in data:
+            changes = data['changes']
+            history_index = self.findItem('history', as_model=True)
+            self.addItems(history_index, changes, ChangeItem)
     
     def addItems(self, parent, data, model):
         parent_item = parent.data(Qt.UserRole)
@@ -250,14 +276,23 @@ class ActivitiesModel(QAbstractItemModel):
         self.currentFeature = feature
 
 class ActivitiesProxyModel(QSortFilterProxyModel):
-    pass
+    
+    def lessThan(self, left, right):
+        left_item = left.data(Qt.UserRole)
+        if isinstance( left.data(Qt.UserRole), ActivitiesItem ):
+            #Order: attachments -> comments -> history
+            if left_item.type == 'attachments':
+                return False
+            if left_item.type == 'comments':
+                return False
+        return True
 
 class HTMLDelegate(QStyledItemDelegate):
     """ http://stackoverflow.com/a/5443112 """
     def paint(self, painter, option, index):
         options = QStyleOptionViewItemV4(option)
         item = index.data(Qt.UserRole)
-        if isinstance(item, CommentItem):
+        if isinstance(item, (CommentItem, ChangeItem)):
             options.decorationAlignment = Qt.AlignHCenter
         self.initStyleOption(options,index)
 

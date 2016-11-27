@@ -14,7 +14,7 @@
    <locale language="English" country="UnitedStates"/>
   </property>
   <property name="windowTitle">
-   <string>Activities</string>
+   <string>DIVI QGIS Plugin - activities</string>
   </property>
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QVBoxLayout" name="verticalLayout">
