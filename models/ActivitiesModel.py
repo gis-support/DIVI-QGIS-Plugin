@@ -168,6 +168,7 @@ class RasterItem(BaseActivityItem):
 class ActivitiesModel(QAbstractItemModel):
     
     expand = pyqtSignal(QModelIndex)
+    layerTypeChanged = pyqtSignal(str)
     
     def __init__(self, layerType='vector', parent=None):
         super(ActivitiesModel, self).__init__(parent)
@@ -296,6 +297,7 @@ class ActivitiesModel(QAbstractItemModel):
             return
         self.removeAll()
         self.layerType = layerType
+        self.layerTypeChanged.emit( self.layerType )
         settings = QSettings()
         if layerType=='vector':
             self.beginInsertRows(self.index(0,0), 0, 2)

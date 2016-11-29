@@ -27,7 +27,7 @@ from PyQt4.QtGui import QDockWidget, QIcon, QFileDialog, QInputDialog, \
     QMessageBox, QMenu
 import os.path as op
 from ..models.ActivitiesModel import ActivitiesModel, ActivitiesProxyModel, \
-    AttachmentItem, ActivitiesItem, HTMLDelegate
+    AttachmentItem, ActivitiesItem, RasterItem, HTMLDelegate
 from ..utils.files import readFile
 import os.path as op
 
@@ -50,8 +50,6 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
         self.tvActivities.setModel( proxyModel )
         self.tvActivities.setSortingEnabled(True)
         self.tvActivities.setItemDelegate(HTMLDelegate())
-        self.tvActivities.model().sourceModel().expand.connect( 
-            lambda index: self.tvActivities.expand( self.tvActivities.model().mapFromSource( index ) ) )
         #Toolbar
         self.btnAddAttachment.setIcon( QIcon(':/plugins/DiviPlugin/images/attachment_add.png') )
         self.btnRemoveAttachment.setIcon( QIcon(':/plugins/DiviPlugin/images/attachment_remove.png') )
@@ -65,6 +63,9 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
         self.tvActivities.selectionModel().currentChanged.connect(self.treeSelectionChanged)
         self.tvActivities.collapsed.connect( lambda index: self.itemViewChanged(index, False) )
         self.tvActivities.expanded.connect( lambda index: self.itemViewChanged(index, True) )
+        self.tvActivities.model().sourceModel().layerTypeChanged.connect( lambda layerType: self.setToolbarEnabled(layerType=='vector') )
+        self.tvActivities.model().sourceModel().expand.connect( 
+            lambda index: self.tvActivities.expand( self.tvActivities.model().mapFromSource( index ) ) )
         self.btnDownloadAttachment.clicked.connect( self.downloadFiles )
         self.btnAddAttachment.clicked.connect( self.addAttachment )
         self.btnRemoveAttachment.clicked.connect( self.removeAttachment )
@@ -77,7 +78,18 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
     
     def treeSelectionChanged(self, new, old):
         item = new.data(Qt.UserRole)
+        if not item:
+            return
+        if isinstance(item, RasterItem) or item.type=='raster':
+            self.setToolbarEnabled( False )
+            self.btnRemoveAttachment.setEnabled( False )
+            return
         self.btnRemoveAttachment.setEnabled( isinstance(item, AttachmentItem) )
+    
+    def setToolbarEnabled(self, enabled):
+        self.btnAddAttachment.setEnabled( enabled )
+        self.btnDownloadAttachment.setEnabled( enabled )
+        self.btnAddComment.setEnabled( enabled )
     
     def downloadMenuShow(self):
         menu = self.sender()

@@ -73,7 +73,6 @@ class DiviIdentifyTool(QgsMapToolIdentify):
         layer = self.iface.activeLayer()
         if isinstance(layer, QgsRasterLayer):
             point = self.iface.mapCanvas().getCoordinateTransform().toMapCoordinates( event.x(), event.y() )
-            print point
             self.identifyRaster( point )
             self.geometry.addPoint( point )
             return
@@ -123,7 +122,6 @@ class DiviIdentifyTool(QgsMapToolIdentify):
     def identifyRaster(self, point):
         transform = QgsCoordinateTransform(self.canvas.mapSettings().destinationCrs(), self.wgs84)
         point = transform.transform(point)
-        print point
         self.on_raster.emit( self.connector.getRasterIdentification( 'Xee', point )['data'][0] )
     
     def toggleMapTool(self, state):
