@@ -14,7 +14,7 @@
    <locale language="English" country="UnitedStates"/>
   </property>
   <property name="windowTitle">
-   <string>DIVI QGIS Plugin - activities</string>
+   <string>DIVI QGIS Plugin - identification</string>
   </property>
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -101,7 +101,7 @@
      </layout>
     </item>
     <item>
-     <widget class="QTreeView" name="tvActivities">
+     <widget class="QTreeView" name="tvIdentificationResult">
       <attribute name="headerVisible">
        <bool>false</bool>
       </attribute>

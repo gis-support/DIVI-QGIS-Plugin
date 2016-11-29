@@ -32,12 +32,12 @@ from ..utils.files import readFile
 import os.path as op
 
 FORM_CLASS, _ = uic.loadUiType(op.join(
-    op.dirname(__file__), 'activities_dock.ui'))
+    op.dirname(__file__), 'identification_dock.ui'))
 
-class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
+class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
     def __init__(self, plugin, parent=None):
         """Constructor."""
-        super(DiviPluginActivitiesPanel, self).__init__(parent)
+        super(DiviPluginIdentificationPanel, self).__init__(parent)
         self.plugin = plugin
         self.setupUi(self)
         self.initGui()
@@ -47,9 +47,9 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
         proxyModel = ActivitiesProxyModel()
         proxyModel.setSourceModel( ActivitiesModel() )
         proxyModel.setDynamicSortFilter( True )
-        self.tvActivities.setModel( proxyModel )
-        self.tvActivities.setSortingEnabled(True)
-        self.tvActivities.setItemDelegate(HTMLDelegate())
+        self.tvIdentificationResult.setModel( proxyModel )
+        self.tvIdentificationResult.setSortingEnabled(True)
+        self.tvIdentificationResult.setItemDelegate(HTMLDelegate())
         #Toolbar
         self.btnAddAttachment.setIcon( QIcon(':/plugins/DiviPlugin/images/attachment_add.png') )
         self.btnRemoveAttachment.setIcon( QIcon(':/plugins/DiviPlugin/images/attachment_remove.png') )
@@ -59,13 +59,13 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
         menu.aboutToShow.connect(self.downloadMenuShow)
         self.btnDownloadAttachment.setMenu(menu)
         #Signals
-        self.tvActivities.activated.connect( self.itemActivated )
-        self.tvActivities.selectionModel().currentChanged.connect(self.treeSelectionChanged)
-        self.tvActivities.collapsed.connect( lambda index: self.itemViewChanged(index, False) )
-        self.tvActivities.expanded.connect( lambda index: self.itemViewChanged(index, True) )
-        self.tvActivities.model().sourceModel().layerTypeChanged.connect( lambda layerType: self.setToolbarEnabled(layerType=='vector') )
-        self.tvActivities.model().sourceModel().expand.connect( 
-            lambda index: self.tvActivities.expand( self.tvActivities.model().mapFromSource( index ) ) )
+        self.tvIdentificationResult.activated.connect( self.itemActivated )
+        self.tvIdentificationResult.selectionModel().currentChanged.connect(self.treeSelectionChanged)
+        self.tvIdentificationResult.collapsed.connect( lambda index: self.itemViewChanged(index, False) )
+        self.tvIdentificationResult.expanded.connect( lambda index: self.itemViewChanged(index, True) )
+        self.tvIdentificationResult.model().sourceModel().layerTypeChanged.connect( lambda layerType: self.setToolbarEnabled(layerType=='vector') )
+        self.tvIdentificationResult.model().sourceModel().expand.connect( 
+            lambda index: self.tvIdentificationResult.expand( self.tvIdentificationResult.model().mapFromSource( index ) ) )
         self.btnDownloadAttachment.clicked.connect( self.downloadFiles )
         self.btnAddAttachment.clicked.connect( self.addAttachment )
         self.btnRemoveAttachment.clicked.connect( self.removeAttachment )
@@ -94,7 +94,7 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
     def downloadMenuShow(self):
         menu = self.sender()
         menu.clear()
-        parent_item = self.tvActivities.model().sourceModel().findItem('attachments')
+        parent_item = self.tvIdentificationResult.model().sourceModel().findItem('attachments')
         if not parent_item.childCount():
             menu.addAction( self.tr('No attachments') ).setEnabled( False )
             return
@@ -104,7 +104,7 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
             action = menu.addAction( child.icon, child.name, lambda: self.saveFile( self.sender().text() ) )
     
     def downloadFiles(self):
-        indexes = self.tvActivities.selectedIndexes()
+        indexes = self.tvIdentificationResult.selectedIndexes()
         if indexes:
             index = indexes[0]
             item = index.data(Qt.UserRole)
@@ -123,7 +123,7 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
             return
         settings.setValue('divi/last_dir', op.dirname(filePath))
         connector = self.plugin.dockwidget.getConnector()
-        featureid = self.tvActivities.model().sourceModel().currentFeature
+        featureid = self.tvIdentificationResult.model().sourceModel().currentFeature
         if allFiles:
             fileData = connector.getFiles( featureid )
         else:
@@ -139,7 +139,7 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
             return
         to_send = { op.basename(f):readFile(f) for f in files }
         connector = self.plugin.dockwidget.getConnector()
-        fid = self.tvActivities.model().sourceModel().currentFeature
+        fid = self.tvIdentificationResult.model().sourceModel().currentFeature
         if fid is None:
             return
         connector.sendAttachments( fid, to_send )
@@ -147,7 +147,7 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
         self.plugin.identifyTool.on_activities.emit( {'attachments':attachments.get('data', [])} )
     
     def removeAttachment(self):
-        indexes = self.tvActivities.selectedIndexes()
+        indexes = self.tvIdentificationResult.selectedIndexes()
         if not indexes:
             return
         item = indexes[0].data(Qt.UserRole)
@@ -157,7 +157,7 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
             QMessageBox.Yes | QMessageBox.No)
         if result == QMessageBox.No:
             return
-        fid = self.tvActivities.model().sourceModel().currentFeature
+        fid = self.tvIdentificationResult.model().sourceModel().currentFeature
         if fid is None:
             return
         connector = self.plugin.dockwidget.getConnector()
@@ -170,7 +170,7 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
         if not text:
             return
         connector = self.plugin.dockwidget.getConnector()
-        fid = self.tvActivities.model().sourceModel().currentFeature
+        fid = self.tvIdentificationResult.model().sourceModel().currentFeature
         if fid is None:
             return
         connector.addComment(fid, text)

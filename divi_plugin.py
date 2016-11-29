@@ -31,7 +31,7 @@ from qgis.core import QgsProject, QGis, QgsVectorLayer, QgsMessageLog,\
 import resources
 
 # Import the code for the DockWidget
-from dialogs.activities_dock import DiviPluginActivitiesPanel
+from dialogs.identification_dock import DiviPluginIdentificationPanel
 from dialogs.dockwidget import DiviPluginDockWidget
 from dialogs.import_dialog import DiviPluginImportDialog
 from tools.identifyTool import DiviIdentifyTool
@@ -200,7 +200,7 @@ class DiviPlugin(QObject):
         
         icon_path = ':/plugins/DiviPlugin/images/icon.png'
         self.dockwidget = DiviPluginDockWidget(self)
-        self.activities_dock = DiviPluginActivitiesPanel(self)
+        self.identification_dock = DiviPluginIdentificationPanel(self)
         
         self.add_action(
             icon_path,
@@ -210,20 +210,20 @@ class DiviPlugin(QObject):
         
         self.add_action(
             icon_path,
-            text=self.tr(u'DIVI activities panel'),
-            action = self.activities_dock.toggleViewAction(),
+            text=self.tr(u'DIVI identification panel'),
+            action = self.identification_dock.toggleViewAction(),
             parent=self.iface.mainWindow())
         
         self.identifyTool = DiviIdentifyTool(self)
         self.identifyAction = self.add_action(
             QgsApplication.getThemeIcon('mActionSelect.svg'),
-            self.tr('Get activities'),
+            self.tr('Identify'),
             callback = self.identifyTool.toggleMapTool,
             parent=self.iface.mainWindow() )
         self.identifyTool.setAction( self.identifyAction )
-        self.identifyTool.on_feature.connect( self.activities_dock.tvActivities.model().sourceModel().setCurrentFeature )
-        self.identifyTool.on_activities.connect( self.activities_dock.tvActivities.model().sourceModel().addActivities )
-        self.identifyTool.on_raster.connect( self.activities_dock.tvActivities.model().sourceModel().addRasterResult )
+        self.identifyTool.on_feature.connect( self.identification_dock.tvIdentificationResult.model().sourceModel().setCurrentFeature )
+        self.identifyTool.on_activities.connect( self.identification_dock.tvIdentificationResult.model().sourceModel().addActivities )
+        self.identifyTool.on_raster.connect( self.identification_dock.tvIdentificationResult.model().sourceModel().addRasterResult )
         
         self.add_action(
             QgsApplication.getThemeIcon('/mActionSharingImport.svg'),
@@ -233,7 +233,7 @@ class DiviPlugin(QObject):
             checkable=False)
         
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
-        self.iface.addDockWidget(Qt.RightDockWidgetArea, self.activities_dock)
+        self.iface.addDockWidget(Qt.RightDockWidgetArea, self.identification_dock)
 
     #--------------------------------------------------------------------------
     
@@ -256,7 +256,7 @@ class DiviPlugin(QObject):
                 self.tr(u'&DIVI QGIS Plugin'),
                 action)
         self.iface.removeDockWidget(self.dockwidget)
-        self.iface.removeDockWidget(self.activities_dock)
+        self.iface.removeDockWidget(self.identification_dock)
         
         del self.toolbar
 
