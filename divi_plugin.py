@@ -223,6 +223,7 @@ class DiviPlugin(QObject):
         self.identifyTool.setAction( self.identifyAction )
         self.identifyTool.on_feature.connect( self.activities_dock.tvActivities.model().sourceModel().setCurrentFeature )
         self.identifyTool.on_activities.connect( self.activities_dock.tvActivities.model().sourceModel().addActivities )
+        self.identifyTool.on_raster.connect( self.activities_dock.tvActivities.model().sourceModel().addRasterResult )
         
         self.add_action(
             QgsApplication.getThemeIcon('/mActionSharingImport.svg'),

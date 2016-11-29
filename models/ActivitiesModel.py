@@ -22,7 +22,7 @@
 """
 
 from PyQt4.QtCore import QObject, QAbstractItemModel, Qt, QModelIndex, SIGNAL, \
-    QFileInfo, QSize
+    QFileInfo, QSize, QSettings, pyqtSignal
 from PyQt4.QtGui import QSortFilterProxyModel, QIcon, QFileIconProvider, \
     QStyledItemDelegate, QStyleOptionViewItemV4, QApplication, QTextDocument, \
     QStyle, QAbstractTextDocumentLayout
@@ -157,15 +157,24 @@ class ChangeItem(BaseActivityItem):
     def name(self):
         return u'<b>{}</b><br/><i>{}</i><br/>{}'.format( self.user, self.displayDate, self.description )
 
+class RasterItem(BaseActivityItem):
+    
+    def __init__(self, result, parent):
+        super(RasterItem, self).__init__(self, parent)
+        row, value = result
+        self.value = value
+        self.name = self.tr('Band %d: %s') % (row, self.value)
+
 class ActivitiesModel(QAbstractItemModel):
     
-    def __init__(self, parent=None):
+    expand = pyqtSignal(QModelIndex)
+    
+    def __init__(self, layerType='vector', parent=None):
         super(ActivitiesModel, self).__init__(parent)
         
         self.rootItem = TreeItem(None, None)
-        ActivitiesItem('Attachments', self.rootItem)
-        ActivitiesItem('Comments', self.rootItem)
-        ActivitiesItem('History', self.rootItem)
+        self.layerType = None
+        self.setLayerType(layerType)
         
         self.setCurrentFeature(None)
     
@@ -226,26 +235,32 @@ class ActivitiesModel(QAbstractItemModel):
     
     def removeAll(self, parent=None):
         if parent is None:
-            parent = self.index(0,0).parent()
+            item = self.index(0,0).data(Qt.UserRole)
+            self.removeRows(0, self.rootItem.childCount(), self.index(0,0).parent())
+            return
         item = parent.data(Qt.UserRole)
         self.removeRows(0, item.childCount(), parent)
     
     def addActivities(self, data):
         #Add attachments
+        self.setLayerType('vector')
         if 'attachments' in data:
             attachments = data['attachments']
             attachment_index = self.findItem('attachments', as_model=True)
-            self.addItems(attachment_index, attachments, AttachmentItem)
+            if attachment_index is not None:
+                self.addItems(attachment_index, attachments, AttachmentItem)
         #Add comments
         if 'comments' in data:
             comments = data['comments']
             comment_index = self.findItem('comments', as_model=True)
-            self.addItems(comment_index, comments, CommentItem)
+            if comment_index is not None:
+                self.addItems(comment_index, comments, CommentItem)
         #Add history
         if 'changes' in data:
             changes = data['changes']
             history_index = self.findItem('history', as_model=True)
-            self.addItems(history_index, changes, ChangeItem)
+            if history_index is not None:
+                self.addItems(history_index, changes, ChangeItem)
     
     def addItems(self, parent, data, model):
         parent_item = parent.data(Qt.UserRole)
@@ -274,6 +289,44 @@ class ActivitiesModel(QAbstractItemModel):
     
     def setCurrentFeature(self, feature):
         self.currentFeature = feature
+    
+    def setLayerType(self, layerType):
+        if self.layerType == layerType:
+            self.setExpand()
+            return
+        self.removeAll()
+        self.layerType = layerType
+        settings = QSettings()
+        if layerType=='vector':
+            self.beginInsertRows(self.index(0,0), 0, 2)
+            ActivitiesItem('Attachments', self.rootItem)
+            ActivitiesItem('Comments', self.rootItem)
+            ActivitiesItem('History', self.rootItem)
+            self.endInsertRows()
+        else:
+            self.beginInsertRows(self.index(0,0), 0, 0)
+            ActivitiesItem('Raster', self.rootItem)
+            self.endInsertRows()
+        self.setExpand()
+    
+    def setExpand(self):
+        def expand( itemTypes ):
+            for itemType in itemTypes:
+                if settings.value('divi/expanded/%s' % itemType, False, bool):
+                    self.expand.emit( self.findItem(itemType, True) )
+        
+        settings = QSettings()
+        if self.layerType=='vector':
+            expand(['attachments', 'comments', 'history'])
+        else:
+            expand(['raster'])
+    
+    def addRasterResult(self, data):
+        self.setLayerType('raster')
+        index = self.findItem('raster', as_model=True)
+        if index is not None:
+            self.addItems(index, list(enumerate(data, start=1)), RasterItem)
+        
 
 class ActivitiesProxyModel(QSortFilterProxyModel):
     

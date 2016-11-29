@@ -341,6 +341,9 @@ class DiviConnector(QObject):
     def removeAttachment(self, featureid, fileName):
         return self.getJson( self.sendDeleteRequest('/files/%s/%s'%(featureid, fileName), params={'token':self.token}) )
     
+    def getRasterIdentification(self, layerid, point ):
+        return self.getJson( self.sendGetRequest('/sample_raster/%s'%layerid, {'token':self.token, 'locs':'%f %f' % tuple(point) }) )
+    
     #Edit data
     
     def addNewFeatures(self, layerid, data, transaction):

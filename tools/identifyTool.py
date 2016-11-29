@@ -22,14 +22,19 @@
 """
 
 from PyQt4.QtCore import pyqtSignal
-from PyQt4.QtGui import QCursor, QPixmap
-from qgis.core import QgsFeature
-from qgis.gui import QgsMapToolIdentifyFeature
+from PyQt4.QtGui import QCursor, QPixmap, QColor
+from qgis.core import QgsFeature, QgsRasterLayer, QgsCoordinateTransform, \
+    QgsCoordinateReferenceSystem
+from qgis.core import QGis
+from qgis.gui import QgsMapToolIdentify, QgsRubberBand
 
-class DiviIdentifyTool(QgsMapToolIdentifyFeature):
+class DiviIdentifyTool(QgsMapToolIdentify):
     
     on_feature = pyqtSignal(int)
     on_activities = pyqtSignal(dict)
+    on_raster = pyqtSignal(list)
+    
+    wgs84 = QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId)
     
     cursor = QCursor(QPixmap(["16 16 3 1",
           "# c None",
@@ -55,29 +60,56 @@ class DiviIdentifyTool(QgsMapToolIdentifyFeature):
     
     def __init__(self, parent):
         self.parent = parent
+        self.iface = parent.iface
         self.canvas = parent.iface.mapCanvas()
-        super(DiviIdentifyTool, self).__init__(self.canvas, parent.iface.activeLayer())
-        #Signals
-        self.featureIdentified[QgsFeature].connect( self.identifyFeature )
+        self.geometry = QgsRubberBand(self.canvas, QGis.Point)
+        self.geometry.setColor(QColor('red'))
+        self.geometry.setIconSize(7)
+        self.geometry.setWidth(3)
+        super(DiviIdentifyTool, self).__init__(self.canvas)
+    
+    def canvasReleaseEvent(self, event ):
+        self.geometry.reset(QGis.Point)
+        layer = self.iface.activeLayer()
+        if isinstance(layer, QgsRasterLayer):
+            point = self.iface.mapCanvas().getCoordinateTransform().toMapCoordinates( event.x(), event.y() )
+            print point
+            self.identifyRaster( point )
+            self.geometry.addPoint( point )
+            return
+        if layer.customProperty('DiviId') is None:
+            #Selected layer is not from DIVI
+            self.on_activities.emit( {
+                'attachments':[],
+                'comments':[],
+                'changes':[]} )
+            return
+        result = self.identify(event.x(), event.y(), [layer], QgsMapToolIdentify.ActiveLayer)
+        if not result:
+            #Clear activities panel and return if no feaure was found
+            self.on_activities.emit( {
+                'attachments':[],
+                'comments':[],
+                'changes':[]} )
+            return
+        feature = result[0].mFeature
+        self.geometry.setToGeometry(feature.geometry(), layer)
+        self.identifyVector( feature )
     
     def activate(self):
         super(DiviIdentifyTool, self).activate()
-        self.setLayer( self.parent.iface.activeLayer() )
         self.connector = self.parent.dockwidget.getConnector()
-        self.parent.iface.mapCanvas().setCursor(self.cursor)
+        self.canvas.setCursor(self.cursor)
     
     def deactivate(self):
         super(DiviIdentifyTool, self).deactivate()
+        self.geometry.reset()
         self.action().setChecked(False)
         del self.connector
     
-    def identifyFeature(self, feature):
+    def identifyVector(self, feature):
         if not self.parent.activities_dock.isVisible():
             self.parent.activities_dock.show()
-        layer = self.parent.iface.activeLayer()
-        if layer.customProperty('DiviId') is None:
-            #Selected layer is not from DIVI
-            return
         fid = self.parent.ids_map[self.parent.iface.activeLayer().id()][feature.id()]
         attachments = self.connector.getAttachments( fid )
         comments = self.connector.getComments( fid )
@@ -87,6 +119,12 @@ class DiviIdentifyTool(QgsMapToolIdentifyFeature):
             'attachments':attachments.get('data', []),
             'comments':comments.get('data', []),
             'changes':changes.get('data', [])} )
+    
+    def identifyRaster(self, point):
+        transform = QgsCoordinateTransform(self.canvas.mapSettings().destinationCrs(), self.wgs84)
+        point = transform.transform(point)
+        print point
+        self.on_raster.emit( self.connector.getRasterIdentification( 'Xee', point )['data'][0] )
     
     def toggleMapTool(self, state):
         if state:

@@ -27,7 +27,7 @@ from PyQt4.QtGui import QDockWidget, QIcon, QFileDialog, QInputDialog, \
     QMessageBox, QMenu
 import os.path as op
 from ..models.ActivitiesModel import ActivitiesModel, ActivitiesProxyModel, \
-    AttachmentItem, HTMLDelegate
+    AttachmentItem, ActivitiesItem, HTMLDelegate
 from ..utils.files import readFile
 import os.path as op
 
@@ -49,8 +49,9 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
         proxyModel.setDynamicSortFilter( True )
         self.tvActivities.setModel( proxyModel )
         self.tvActivities.setSortingEnabled(True)
-        self.tvActivities.expandAll()
         self.tvActivities.setItemDelegate(HTMLDelegate())
+        self.tvActivities.model().sourceModel().expand.connect( 
+            lambda index: self.tvActivities.expand( self.tvActivities.model().mapFromSource( index ) ) )
         #Toolbar
         self.btnAddAttachment.setIcon( QIcon(':/plugins/DiviPlugin/images/attachment_add.png') )
         self.btnRemoveAttachment.setIcon( QIcon(':/plugins/DiviPlugin/images/attachment_remove.png') )
@@ -62,6 +63,8 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
         #Signals
         self.tvActivities.activated.connect( self.itemActivated )
         self.tvActivities.selectionModel().currentChanged.connect(self.treeSelectionChanged)
+        self.tvActivities.collapsed.connect( lambda index: self.itemViewChanged(index, False) )
+        self.tvActivities.expanded.connect( lambda index: self.itemViewChanged(index, True) )
         self.btnDownloadAttachment.clicked.connect( self.downloadFiles )
         self.btnAddAttachment.clicked.connect( self.addAttachment )
         self.btnRemoveAttachment.clicked.connect( self.removeAttachment )
@@ -161,3 +164,9 @@ class DiviPluginActivitiesPanel(QDockWidget, FORM_CLASS):
         connector.addComment(fid, text)
         comments = connector.getComments( str(fid) )
         self.plugin.identifyTool.on_activities.emit( {'comments':comments.get('data', [])} )
+    
+    def itemViewChanged(self, index, expanded):
+        item = index.data(Qt.UserRole)
+        if not isinstance(item, ActivitiesItem):
+            return
+        QSettings().setValue('divi/expanded/%s' % item.type, expanded)
