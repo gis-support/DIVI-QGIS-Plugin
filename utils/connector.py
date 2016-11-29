@@ -28,6 +28,13 @@ from PyQt4.QtNetwork import QNetworkRequest, QNetworkAccessManager, \
 from qgis.core import QgsMessageLog, QgsCredentials
 from qgis.gui import QgsMessageBar
 import json
+import ConfigParser
+import os.path as op
+
+config = ConfigParser.ConfigParser()
+config.read(op.join(op.dirname(__file__),'../metadata.txt'))
+
+PLUGIN_VERSION = config.get('general', 'version')
 
 class DiviConnector(QObject):
     diviLogged = pyqtSignal(str, str)
@@ -48,6 +55,7 @@ class DiviConnector(QObject):
         def send(params):
             url = self.formatUrl(endpoint, params)
             request = QNetworkRequest(url)
+            headers['User-Agent'] = 'Divi QGIS Plugin/%s' % PLUGIN_VERSION
             for key, value in headers.iteritems():
                 request.setRawHeader(key, value)
             if method == 'delete':
@@ -74,6 +82,14 @@ class DiviConnector(QObject):
                 self.iface.messageBar().pushMessage(self.tr("Error"),
                     self.trUtf8("Server rejected request"),
                     level=QgsMessageBar.CRITICAL, duration=3)
+            return
+        elif status_code == 409:
+            if self.iface is not None:
+                min_version = json.loads(unicode(content)).get('error', '')
+                self.iface.messageBar().pushMessage(self.tr("Error"),
+                    self.tr("Error 409: DIVI QGIS Plugin is not supported in version '%s'. "
+                            "Please upgrade to version '%s' or higher. ") % (PLUGIN_VERSION, min_version),
+                    level=QgsMessageBar.CRITICAL, duration=0)
             return
         elif status_code == 403:
             if not self.auto_login:
@@ -103,7 +119,7 @@ class DiviConnector(QObject):
         return content
     
     def sendPostRequest(self, endpoint, data, params={}, headers={}):
-        headers.update({"Content-Type":"application/json", "User-Agent":"Divi QGIS Plugin"})
+        headers.update({"Content-Type":"application/json"})
         return self.sendRequest( endpoint, params,
                 'post',
                 json.dumps(data),
@@ -111,7 +127,7 @@ class DiviConnector(QObject):
             )
     
     def sendPutRequest(self, endpoint, data, params={}, headers={}):
-        headers.update({"Content-Type":"application/json", "User-Agent":"Divi QGIS Plugin"})
+        headers.update({"Content-Type":"application/json"})
         return self.sendRequest( endpoint, params,
                 'put',
                 json.dumps(data),
@@ -123,7 +139,7 @@ class DiviConnector(QObject):
         buff.open(QBuffer.ReadWrite)
         buff.write(json.dumps(data).decode('utf-8'))
         buff.seek(0)
-        headers.update({"Content-Type":"application/json", "User-Agent":"Divi QGIS Plugin"})
+        headers.update({"Content-Type":"application/json"})
         content = self.sendRequest( endpoint, params,
             'delete',
             buff,
@@ -134,7 +150,6 @@ class DiviConnector(QObject):
     
     def sendGetRequest(self, endpoint, data, as_unicode=True):
         return self.sendRequest(endpoint, data, 'get',
-                headers={"User-Agent":"Divi QGIS Plugin"},
                 as_unicode = as_unicode
             )
     
@@ -253,8 +268,7 @@ class DiviConnector(QObject):
         multi_part.append(file_part)
         content = self.sendRequest( '/upload_gis/%s/new' % projectid, {'token':self.token},
             'post',
-            multi_part,
-            {"User-Agent":"Divi QGIS Plugin"}
+            multi_part
         )
         return json.loads(content)
     
@@ -275,8 +289,7 @@ class DiviConnector(QObject):
         multi_part.append(file_part)
         content = self.sendRequest( '/rasters/%s' % projectid, {'token':self.token},
             'post',
-            multi_part,
-            {"User-Agent":"Divi QGIS Plugin"}
+            multi_part
         )
         return json.loads(content)
     
@@ -321,8 +334,7 @@ class DiviConnector(QObject):
             multi_part.append(file_part)
         content = self.sendRequest( '/upload/%s' % featureid, {'token':self.token},
             'post',
-            multi_part,
-            {"User-Agent":"Divi QGIS Plugin"}
+            multi_part
         )
         return json.loads(content)
     
