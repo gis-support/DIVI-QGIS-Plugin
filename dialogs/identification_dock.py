@@ -113,6 +113,9 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         self.saveFile( 'attachments.zip', True )
     
     def saveFile(self, fileName, allFiles=False):
+        featureid = self.tvIdentificationResult.model().sourceModel().currentFeature
+        if featureid is None:
+            return
         ext = op.splitext(fileName)[-1]
         settings = QSettings()
         defaultDir = settings.value('divi/last_dir', '')
@@ -123,7 +126,6 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
             return
         settings.setValue('divi/last_dir', op.dirname(filePath))
         connector = self.plugin.dockwidget.getConnector()
-        featureid = self.tvIdentificationResult.model().sourceModel().currentFeature
         if allFiles:
             fileData = connector.getFiles( featureid )
         else:
@@ -132,6 +134,9 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
                 f.write(fileData)
 
     def addAttachment(self):
+        fid = self.tvIdentificationResult.model().sourceModel().currentFeature
+        if fid is None:
+            return
         settings = QSettings()
         defaultDir = settings.value('divi/last_dir', '')
         files = QFileDialog.getOpenFileNames(self, self.tr('Select attachment(s)'), defaultDir)
@@ -139,7 +144,6 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
             return
         to_send = { op.basename(f):readFile(f) for f in files }
         connector = self.plugin.dockwidget.getConnector()
-        fid = self.tvIdentificationResult.model().sourceModel().currentFeature
         if fid is None:
             return
         connector.sendAttachments( fid, to_send )
@@ -166,11 +170,13 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         self.plugin.identifyTool.on_activities.emit( {'attachments':attachments.get('data', [])} )
     
     def addComment(self):
+        fid = self.tvIdentificationResult.model().sourceModel().currentFeature
+        if fid is None:
+            return
         text, _ = QInputDialog.getText(self, 'DIVI QGIS Plugin', self.tr('Add new comment'))
         if not text:
             return
         connector = self.plugin.dockwidget.getConnector()
-        fid = self.tvIdentificationResult.model().sourceModel().currentFeature
         if fid is None:
             return
         connector.addComment(fid, text)

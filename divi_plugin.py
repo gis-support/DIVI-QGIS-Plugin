@@ -209,14 +209,14 @@ class DiviPlugin(QObject):
             parent=self.iface.mainWindow())
         
         self.add_action(
-            icon_path,
+            ':/plugins/DiviPlugin/images/identification.svg',
             text=self.tr(u'DIVI identification panel'),
             action = self.identification_dock.toggleViewAction(),
             parent=self.iface.mainWindow())
         
         self.identifyTool = DiviIdentifyTool(self)
         self.identifyAction = self.add_action(
-            QgsApplication.getThemeIcon('mActionSelect.svg'),
+            QgsApplication.getThemeIcon('mActionIdentify.svg'),
             self.tr('Identify'),
             callback = self.identifyTool.toggleMapTool,
             parent=self.iface.mainWindow() )

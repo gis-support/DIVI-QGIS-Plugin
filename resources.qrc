@@ -38,4 +38,7 @@
     <qresource prefix="/plugins/DiviPlugin" >
         <file>images/history.png</file>
     </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/identification.svg</file>
+    </qresource>
 </RCC>

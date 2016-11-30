@@ -72,8 +72,12 @@ class DiviIdentifyTool(QgsMapToolIdentify):
         self.geometry.reset(QGis.Point)
         layer = self.iface.activeLayer()
         if isinstance(layer, QgsRasterLayer):
+            if layer.customProperty('DiviId') is None:
+                #Selected layer is not from DIVI
+                self.on_raster.emit( [] )
+                return
             point = self.iface.mapCanvas().getCoordinateTransform().toMapCoordinates( event.x(), event.y() )
-            self.identifyRaster( point )
+            self.identifyRaster( point, layer.customProperty('DiviId') )
             self.geometry.addPoint( point )
             return
         if layer.customProperty('DiviId') is None:
@@ -119,10 +123,10 @@ class DiviIdentifyTool(QgsMapToolIdentify):
             'comments':comments.get('data', []),
             'changes':changes.get('data', [])} )
     
-    def identifyRaster(self, point):
+    def identifyRaster(self, point, layerid):
         transform = QgsCoordinateTransform(self.canvas.mapSettings().destinationCrs(), self.wgs84)
         point = transform.transform(point)
-        self.on_raster.emit( self.connector.getRasterIdentification( 'Xee', point )['data'][0] )
+        self.on_raster.emit( self.connector.getRasterIdentification( layerid, point )['data'][0] )
     
     def toggleMapTool(self, state):
         if state:
