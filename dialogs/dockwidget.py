@@ -27,7 +27,8 @@ from functools import partial
 from PyQt4 import uic
 from PyQt4.QtCore import pyqtSignal, QSettings, Qt, QRegExp
 from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis,\
-    QgsApplication, QgsRasterLayer
+    QgsApplication, QgsRasterLayer, QgsRectangle, QgsCoordinateReferenceSystem,\
+    QgsCoordinateTransform
 from PyQt4.QtGui import QDockWidget, QInputDialog, QMenu, QToolButton
 from qgis.gui import QgsMessageBar, QgsFilterLineEdit
 from ..utils.connector import DiviConnector
@@ -42,6 +43,10 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
+    transform2mercator = QgsCoordinateTransform(
+            QgsCoordinateReferenceSystem('EPSG:4326'),
+            QgsCoordinateReferenceSystem('EPSG:3857')
+        )
 
     def __init__(self, plugin, parent=None):
         """Constructor."""
@@ -259,6 +264,15 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                 QgsMessageLog.logMessage( uri, 'DIVI')
                 r = QgsRasterLayer(uri, item.name, 'wms')
                 r.setCustomProperty('DiviId', item.id)
+                if item.extent is not None:
+                    #Set extent for raster layer
+                    bbox = self.transform2mercator.transformBoundingBox( QgsRectangle(
+                            item.extent['st_xmin'],
+                            item.extent['st_ymin'],
+                            item.extent['st_xmax'],
+                            item.extent['st_ymax']
+                        ))
+                    r.setExtent( bbox )
                 addedData.append( r )
                 item.items.extend( addedData )
                 QgsMapLayerRegistry.instance().addMapLayer(r)

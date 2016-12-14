@@ -161,6 +161,7 @@ class RasterItem(LayerItem):
     
     def __init__(self, data, parent=None):
         super(RasterItem, self).__init__(data, parent)
+        self.extent = data.get('visual', {}).get('extent')
         self.icon = QIcon(':/plugins/DiviPlugin/images/raster.png')
     
     def identifier(self):
