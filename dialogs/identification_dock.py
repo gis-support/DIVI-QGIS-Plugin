@@ -80,7 +80,7 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         item = new.data(Qt.UserRole)
         if not item:
             return
-        if isinstance(item, RasterItem) or item.type=='raster':
+        if isinstance(item, RasterItem) or self.tvIdentificationResult.model().sourceModel().layerType=='raster':
             self.setToolbarEnabled( False )
             self.btnRemoveAttachment.setEnabled( False )
             return
