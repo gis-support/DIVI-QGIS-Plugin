@@ -1,12 +1,14 @@
 1.2
 - load DIVI rasters, QGIS 2.18+ required
 - add identification panel
+- add identification tool in plugin toolbar
 - display attachments, comments and history for features in identification panel
 - add comments for selected feature
 - add/remove/download attachments for selected feature
 - display raster values in identification panel
 - toolbar in main panel
-- properly logout plugin
+- properly plugin logout
+- verify plugin version by DIVI
 
 1.1
 - rasters and tables upload
