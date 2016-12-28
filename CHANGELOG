@@ -1,0 +1,94 @@
+1.2
+- load DIVI rasters, QGIS 2.18+ required
+- add identification panel
+- display attachments, comments and history for features in identification panel
+- add comments for selected feature
+- add/remove/download attachments for selected feature
+- display raster values in identification panel
+- toolbar in main panel
+- properly logout plugin
+
+1.1
+- rasters and tables upload
+- show DIVI rasters in tree view
+- edit DIVI tables
+- speedup data loading
+- DateTime widget for DIVI calendar data type
+- unify menu for layers and tables
+- highlight accounts/projects with loaded items
+
+1.0.1
+- 30 day token after login
+- fix translation upload with pb_tool
+
+1.0
+- official release
+
+0.9
+- English translation
+
+0.8
+- starting layer edit will block DIVI layer for editign by other users
+- set dropdown DIVI fields to ValueMap widget in QGIS
+- fix problems with signals managment for layers
+- fix problem with refreshing tree view
+- fix problem with error message on project loading
+
+0.7
+- upload layers from QGIS to DIVI
+- add icons to centext menu in tree view
+- fix error on removing layers from QGIS
+
+0.6
+- loading DIVI tables in QGIS 2.14+
+- add all layers from selected project
+- add option for editing layer name
+- search items in tree view
+- LICENSE file added
+
+0.5.3.
+- READMY file added (PL)
+- block loading another layer while other layer is downloading from DIVI
+- fix error after closing progress bar while loading layer
+- show info in tree about downloading data while loading projects, layers and tables lists
+
+0.5.2
+- new plugin icon
+- fix problems after layer data refresh
+- block refreshing data if layer is in edit mode
+- better progress on loading layer
+
+0.5.1
+- fix error on saving changed features
+- fix problems with editing after layer refresh
+
+0.5
+- QGIS fields edition (add/remove) are saved to DIVI
+- force load layer with selected geometry type
+- remember dock position
+- fields names are now visible as field aliases
+- manual data refresh in layer menu
+- bug fixes
+
+0.4
+- checking editing permission for layers
+- add layer edit capabilities (adding new features, editing attributes and geometry, deleting features)
+
+0.3
+- user can disconnect from DIVI  (delete active token) and login as another user
+- added right click menu for layers in tree view
+- loaded DIVI layers are bold in tree view
+- progress bar while loading layer
+- fix bugs
+
+0.2
+- support for DIVI tables in tree view
+- show icons for layers and tables in tree view
+- load DIVI layers to QGIS
+- DIVI layers are restored when QGIS project is loaded
+- fix bugs with expired token
+
+0.1
+- first release
+- login to divi.io
+- download accounts/projects/layers lists and display in tree view
