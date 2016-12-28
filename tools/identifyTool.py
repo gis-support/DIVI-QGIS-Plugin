@@ -128,7 +128,10 @@ class DiviIdentifyTool(QgsMapToolIdentify):
     def identifyRaster(self, point, layerid):
         transform = QgsCoordinateTransform(self.canvas.mapSettings().destinationCrs(), self.wgs84)
         point = transform.transform(point)
-        self.on_raster.emit( self.connector.getRasterIdentification( layerid, point )['data'][0] )
+        result = self.connector.getRasterIdentification( layerid, point )['data'][0]
+        if not isinstance(result, list):
+            result = [result]
+        self.on_raster.emit( result )
     
     def toggleMapTool(self, state):
         if state:
