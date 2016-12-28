@@ -27,7 +27,14 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QComboBox" name="cmbLayers"/>
+      <widget class="QComboBox" name="cmbLayers">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
      </item>
      <item row="1" column="0" colspan="2">
       <widget class="Line" name="line">
@@ -44,7 +51,14 @@
       </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QComboBox" name="cmbAccounts"/>
+      <widget class="QComboBox" name="cmbAccounts">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
      </item>
      <item row="3" column="0">
       <widget class="QLabel" name="label_3">
@@ -54,7 +68,14 @@
       </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QComboBox" name="cmbProjects"/>
+      <widget class="QComboBox" name="cmbProjects">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
      </item>
      <item row="4" column="0">
       <widget class="QLabel" name="label_4">
@@ -64,7 +85,14 @@
       </widget>
      </item>
      <item row="4" column="1">
-      <widget class="QLineEdit" name="eLayerName"/>
+      <widget class="QLineEdit" name="eLayerName">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>

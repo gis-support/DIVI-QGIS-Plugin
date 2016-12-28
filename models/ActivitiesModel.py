@@ -83,10 +83,17 @@ class TreeItem(QObject):
 
 class ActivitiesItem(TreeItem):
     
-    def __init__(self, name, parent):
+    def __init__(self, _type, parent):
         super(ActivitiesItem, self).__init__(self, parent)
-        self.name = self.tr(name)
-        self.type = name.lower()
+        self.type = _type
+        if _type == 'attachments':
+            self.name = self.tr('Attachments')
+        elif _type == 'comments':
+            self.name = self.tr('Comments')
+        elif _type == 'history':
+            self.name = self.tr('History')
+        elif _type == 'raster':
+            self.name = self.tr('Raster')
         self.icon = QIcon(':/plugins/DiviPlugin/images/%s.png' % self.type)
     
     def identifier(self):
@@ -301,13 +308,13 @@ class ActivitiesModel(QAbstractItemModel):
         settings = QSettings()
         if layerType=='vector':
             self.beginInsertRows(self.index(0,0), 0, 2)
-            ActivitiesItem('Attachments', self.rootItem)
-            ActivitiesItem('Comments', self.rootItem)
-            ActivitiesItem('History', self.rootItem)
+            ActivitiesItem('attachments', self.rootItem)
+            ActivitiesItem('comments', self.rootItem)
+            ActivitiesItem('history', self.rootItem)
             self.endInsertRows()
         else:
             self.beginInsertRows(self.index(0,0), 0, 0)
-            ActivitiesItem('Raster', self.rootItem)
+            ActivitiesItem('raster', self.rootItem)
             self.endInsertRows()
         self.setExpand()
     
@@ -317,13 +324,13 @@ class ActivitiesModel(QAbstractItemModel):
         settings = QSettings()
         if self.layerType=='vector':
             self.beginInsertRows(self.index(0,0), 0, 2)
-            ActivitiesItem('Attachments', self.rootItem)
-            ActivitiesItem('Comments', self.rootItem)
-            ActivitiesItem('History', self.rootItem)
+            ActivitiesItem('attachments', self.rootItem)
+            ActivitiesItem('comments', self.rootItem)
+            ActivitiesItem('history', self.rootItem)
             self.endInsertRows()
         else:
             self.beginInsertRows(self.index(0,0), 0, 0)
-            ActivitiesItem('Raster', self.rootItem)
+            ActivitiesItem('raster', self.rootItem)
             self.endInsertRows()
         self.setExpand()
     
