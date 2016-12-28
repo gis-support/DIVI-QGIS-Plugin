@@ -115,6 +115,7 @@ class DiviIdentifyTool(QgsMapToolIdentify):
     def identifyVector(self, feature):
         if not self.parent.identification_dock.isVisible():
             self.parent.identification_dock.show()
+        self.parent.identification_dock.raise_()
         fid = self.parent.ids_map[self.parent.iface.activeLayer().id()][feature.id()]
         attachments = self.connector.getAttachments( fid )
         comments = self.connector.getComments( fid )
