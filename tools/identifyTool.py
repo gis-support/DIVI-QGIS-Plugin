@@ -71,6 +71,8 @@ class DiviIdentifyTool(QgsMapToolIdentify):
     def canvasReleaseEvent(self, event ):
         self.geometry.reset(QGis.Point)
         layer = self.iface.activeLayer()
+        if layer is None:
+            return
         if isinstance(layer, QgsRasterLayer):
             if layer.customProperty('DiviId') is None:
                 #Selected layer is not from DIVI
