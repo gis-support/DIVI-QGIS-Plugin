@@ -136,6 +136,7 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             self.btnConnect.setText(self.tr('Connect'))
             self.btnConnect.setChecked(False)
             self.token = None
+        self.plugin.setEnabled( logged )
         QgsMessageLog.logMessage(str(self.token), 'DIVI')
     
     def setUserData(self, user, token):

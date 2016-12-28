@@ -311,6 +311,22 @@ class ActivitiesModel(QAbstractItemModel):
             self.endInsertRows()
         self.setExpand()
     
+    def clearItems( self ):
+        #Clear identification tree
+        self.removeAll()
+        settings = QSettings()
+        if self.layerType=='vector':
+            self.beginInsertRows(self.index(0,0), 0, 2)
+            ActivitiesItem('Attachments', self.rootItem)
+            ActivitiesItem('Comments', self.rootItem)
+            ActivitiesItem('History', self.rootItem)
+            self.endInsertRows()
+        else:
+            self.beginInsertRows(self.index(0,0), 0, 0)
+            ActivitiesItem('Raster', self.rootItem)
+            self.endInsertRows()
+        self.setExpand()
+    
     def setExpand(self):
         def expand( itemTypes ):
             for itemType in itemTypes:

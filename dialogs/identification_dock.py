@@ -71,6 +71,13 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         self.btnRemoveAttachment.clicked.connect( self.removeAttachment )
         self.btnAddComment.clicked.connect( self.addComment )
     
+    def setEnabled( self, enabled ):
+        #Set widgets enable state by connection status
+        self.fToolbar.setEnabled( enabled )
+        self.tvIdentificationResult.setEnabled( enabled )
+        if not enabled:
+            self.tvIdentificationResult.model().sourceModel().clearItems()
+    
     def itemActivated(self, index):
         item = index.data(Qt.UserRole)
         if isinstance(item, AttachmentItem):

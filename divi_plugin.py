@@ -199,9 +199,19 @@ class DiviPlugin(QObject):
         self.iface.projectRead.connect(self.loadLayers)
         
         icon_path = ':/plugins/DiviPlugin/images/icon.png'
-        self.dockwidget = DiviPluginDockWidget(self)
         self.identification_dock = DiviPluginIdentificationPanel(self)
+        self.identifyTool = DiviIdentifyTool(self)
+        self.identifyAction = QAction(self.iface.mainWindow())
+        self.identifyTool.setAction( self.identifyAction )
+        self.identifyTool.on_feature.connect( self.identification_dock.tvIdentificationResult.model().sourceModel().setCurrentFeature )
+        self.identifyTool.on_activities.connect( self.identification_dock.tvIdentificationResult.model().sourceModel().addActivities )
+        self.identifyTool.on_raster.connect( self.identification_dock.tvIdentificationResult.model().sourceModel().addRasterResult )
         
+        self.uploadAction = QAction(self.iface.mainWindow())
+        
+        self.dockwidget = DiviPluginDockWidget(self)
+        
+        #Add actions to toolbar
         self.add_action(
             icon_path,
             text=self.tr(u'DIVI QGIS Plugin'),
@@ -214,23 +224,24 @@ class DiviPlugin(QObject):
             action = self.identification_dock.toggleViewAction(),
             parent=self.iface.mainWindow())
         
-        self.identifyTool = DiviIdentifyTool(self)
-        self.identifyAction = self.add_action(
-            QgsApplication.getThemeIcon('mActionIdentify.svg'),
-            self.tr('Identify'),
-            callback = self.identifyTool.toggleMapTool,
-            parent=self.iface.mainWindow() )
-        self.identifyTool.setAction( self.identifyAction )
-        self.identifyTool.on_feature.connect( self.identification_dock.tvIdentificationResult.model().sourceModel().setCurrentFeature )
-        self.identifyTool.on_activities.connect( self.identification_dock.tvIdentificationResult.model().sourceModel().addActivities )
-        self.identifyTool.on_raster.connect( self.identification_dock.tvIdentificationResult.model().sourceModel().addRasterResult )
+        enabled = self.dockwidget.token is not None
         
         self.add_action(
+            QgsApplication.getThemeIcon('mActionIdentify.svg'),
+            self.tr('Identify'),
+            action = self.identifyAction,
+            callback = self.identifyTool.toggleMapTool,
+            parent=self.iface.mainWindow(),
+            enabled_flag=enabled)
+        
+        self.uploadAction = self.add_action(
             QgsApplication.getThemeIcon('/mActionSharingImport.svg'),
             text=self.tr(u'Upload layer'),
+            action=self.uploadAction,
             callback = self.importDialog,
             parent=self.iface.mainWindow(),
-            checkable=False)
+            checkable=False,
+            enabled_flag=enabled)
         
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.identification_dock)
@@ -261,6 +272,13 @@ class DiviPlugin(QObject):
         del self.toolbar
 
     #--------------------------------------------------------------------------
+    
+    def setEnabled( self, enabled ):
+        #Set widgets enable state by connection status
+        self.identifyAction.setEnabled( enabled )
+        self.uploadAction.setEnabled( enabled )
+        self.iface.mapCanvas().unsetMapTool(self.identifyTool)
+        self.identification_dock.setEnabled( enabled )
     
     def setLoading(self, isLoading):
         if isLoading and self.loading:
