@@ -148,14 +148,100 @@ class TableItem(LayerItem):
     def identifier(self):
         return 'table@%s' % self.id
 
+from qgis.core import QgsMarkerSymbolV2, QgsLineSymbolV2, QgsFillSymbolV2, QGis, QgsRendererRangeV2, QgsGraduatedSymbolRendererV2, QgsRendererCategoryV2, QgsCategorizedSymbolRendererV2
+from PyQt4.QtGui import QColor
+
 class VectorItem(TableItem):
     
     def __init__(self, data, parent=None):
         super(VectorItem, self).__init__(data, parent)
         self.icon = QIcon(':/plugins/DiviPlugin/images/vector.png')
+        self.style = data.get('visual', {})
     
     def identifier(self):
         return 'vector@%s' % self.id
+    
+    def setQgisStyle(self, layer):
+        if not self.style:
+            return
+        styleType = self.style.get('type', 'single')
+        #Get symbol class based on layer geoemtry type
+        if layer.geometryType()==QGis.Point:
+            symbolClass = QgsMarkerSymbolV2
+        elif layer.geometryType()==QGis.Line:
+            symbolClass =  QgsLineSymbolV2
+        else:
+            symbolClass =  QgsFillSymbolV2
+        #Set style
+        if styleType=='single':
+            #Single symbol
+            symbol = self.createSymbol( symbolClass, self.style )
+            layer.rendererV2().setSymbol( symbol )
+        else:
+            rules = []
+            attribute = self.style['attribute']['key']
+            if styleType=='classified':
+                #Graduated symbol
+                for i, rule in enumerate(self.style['rules'], start=1):
+                    symbol = self.createSymbol( symbolClass, rule['symbol'] )
+                    if i==1:
+                        #Min value is taken from attributes
+                        minVal = layer.minimumValue( layer.fields().fieldNameIndex(attribute) )
+                        maxVal = rule['filter']['val']
+                    else:
+                        minVal = rule['filter']['lo']
+                        maxVal = rule['filter']['hi']
+                    rules.append( QgsRendererRangeV2( minVal, maxVal, symbol, '{} - {}'.format(minVal, maxVal)) )
+                renderer = QgsGraduatedSymbolRendererV2(attribute, rules)
+            elif styleType=='unique':
+                #Unique values symbol
+                attrType = self.style['attribute']['type']
+                for category in self.style['rules']:
+                    symbol = self.createSymbol( symbolClass, category['symbol'] )
+                    value = category['filter']['val']
+                    rules.append( QgsRendererCategoryV2(self.parseValueType(value, attrType), symbol, value) )
+                renderer = QgsCategorizedSymbolRendererV2(attribute, rules)
+            layer.setRendererV2(renderer)
+        #Set layer transparency
+        layer.setLayerTransparency( self.parseTransparency( self.style.get('fillOpacity', 0.7) ) ) #Layer transparency
+        layer.triggerRepaint()
+    
+    def createSymbol( self, symbolClass, data ):
+        """ Create QGIS symblo from DIVI style definition """
+        return symbolClass.createSimple({
+                'color': self.parseHexColor( data.get('fillColor', '#abcdea') ), #Fill color
+                'outline_color': self.parseHexColor( data.get('strokeColor', '#aeabea') ), #Outline color
+                'outline_width': str( float(data.get('strokeWidth', 3))/10), #Outline width
+                'size' : str( float(data.get('pointRadius', 6))/5 ) #Point size
+            })
+    
+    @staticmethod
+    def parseValueType( value, attrType ):
+        """ Converse value type """
+        if attrType=='number':
+            return float(value)
+        return value
+    
+    @staticmethod
+    def parseHexColor( value ):
+        """ Converse HEX colors to RGBA """
+        c = value[1:]
+        if len(c)==6:
+            r = int(c[0:2], 16)
+            g = int(c[2:4], 16)
+            b = int(c[4:6], 16)
+            a = 255
+        elif len(c) == 8:
+            r = int(c[0:2], 16)
+            g = int(c[2:4], 16)
+            b = int(c[4:6], 16)
+            a = int(c[6:8], 16)
+        return '{},{},{},{}'.format(r, g, b, a)
+    
+    @staticmethod
+    def parseTransparency( value ):
+        """ Convert transparency value from 0-1 range to percent """
+        return (1-value)*100
 
 class RasterItem(LayerItem):
     

@@ -220,7 +220,14 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             if data:
                 permissions = connector.getUserPermission(item.id, 'layer')
                 self.plugin.msgBar.setBoundries(50, 50)
+                #Disable rendering for changing symbology
+                self.iface.mapCanvas().setRenderFlag(False)
                 layers = self.plugin.addLayer(data['features'], item, permissions)
+                for layer in layers:
+                    #Set symbols based on layer geometry type
+                    item.setQgisStyle(layer)
+                    self.iface.legendInterface().refreshLayerSymbology(layer)
+                self.iface.mapCanvas().setRenderFlag(True)
                 addedData.extend( layers )
                 item.items.extend( addedData )
             self.plugin.msgBar.setValue(100)
