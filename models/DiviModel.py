@@ -22,8 +22,10 @@
 """
 
 from PyQt4.QtCore import QObject, QAbstractItemModel, Qt, QModelIndex, SIGNAL
-from PyQt4.QtGui import QIcon, QFont, QSortFilterProxyModel
-from qgis.core import QgsMessageLog, QgsDataSourceURI
+from PyQt4.QtGui import QIcon, QFont, QSortFilterProxyModel, QColor
+from qgis.core import QgsMessageLog, QgsDataSourceURI, QgsPalLayerSettings, QGis,\
+    QgsLineSymbolV2, QgsFillSymbolV2, QgsMarkerSymbolV2, QgsRendererRangeV2,\
+    QgsGraduatedSymbolRendererV2, QgsRendererCategoryV2, QgsCategorizedSymbolRendererV2
 from ..utils.connector import DiviConnector
 import locale
 
@@ -148,9 +150,6 @@ class TableItem(LayerItem):
     def identifier(self):
         return 'table@%s' % self.id
 
-from qgis.core import QgsMarkerSymbolV2, QgsLineSymbolV2, QgsFillSymbolV2, QGis, QgsRendererRangeV2, QgsGraduatedSymbolRendererV2, QgsRendererCategoryV2, QgsCategorizedSymbolRendererV2
-from PyQt4.QtGui import QColor
-
 class VectorItem(TableItem):
     
     def __init__(self, data, parent=None):
@@ -204,6 +203,17 @@ class VectorItem(TableItem):
             layer.setRendererV2(renderer)
         #Set layer transparency
         layer.setLayerTransparency( self.parseTransparency( self.style.get('fillOpacity', 0.7) ) ) #Layer transparency
+        #Labeling
+        if 'label' in self.style:
+            palyr = QgsPalLayerSettings()
+            palyr.readFromLayer( layer )
+            palyr.enabled = True
+            palyr.fieldName = self.style['label']['key']
+            palyr.bufferDraw = True
+            palyr.bufferSize = int(self.style.get('labelOutlineWidth', 1))
+            palyr.textFont.setPointSize( int(self.style.get('labelFontSize', 12)) )
+            palyr.textColor = self.parseHexColor(self.style.get('labelFontColor', '#000000') )
+            palyr.writeToLayer( layer )
         layer.triggerRepaint()
     
     def createSymbol( self, symbolClass, data ):
@@ -223,7 +233,7 @@ class VectorItem(TableItem):
         return value
     
     @staticmethod
-    def parseHexColor( value ):
+    def parseHexColor( value, qgisString=True ):
         """ Converse HEX colors to RGBA """
         c = value[1:]
         if len(c)==6:
@@ -236,7 +246,10 @@ class VectorItem(TableItem):
             g = int(c[2:4], 16)
             b = int(c[4:6], 16)
             a = int(c[6:8], 16)
-        return '{},{},{},{}'.format(r, g, b, a)
+        if qgisString:
+            return '{},{},{},{}'.format(r, g, b, a)
+        else:
+            return QColor(r, g, b, a)
     
     @staticmethod
     def parseTransparency( value ):
