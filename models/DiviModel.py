@@ -25,9 +25,14 @@ from PyQt4.QtCore import QObject, QAbstractItemModel, Qt, QModelIndex, SIGNAL
 from PyQt4.QtGui import QIcon, QFont, QSortFilterProxyModel, QColor
 from qgis.core import QgsMessageLog, QgsDataSourceURI, QgsPalLayerSettings, QGis,\
     QgsLineSymbolV2, QgsFillSymbolV2, QgsMarkerSymbolV2, QgsRendererRangeV2,\
-    QgsGraduatedSymbolRendererV2, QgsRendererCategoryV2, QgsCategorizedSymbolRendererV2
+    QgsGraduatedSymbolRendererV2, QgsRendererCategoryV2, QgsCategorizedSymbolRendererV2,\
+    QgsSvgMarkerSymbolLayerV2
 from ..utils.connector import DiviConnector
 import locale
+from tempfile import gettempdir
+from os import path as op, mkdir
+import base64
+import urllib
 
 class TreeItem(QObject):
     '''
@@ -161,6 +166,7 @@ class VectorItem(TableItem):
         return 'vector@%s' % self.id
     
     def setQgisStyle(self, layer):
+        """ Set layer style based on DIVI style """
         if not self.style:
             return
         styleType = self.style.get('type', 'single')
@@ -174,15 +180,18 @@ class VectorItem(TableItem):
         #Set style
         if styleType=='single':
             #Single symbol
-            symbol = self.createSymbol( symbolClass, self.style )
-            layer.rendererV2().setSymbol( symbol )
+            if 'externalGraphic' in self.style:
+                symbol = self.createSvgSymbol( self.style )
+                layer.rendererV2().symbols()[0].changeSymbolLayer(0, symbol)
+            else:
+                symbol = self.createSymbol( symbolClass, self.style )
+                layer.rendererV2().setSymbol( symbol )
         else:
             rules = []
             attribute = self.style['attribute']['key']
             if styleType=='classified':
                 #Graduated symbol
                 for i, rule in enumerate(self.style['rules'], start=1):
-                    symbol = self.createSymbol( symbolClass, rule['symbol'] )
                     if i==1:
                         #Min value is taken from attributes
                         minVal = layer.minimumValue( layer.fields().fieldNameIndex(attribute) )
@@ -190,6 +199,11 @@ class VectorItem(TableItem):
                     else:
                         minVal = rule['filter']['lo']
                         maxVal = rule['filter']['hi']
+                    symbol = self.createSymbol( symbolClass, rule['symbol'] )
+                    if 'externalGraphic' in rule['symbol']:
+                        #Set SVG graphic as symbol
+                        symbolSvg = self.createSvgSymbol( rule['symbol'] )
+                        symbol.changeSymbolLayer(0, symbolSvg)
                     rules.append( QgsRendererRangeV2( minVal, maxVal, symbol, '{} - {}'.format(minVal, maxVal)) )
                 renderer = QgsGraduatedSymbolRendererV2(attribute, rules)
             elif styleType=='unique':
@@ -197,6 +211,9 @@ class VectorItem(TableItem):
                 attrType = self.style['attribute']['type']
                 for category in self.style['rules']:
                     symbol = self.createSymbol( symbolClass, category['symbol'] )
+                    if 'externalGraphic' in category['symbol']:
+                        symbolSvg = self.createSvgSymbol( category['symbol'] )
+                        symbol.changeSymbolLayer(0, symbolSvg)
                     value = category['filter']['val']
                     rules.append( QgsRendererCategoryV2(self.parseValueType(value, attrType), symbol, value) )
                 renderer = QgsCategorizedSymbolRendererV2(attribute, rules)
@@ -224,6 +241,41 @@ class VectorItem(TableItem):
                 'outline_width': str( float(data.get('strokeWidth', 3))/10), #Outline width
                 'size' : str( float(data.get('pointRadius', 6))/5 ) #Point size
             })
+    
+    def createSvgSymbol( self, data ):
+        """ Create SVG  """
+        return QgsSvgMarkerSymbolLayerV2.create( {
+                'name' : self.getIcon(data['externalGraphic']),
+                'color': self.parseHexColor( data.get('fillColor', '#abcdea') ), #Fill color
+                'outline_color': self.parseHexColor( data.get('strokeColor', '#aeabea') ), #Outline color
+                'outline_width': str( float(data.get('strokeWidth', 3))/10), #Outline width
+                'size' : str( float(data.get('pointRadius', 6))/2 ) #Point size
+            })
+    
+    def getIcon(self, name):
+        """ External graphic based on Nathan Woodrow article:
+        https://nathanw.net/2016/02/04/live-svgs/
+        """
+        path = op.join(gettempdir(), 'divi')
+        if not op.exists( path ):
+            mkdir( path )
+        
+        svg = """
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg>
+  <g>
+    <image xlink:href="data:image/jpeg;base64,{0}" height="256" width="320" />
+  </g>
+</svg>
+"""
+        data = urllib.urlopen( 'http://0.0.0.0:5034/icons/%s' % name )
+        svgFile = '%s.svg' % name.replace('/', '_')
+        svgPath = op.join(path, svgFile)
+        b64response = base64.b64encode(data.read())
+        newsvg = svg.format(b64response).replace('\n','')
+        with open(svgPath, 'w') as f:
+            f.write(newsvg)
+        return svgPath.replace("\\", "/")
     
     @staticmethod
     def parseValueType( value, attrType ):
