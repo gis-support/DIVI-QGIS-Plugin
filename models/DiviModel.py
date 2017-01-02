@@ -180,7 +180,8 @@ class VectorItem(TableItem):
         #Set style
         if styleType=='single':
             #Single symbol
-            if 'externalGraphic' in self.style:
+            externalGraphic = self.style.get('externalGraphic')
+            if externalGraphic:
                 symbol = self.createSvgSymbol( self.style )
                 layer.rendererV2().symbols()[0].changeSymbolLayer(0, symbol)
             else:
@@ -200,7 +201,8 @@ class VectorItem(TableItem):
                         minVal = rule['filter']['lo']
                         maxVal = rule['filter']['hi']
                     symbol = self.createSymbol( symbolClass, rule['symbol'] )
-                    if 'externalGraphic' in rule['symbol']:
+                    externalGraphic = rule['symbol'].get('externalGraphic')
+                    if externalGraphic:
                         #Set SVG graphic as symbol
                         symbolSvg = self.createSvgSymbol( rule['symbol'] )
                         symbol.changeSymbolLayer(0, symbolSvg)
@@ -211,7 +213,8 @@ class VectorItem(TableItem):
                 attrType = self.style['attribute']['type']
                 for category in self.style['rules']:
                     symbol = self.createSymbol( symbolClass, category['symbol'] )
-                    if 'externalGraphic' in category['symbol']:
+                    externalGraphic = category['symbol'].get('externalGraphic')
+                    if externalGraphic:
                         symbolSvg = self.createSvgSymbol( category['symbol'] )
                         symbol.changeSymbolLayer(0, symbolSvg)
                     value = category['filter']['val']
