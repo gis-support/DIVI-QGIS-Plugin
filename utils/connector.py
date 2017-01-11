@@ -187,27 +187,16 @@ class DiviConnector(QObject):
     
     def diviFeatchData(self):
         QgsMessageLog.logMessage('Fecthing data', 'DIVI')
-        accounts = self.getJson(self.sendGetRequest('/accounts', {'token':self.token}))
-        if not accounts:
-            return
         projects = self.getJson(self.sendGetRequest('/projects', {'token':self.token}))
+        if not projects:
+            return
         layers, tables = self.diviGetProjectItems()
-        return accounts['data'], projects['data'], layers, tables
-    
-    def diviGetAccountItems(self, accountid):
-        params = {'token':self.token}
-        if accountid is not None:
-            params['account'] = accountid
-        projects = self.getJson(self.sendGetRequest('/projects', params))
-        layers, tables = self.diviGetProjectItems(accountid=accountid)
         return projects['data'], layers, tables
-        
-    def diviGetProjectItems(self, projectid=None, accountid=None):
+    
+    def diviGetProjectItems(self, projectid=None):
         params = {'token':self.token}
         if projectid is not None:
             params['project'] = projectid
-        elif accountid is not None:
-            params['account'] = accountid
         layers = self.getJson(self.sendGetRequest('/layers', params))
         tables = self.getJson(self.sendGetRequest('/tables', params))
         return layers['data'], tables['data']

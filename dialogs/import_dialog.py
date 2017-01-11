@@ -55,10 +55,8 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         self.cmbLayers.currentIndexChanged[str].connect(self.eLayerName.setText)
         
         self.loadLayers()
-        self.loadAccounts()
-        self.loadProjects(self.cmbAccounts.currentIndex())
+        self.loadProjects()
         
-        self.cmbAccounts.currentIndexChanged[int].connect(self.loadProjects)
         self.btnOK.clicked.connect(self.uploadLayer)
         
         self.msgBar = None
@@ -69,26 +67,15 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         for _, layer in QgsMapLayerRegistry.instance().mapLayers().iteritems():
             self.cmbLayers.addItem(layer.name(), layer)
     
-    def loadAccounts(self):
-        self.cmbAccounts.clear()
-        for account in self.getModelType("Account"):
-            self.cmbAccounts.addItem(account.name, account.id)
-    
-    def loadProjects(self, account):
-        accountid = self.cmbAccounts.itemData(account)
+    def loadProjects(self):
         self.cmbProjects.clear()
-        for project in self.getModelType("Project", accountid):
+        for project in self.getModelType("Project"):
             self.cmbProjects.addItem(project.name, project)
     
     def getModelType(self, modelType, parentid=None):
         model = self.plugin.dockwidget.tvData.model().sourceModel()
-        if parentid is None:
-            parent = model.index(0,0)
-            #Accounts count
-            hits = len(model.rootItem.childItems)
-        else:
-            parent = model.findItem(parentid, 'account', True)
-            hits = len(parent.data(role=Qt.UserRole).childItems)
+        parent = model.index(0,0)
+        hits = len(model.rootItem.childItems)
         indexes = model.match(
             parent,
             Qt.UserRole+2,
@@ -126,13 +113,12 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
     def uploadTable(self, table):
         """ Upload non-spatial tables """
         project = self.cmbProjects.itemData(self.cmbProjects.currentIndex())
-        account = self.cmbAccounts.itemData(self.cmbAccounts.currentIndex())
         fields = [ field.name() for field in table.fields() ]
         data = [ feature.attributes() for feature in table.getFeatures() ]
         token = QSettings().value('divi/token', None)
         content = self.connector.sendPostRequest('/tables_tabular', 
             {'header':fields, 'data':data, 'project':project.id, 'name':self.eLayerName.text()},
-            params={'token':token, 'account':account})
+            params={'token':token})
         result = json.loads(content)
         #Refresh list
         self.plugin.dockwidget.tvData.model().sourceModel().addProjectItems(

@@ -95,28 +95,12 @@ class LoadingItem(TreeItem):
         
         self.icon = QIcon(':/plugins/DiviPlugin/images/downloading.png')
 
-class AccountItem(TreeItem):
-    
-    def __init__(self, data, parent=None):
-        super(AccountItem, self).__init__(self, parent)
-        self.name = data.get('name')
-        self.id = data.get('id')
-        self.abstract = data.get('description')
-    
-    def identifier(self):
-        return 'account@%s' % self.id
-    
-    def loadedChilds(self):
-        """ True if any layer/table from this account is loaded """
-        return any( child.loadedChilds() for child in self.childItems )
-
 class ProjectItem(TreeItem):
     
     def __init__(self, data, parent=None):
         super(ProjectItem, self).__init__(self, parent)
         self.name = data.get('name')
         self.id = data.get('id')
-        self.id_accounts = data.get('id_accounts')
         self.abstract = data.get('description')
     
     def identifier(self):
@@ -132,7 +116,6 @@ class LayerItem(TreeItem):
         super(LayerItem, self).__init__(self, parent)
         self.name = data.get('name')
         self.id = data.get('id')
-        self.id_accounts = data.get('id_accounts')
         self.id_projects = data.get('id_projects')
         self.abstract = data.get('abstract')
         self.data_type = data.get('data_type')
@@ -345,7 +328,7 @@ class DiviModel(QAbstractItemModel):
             font = QFont()
             if isinstance(item, LayerItem):
                 font.setBold(bool(item.items))
-            elif isinstance(item, (AccountItem, ProjectItem)):
+            elif isinstance(item, ProjectItem):
                 font.setItalic( item.loadedChilds() )
                 font.setUnderline( item.loadedChilds() )
             return font
@@ -370,23 +353,17 @@ class DiviModel(QAbstractItemModel):
         item = LoadingItem( self.rootItem )
         self.endInsertRows()
     
-    def addData(self, accounts, projects, layers, tables):
+    def addData(self, projects, layers, tables):
         self.removeAll()
-        self.beginInsertRows(QModelIndex(), 0, len(accounts)-1)
-        self.addAccounts(accounts)
+        self.beginInsertRows(QModelIndex(), 0, len(projects)-1)
         self.addProjects(projects)
         self.addLayers(layers)
         self.addTables(tables)
         self.endInsertRows()
     
-    def addAccounts(self, accounts):
-        for account in accounts:
-            item = AccountItem(account, self.rootItem )
-    
     def addProjects(self, projects):
         for project in projects:
-            account = self.findItem(project['id_accounts'], 'account')
-            item = ProjectItem(project, account )
+            item = ProjectItem( project, self.rootItem )
     
     def addLayers(self, layers):
         for layer in layers:
@@ -405,15 +382,6 @@ class DiviModel(QAbstractItemModel):
         parent = self.findItem(project.id, 'project', True)
         count = len(project.childItems)
         self.beginInsertRows(parent, count, count+len(layers)+len(tables)-1)
-        self.addLayers(layers)
-        self.addTables(tables)
-        self.endInsertRows()
-    
-    def addAccountItems(self, account, projects=[], layers=[], tables=[]):
-        parent = self.findItem(account.id, 'account', True)
-        count = len(account.childItems)
-        self.beginInsertRows(parent, count, count+len(projects)-1)
-        self.addProjects(projects)
         self.addLayers(layers)
         self.addTables(tables)
         self.endInsertRows()

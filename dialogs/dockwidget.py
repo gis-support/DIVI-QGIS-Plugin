@@ -33,7 +33,7 @@ from PyQt4.QtGui import QDockWidget, QInputDialog, QMenu, QToolButton
 from qgis.gui import QgsMessageBar, QgsFilterLineEdit
 from ..utils.connector import DiviConnector
 from ..models.DiviModel import DiviModel, DiviProxyModel, LayerItem, TableItem, \
-    ProjectItem, VectorItem, RasterItem, AccountItem
+    ProjectItem, VectorItem, RasterItem
 from ..utils.widgets import ProgressMessageBar
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -327,8 +327,6 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         elif isinstance(item, ProjectItem):
             menu.addAction(QgsApplication.getThemeIcon('/mActionAddGroup.png'), self.tr(u'Add all layers from project'), lambda: self.addProjectData(index))
             menu.addAction(QgsApplication.getThemeIcon('/mActionDraw.svg'), self.tr(u'Refresh items'), lambda: self.refreshItems(index))
-        elif isinstance(item, AccountItem):
-            menu.addAction(QgsApplication.getThemeIcon('/mActionDraw.svg'), self.tr(u'Refresh items'), lambda: self.refreshItems(index))
         menu.popup(self.tvData.viewport().mapToGlobal(point))
     
     def layersRemoved(self, layers):
@@ -406,19 +404,11 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         model = self.tvData.model().sourceModel()
         self.unregisterLayers(item)
         model.removeRows(0, item.childCount(),index)
-        if isinstance(item, AccountItem):
-            projects, layers, tables = connector.diviGetAccountItems(item.id)
-            model.addAccountItems(item, projects, layers, tables)
-        else:
-            layers, tables = connector.diviGetProjectItems(projectid=item.id)
-            model.addProjectItems(item, layers, tables)
+        layers, tables = connector.diviGetProjectItems(projectid=item.id)
+        model.addProjectItems(item, layers, tables)
         self.getLoadedDiviLayers()
     
     def unregisterLayers(self, item):
-        if isinstance(item, AccountItem):
-            for project in item.childItems:
-                self.unregisterLayers(project)
-        else:
-            for child in item.childItems:
-                for layer in child.items:
-                    self.plugin.unregisterLayer(layer)
+        for child in item.childItems:
+            for layer in child.items:
+                self.plugin.unregisterLayer(layer)
