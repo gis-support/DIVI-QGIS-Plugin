@@ -245,6 +245,13 @@ class DiviPlugin(QObject):
         
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.identification_dock)
+        
+        if QGis.QGIS_VERSION_INT >= 21600:
+            #Style panel
+            from .widgets.StylePanel import DiviStylePanelFactory
+            self.diviPanelFactory = DiviStylePanelFactory()
+            self.iface.registerMapLayerConfigWidgetFactory(self.diviPanelFactory)
+
 
     #--------------------------------------------------------------------------
     
@@ -255,6 +262,9 @@ class DiviPlugin(QObject):
         
         self.iface.projectRead.disconnect(self.loadLayers)
         QgsMapLayerRegistry.instance().layersWillBeRemoved.disconnect( self.dockwidget.layersRemoved )
+        
+        if QGis.QGIS_VERSION_INT >= 21600:
+            self.iface.unregisterMapLayerConfigWidgetFactory(self.diviPanelFactory)
         
         #Disconnect layers signal
         for layer in [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]:
