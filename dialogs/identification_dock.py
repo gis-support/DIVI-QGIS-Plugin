@@ -24,8 +24,9 @@
 from PyQt4 import uic
 from PyQt4.QtCore import Qt, QSettings
 from PyQt4.QtGui import QDockWidget, QIcon, QFileDialog, QInputDialog, \
-    QMessageBox, QMenu
+    QMessageBox, QMenu, QImageReader
 import os.path as op
+from .preview_dialog import DiviPluginPreviewDialog
 from ..models.ActivitiesModel import ActivitiesModel, ActivitiesProxyModel, \
     AttachmentItem, ActivitiesItem, RasterItem, HTMLDelegate
 from ..utils.files import readFile
@@ -55,6 +56,7 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         self.btnRemoveAttachment.setIcon( QIcon(':/plugins/DiviPlugin/images/attachment_remove.png') )
         self.btnDownloadAttachment.setIcon( QIcon(':/plugins/DiviPlugin/images/attachment_download.png') )
         self.btnAddComment.setIcon( QIcon(':/plugins/DiviPlugin/images/comment_add.png') )
+        self.btnPreview.setIcon( QIcon(':/plugins/DiviPlugin/images/images.png') )
         menu = QMenu()
         menu.aboutToShow.connect(self.downloadMenuShow)
         self.btnDownloadAttachment.setMenu(menu)
@@ -70,6 +72,9 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         self.btnAddAttachment.clicked.connect( self.addAttachment )
         self.btnRemoveAttachment.clicked.connect( self.removeAttachment )
         self.btnAddComment.clicked.connect( self.addComment )
+        self.btnPreview.clicked.connect( self.previewDialog )
+        #GUI
+        self.dlg = None
     
     def setEnabled( self, enabled ):
         #Set widgets enable state by connection status
@@ -116,13 +121,11 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
             index = indexes[0]
             item = index.data(Qt.UserRole)
             if isinstance(item, AttachmentItem):
-                return self.itemActivated(self, index)
+                return self.itemActivated(index)
         self.saveFile( 'attachments.zip', True )
     
-    def saveFile(self, fileName, allFiles=False):
-        featureid = self.tvIdentificationResult.model().sourceModel().currentFeature
-        if featureid is None:
-            return
+    def getSavePath(self, fileName):
+        """ get path to save from user """
         ext = op.splitext(fileName)[-1]
         settings = QSettings()
         defaultDir = settings.value('divi/last_dir', '')
@@ -132,6 +135,16 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         if not filePath:
             return
         settings.setValue('divi/last_dir', op.dirname(filePath))
+        return filePath
+    
+    def saveFile(self, fileName, allFiles=False):
+        """ Save file to disk """
+        featureid = self.tvIdentificationResult.model().sourceModel().currentFeature
+        if featureid is None:
+            return
+        filePath = self.getSavePath( fileName )
+        if filePath is None:
+            return
         connector = self.plugin.dockwidget.getConnector()
         if allFiles:
             fileData = connector.getFiles( featureid )
@@ -195,3 +208,20 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         if not isinstance(item, ActivitiesItem):
             return
         QSettings().setValue('divi/expanded/%s' % item.type, expanded)
+    
+    def previewDialog(self):
+        """ Show images preview dialog """
+        if self.dlg is None:
+            #Create window if not exists
+            self.dlg = DiviPluginPreviewDialog(self)
+        model = self.tvIdentificationResult.model().sourceModel()
+        item = model.findItem('attachments')
+        image_items = []
+        supportedFormats = QImageReader.supportedImageFormats()
+        #Filter attachments by extension of supported formats
+        for itm in item.childItems:
+            ext = op.splitext(itm.name)[-1][1:].lower()
+            if ext in supportedFormats:
+                image_items.append( itm )
+        fid = self.tvIdentificationResult.model().sourceModel().currentFeature
+        self.dlg.show(fid, image_items)

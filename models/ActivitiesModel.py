@@ -176,6 +176,7 @@ class ActivitiesModel(QAbstractItemModel):
     
     expand = pyqtSignal(QModelIndex)
     layerTypeChanged = pyqtSignal(str)
+    on_attachments = pyqtSignal()
     
     def __init__(self, layerType='vector', parent=None):
         super(ActivitiesModel, self).__init__(parent)
@@ -257,6 +258,7 @@ class ActivitiesModel(QAbstractItemModel):
             attachment_index = self.findItem('attachments', as_model=True)
             if attachment_index is not None:
                 self.addItems(attachment_index, attachments, AttachmentItem)
+            self.on_attachments.emit()
         #Add comments
         if 'comments' in data:
             comments = data['comments']

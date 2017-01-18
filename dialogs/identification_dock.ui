@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>220</width>
+    <width>248</width>
     <height>409</height>
    </rect>
   </property>
@@ -87,6 +87,23 @@
          <property name="toolTip">
           <string>Add comment</string>
          </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="autoRaise">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="btnPreview">
          <property name="text">
           <string/>
          </property>
