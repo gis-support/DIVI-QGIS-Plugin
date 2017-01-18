@@ -98,7 +98,6 @@ class ImageItem(TreeItem):
         self.icon = QIcon( pixmap )
     
     def getImageFull(self):
-        print 'FULL', self.name
         if self.image is None:
             pixmap = self.getImage(False)
             self.image = pixmap
@@ -110,7 +109,6 @@ class ImageItem(TreeItem):
         del connector
         b = QBuffer( img )
         im = QImageReader( b )
-        print self.name, im.size()
         return QPixmap.fromImageReader( im )
 
 class ThumbnailsModel(QAbstractListModel):

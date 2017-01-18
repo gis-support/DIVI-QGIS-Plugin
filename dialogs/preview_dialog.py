@@ -77,6 +77,7 @@ class DiviPluginPreviewDialog(QDialog, FORM_CLASS):
         self.plugin.tvIdentificationResult.model().sourceModel().on_attachments.connect( self.attachmentsChanged )
     
     def show(self, fid, images):
+        """ Update images list and show window """
         self.fid = fid
         model = self.lvThumbnails.model()
         model.setImages(fid, images)
@@ -87,16 +88,19 @@ class DiviPluginPreviewDialog(QDialog, FORM_CLASS):
         super(DiviPluginPreviewDialog, self).show()
     
     def attachmentsChanged(self):
+        """ Reaload data if window is visible """
         if self.isVisible():
             self.plugin.previewDialog()
     
     def showFullImage(self, index, previous=None):
+        """ Show image """
         item = index.data( Qt.UserRole )
         if item is None:
             return
         self.viewer.setImage( item.getImageFull().toImage() )
     
     def changeImage(self, forward):
+        """ Change image after Previous/Next button click """
         current_index = self.lvThumbnails.currentIndex()
         current_item = current_index.data( Qt.UserRole )
         model = self.lvThumbnails.model()
@@ -108,6 +112,7 @@ class DiviPluginPreviewDialog(QDialog, FORM_CLASS):
             self.lvThumbnails.setCurrentIndex( model.index(current_index.row()-1,0) )
     
     def saveImage(self):
+        """ Save current image to disk """
         current_index = self.lvThumbnails.currentIndex()
         current_item = current_index.data( Qt.UserRole )
         if current_item is None:

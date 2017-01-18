@@ -1,23 +1,12 @@
-""" ImageViewer.py: PyQt image viewer widget for a QPixmap in a QGraphicsView scene with mouse zooming and panning.
-
-"""
+# -*- coding: utf-8 -*-
+""" ImageViewer.py: PyQt image viewer widget for a QPixmap in a QGraphicsView scene with mouse zooming and panning. """
 
 import os.path
-try:
-    from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QT_VERSION_STR
-    from PyQt5.QtGui import QImage, QPixmap, QPainterPath
-    from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog
-except ImportError:
-    try:
-        from PyQt4.QtCore import Qt, QRectF, pyqtSignal, QT_VERSION_STR
-        from PyQt4.QtGui import QGraphicsView, QGraphicsScene, QImage, QPixmap, QPainterPath, QFileDialog
-    except ImportError:
-        raise ImportError("ImageViewerQt: Requires PyQt5 or PyQt4.")
-
+from PyQt4.QtCore import Qt, QRectF, pyqtSignal, QT_VERSION_STR
+from PyQt4.QtGui import QGraphicsView, QGraphicsScene, QImage, QPixmap, QPainterPath, QFileDialog
 
 __author__ = "Marcel Goldschen-Ohm <marcel.goldschen@gmail.com>"
 __version__ = '0.9.0'
-
 
 class ImageViewerQt(QGraphicsView):
     """ PyQt image viewer widget for a QPixmap in a QGraphicsView scene with mouse zooming and panning.
@@ -227,34 +216,3 @@ class ImageViewerQt(QGraphicsView):
         if not self.canZoom:
             return
         self.zoom( event.delta()>0, event.pos() )
-
-
-if __name__ == '__main__':
-    import sys
-    try:
-        from PyQt5.QtWidgets import QApplication
-    except ImportError:
-        try:
-            from PyQt4.QtGui import QApplication
-        except ImportError:
-            raise ImportError("ImageViewerQt: Requires PyQt5 or PyQt4.")
-    print('ImageViewerQt: Using Qt ' + QT_VERSION_STR)
-
-    def handleLeftClick(x, y):
-        row = int(y)
-        column = int(x)
-        print("Clicked on image pixel (row="+str(row)+", column="+str(column)+")")
-
-    # Create the application.
-    app = QApplication(sys.argv)
-
-    # Create image viewer and load an image file to display.
-    viewer = ImageViewerQt()
-    viewer.loadImageFromFile()  # Pops up file dialog.
-
-    # Handle left mouse clicks with custom slot.
-    viewer.leftMouseButtonPressed.connect(handleLeftClick)
-
-    # Show viewer and run application.
-    viewer.show()
-    sys.exit(app.exec_())
