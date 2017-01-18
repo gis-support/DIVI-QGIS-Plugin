@@ -41,4 +41,7 @@
     <qresource prefix="/plugins/DiviPlugin" >
         <file>images/identification.svg</file>
     </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/images.png</file>
+    </qresource>
 </RCC>
