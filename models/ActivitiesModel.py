@@ -151,7 +151,7 @@ class ChangeItem(BaseActivityItem):
     def __init__(self, change, parent):
         super(ChangeItem, self).__init__(self, parent)
         self.description = change['what']
-        self.user = change['realname']
+        self.user = change['email']
         #self.date = datetime.utcfromtimestamp( comment['posted_at'] )
         #self.displayDate = self.date.strftime('%Y-%m-%d %H:%M:%S')
         self.displayDate = change['when']
