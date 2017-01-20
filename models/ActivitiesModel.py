@@ -29,6 +29,7 @@ from PyQt4.QtGui import QSortFilterProxyModel, QIcon, QFileIconProvider, \
 import os.path as op
 from tempfile import NamedTemporaryFile
 from datetime import datetime
+from ..utils.connector import DiviConnector
 
 ICONS_CACHE = {}
 
@@ -150,11 +151,13 @@ class ChangeItem(BaseActivityItem):
     
     def __init__(self, change, parent):
         super(ChangeItem, self).__init__(self, parent)
+        self.id = change['id']
         self.description = change['what']
         self.user = change['realname']
         #self.date = datetime.utcfromtimestamp( comment['posted_at'] )
         #self.displayDate = self.date.strftime('%Y-%m-%d %H:%M:%S')
         self.displayDate = change['when']
+        self.details = None
     
     @property
     def tooltip(self):
@@ -163,6 +166,13 @@ class ChangeItem(BaseActivityItem):
     @property
     def name(self):
         return u'<b>{}</b><br/><i>{}</i><br/>{}'.format( self.user, self.displayDate, self.description )
+    
+    def getDetails(self):
+        if self.details is None:
+            connector = DiviConnector()
+            self.details = connector.getChange(self.id)
+            del connector
+        return self.details
 
 class RasterItem(BaseActivityItem):
     
@@ -177,6 +187,7 @@ class ActivitiesModel(QAbstractItemModel):
     expand = pyqtSignal(QModelIndex)
     layerTypeChanged = pyqtSignal(str)
     on_attachments = pyqtSignal()
+    on_history = pyqtSignal()
     
     def __init__(self, layerType='vector', parent=None):
         super(ActivitiesModel, self).__init__(parent)
@@ -271,6 +282,7 @@ class ActivitiesModel(QAbstractItemModel):
             history_index = self.findItem('history', as_model=True)
             if history_index is not None:
                 self.addItems(history_index, changes, ChangeItem)
+            self.on_history.emit()
     
     def addItems(self, parent, data, model):
         parent_item = parent.data(Qt.UserRole)

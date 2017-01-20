@@ -313,6 +313,9 @@ class DiviConnector(QObject):
     def getChanges(self, featureid):
         return self.getJson(self.sendGetRequest('/changes', {'token':self.token, 'feature':str(featureid)}))
     
+    def getChange(self, cid):
+        return self.getJson(self.sendGetRequest('/changes/%s'%cid, {'token':self.token}))
+    
     def getFile(self, featureid, fileName, as_thumbnail=False):
         params = {'token':self.token}
         if as_thumbnail:
