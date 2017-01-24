@@ -22,10 +22,16 @@
 """
 
 from PyQt4 import uic
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QDialog
+from PyQt4.QtCore import Qt, QSettings
+from PyQt4.QtGui import QDialog, QColor, QItemSelectionModel
+from qgis.core import QgsPoint, QGis, QgsGeometry, QgsVectorLayer, \
+    QgsCoordinateReferenceSystem, QgsFeature, QgsRectangle
+from qgis.gui import QgsMapCanvas, QgsRubberBand, QgsMapCanvasLayer, QgsMapToolPan
 import os.path as op
+import json
+from osgeo.ogr import CreateGeometryFromJson
 from ..models.HistoryModels import HistoryModel, HistoryProxyModel, ChangeModel
+from ..utils.geometry import SetLocale_CtxDec
 
 FORM_CLASS, _ = uic.loadUiType(op.join(
     op.dirname(__file__), 'history_dialog.ui'))
@@ -47,20 +53,42 @@ class DiviPluginHistoryDialog(QDialog, FORM_CLASS):
         self.initGui()
     
     def initGui(self):
+        #Models
         self.tblChanges.setModel( ChangeModel() )
-        
         proxyChanges = HistoryProxyModel()
         proxyChanges.setSourceModel( HistoryModel() )
         self.tblHistory.setModel( proxyChanges )
         #Signals
         self.plugin.tvIdentificationResult.model().sourceModel().on_history.connect( self.historyChanged )
         self.tblHistory.selectionModel().currentChanged.connect( self.currentHistoryChanged )
-        #self.tblHistory.selectionModel().currentChanged.connect( 
-        #    lambda c,p: current.data(Qt.UserRole).getDetails().get('what_attributes', []) )
+        #Widgets
+        settings = QSettings()
+        self.mapCanvas = QgsMapCanvas(self.vSplitter)
+        self.mapCanvas.setDestinationCrs( QgsCoordinateReferenceSystem('EPSG:4326') )
+        zoomFactor = settings.value( "/qgis/zoom_factor", 2.0, type=float )
+        action = settings.value( "/qgis/wheel_action", 0, type=int)
+        self.mapCanvas.setWheelAction( QgsMapCanvas.WheelAction(action), zoomFactor )
+        self.mapCanvas.enableAntiAliasing( settings.value( "/qgis/enable_anti_aliasing", False, type=bool ))
+        self.mapCanvas.useImageToRender( settings.value( "/qgis/use_qimage_to_render", False, type=bool ))
+        self.toolPan = QgsMapToolPan( self.mapCanvas )
+        self.mapCanvas.setMapTool( self.toolPan )
+        #Canvas items
+        self.new_geometry = QgsRubberBand(self.mapCanvas)
+        self.new_geometry.setWidth(2)
+        self.new_geometry.setIcon( QgsRubberBand.ICON_CIRCLE )
+        g = QColor(0, 128, 0, 100)
+        self.new_geometry.setColor( g )
+        self.old_geometry = QgsRubberBand(self.mapCanvas)
+        self.old_geometry.setWidth(2)
+        self.old_geometry.setIcon( QgsRubberBand.ICON_CIRCLE )
+        r = QColor(255, 0, 0, 100)
+        self.old_geometry.setColor( r )
     
     def show(self, data=[]):
         model = self.tblHistory.model().sourceModel()
         model.addItems(data)
+        if data:
+            self.tblHistory.selectionModel().setCurrentIndex( model.index(0,0), QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows )
         super(DiviPluginHistoryDialog, self).show()
     
     def historyChanged(self):
@@ -69,9 +97,35 @@ class DiviPluginHistoryDialog(QDialog, FORM_CLASS):
             self.plugin.showHistoryDialog()
     
     def currentHistoryChanged(self, current, previous):
+        self.new_geometry.reset()
+        self.old_geometry.reset()
+        self.tblChanges.model().removeRows()
+        if not current.isValid():
+            return
         item = current.data(Qt.UserRole)
         if item is None:
-            data = []
+            data = {}
         else:
-            data = current.data(Qt.UserRole).getDetails().get('what_attributes', [])
-        self.tblChanges.model().addItems( data )
+            data = current.data(Qt.UserRole).getDetails()
+        with SetLocale_CtxDec():
+            extent = None
+            if data.get('new_geometry'):
+                wkt = CreateGeometryFromJson( json.dumps(data['new_geometry']) ).ExportToWkt()
+                geom = QgsGeometry.fromWkt( wkt )
+                l = QgsVectorLayer('Point?crs=epsg:4326', 'asd', 'memory')
+                self.new_geometry.setToGeometry( geom, l )
+                extent = QgsRectangle(geom.boundingBox())
+            if data.get('old_geometry'):
+                wkt = CreateGeometryFromJson( json.dumps(data['old_geometry']) ).ExportToWkt()
+                geom = QgsGeometry.fromWkt( wkt )
+                l = QgsVectorLayer('Point?crs=epsg:4326', 'asd', 'memory')
+                self.old_geometry.setToGeometry( geom, l )
+                if extent is None:
+                    extent = QgsRectangle(geom.boundingBox())
+                else:
+                    extent.combineExtentWith( geom.boundingBox() )
+            if extent is not None:
+                extent.grow(0.01)
+                self.mapCanvas.setExtent( extent )
+        if data.get('what_attributes', []):
+            self.tblChanges.model().insertRows( 0, data.get('what_attributes', []) )

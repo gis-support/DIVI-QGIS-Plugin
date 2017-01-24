@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QSplitter" name="splitter">
+    <widget class="QSplitter" name="hSplitter">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
@@ -33,16 +33,21 @@
        <bool>false</bool>
       </attribute>
      </widget>
-     <widget class="QTableView" name="tblChanges">
-      <property name="selectionMode">
-       <enum>QAbstractItemView::SingleSelection</enum>
+     <widget class="QSplitter" name="vSplitter">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
       </property>
-      <property name="selectionBehavior">
-       <enum>QAbstractItemView::SelectRows</enum>
-      </property>
-      <attribute name="verticalHeaderVisible">
-       <bool>false</bool>
-      </attribute>
+      <widget class="QTableView" name="tblChanges">
+       <property name="selectionMode">
+        <enum>QAbstractItemView::SingleSelection</enum>
+       </property>
+       <property name="selectionBehavior">
+        <enum>QAbstractItemView::SelectRows</enum>
+       </property>
+       <attribute name="verticalHeaderVisible">
+        <bool>false</bool>
+       </attribute>
+      </widget>
      </widget>
     </widget>
    </item>

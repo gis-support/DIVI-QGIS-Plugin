@@ -21,8 +21,8 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import QAbstractTableModel, Qt, QModelIndex, pyqtSignal
-from PyQt4.QtGui import QSortFilterProxyModel
+from PyQt4.QtCore import QAbstractTableModel, Qt, QModelIndex, pyqtSignal, QSize
+from PyQt4.QtGui import QSortFilterProxyModel, QBrush, QColor
 import os.path as op
 from tempfile import NamedTemporaryFile
 from datetime import datetime
@@ -37,7 +37,7 @@ class HistoryModel(QAbstractTableModel):
         return len(self.items)
  
     def columnCount(self, parent=QModelIndex()):
-        return 2
+        return 4
     
     def data(self, index, role):
         if not index.isValid():
@@ -47,7 +47,16 @@ class HistoryModel(QAbstractTableModel):
             if index.column()==0:
                 return item.user
             elif index.column()==1:
+                if 'geom' in item.description:
+                    return 'X'
+            elif index.column()==2:
+                if 'atr' in item.description:
+                    return 'X'
+            elif index.column()==3:
                 return item.displayDate
+        elif role == Qt.SizeHintRole:
+            if index.column() in (1, 2):
+                return QSize(100, 10)
         elif role == Qt.UserRole:
             #Return item itself
             return item
@@ -57,6 +66,10 @@ class HistoryModel(QAbstractTableModel):
             if section == 0:
                 return self.tr('User')
             elif section == 1:
+                return self.tr('Geom')
+            elif section == 2:
+                return self.tr('Attrs')
+            elif section == 3:
                 return self.tr('Date')
     
     def insertRows(self, position, rows, parent=QModelIndex()):
@@ -111,9 +124,18 @@ class ChangeModel(HistoryModel):
             if index.column()==0:
                 return item['key']
             elif index.column()==1:
-                return item['was']
+                if item['was'] is None:
+                    return 'NULL'
+                else:
+                    return item['was']
             elif index.column()==2:
-                return item['is']
+                if item['is'] is None:
+                    return 'NULL'
+                else:
+                    return item['is']
+        elif role == Qt.ForegroundRole:
+            if (index.column() == 1 and item['was'] is None) or (index.column() == 2 and item['is'] is None):
+                return QBrush(QColor('gray'))
         elif role == Qt.UserRole:
             #Return item itself
             return item
