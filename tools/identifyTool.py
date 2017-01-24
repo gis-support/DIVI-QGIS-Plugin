@@ -64,6 +64,7 @@ class DiviIdentifyTool(QgsMapToolIdentify):
         self.canvas = parent.iface.mapCanvas()
         self.geometry = QgsRubberBand(self.canvas, QGis.Point)
         self.geometry.setColor(QColor('red'))
+        self.geometry.setFillColor(QColor(255, 0, 0, 100))
         self.geometry.setIconSize(7)
         self.geometry.setWidth(3)
         super(DiviIdentifyTool, self).__init__(self.canvas)
