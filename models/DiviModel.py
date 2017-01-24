@@ -175,8 +175,8 @@ class VectorItem(TableItem):
             attribute = self.style['attribute']['key']
             if styleType=='classified':
                 #Graduated symbol
-                for i, rule in enumerate(self.style['rules'], start=1):
-                    if i==1:
+                for rule in self.style['rules']:
+                    if 'val' in rule['filter']:
                         #Min value is taken from attributes
                         minVal = layer.minimumValue( layer.fields().fieldNameIndex(attribute) )
                         maxVal = rule['filter']['val']
@@ -189,7 +189,7 @@ class VectorItem(TableItem):
                         #Set SVG graphic as symbol
                         symbolSvg = self.createSvgSymbol( rule['symbol'] )
                         symbol.changeSymbolLayer(0, symbolSvg)
-                    rules.append( QgsRendererRangeV2( minVal, maxVal, symbol, '{} - {}'.format(minVal, maxVal)) )
+                    rules.append( QgsRendererRangeV2( float(minVal), float(maxVal), symbol, '{} - {}'.format(minVal, maxVal)) )
                 renderer = QgsGraduatedSymbolRendererV2(attribute, rules)
             elif styleType=='unique':
                 #Unique values symbol
@@ -207,7 +207,7 @@ class VectorItem(TableItem):
         #Set layer transparency
         layer.setLayerTransparency( self.parseTransparency( self.style.get('fillOpacity', 0.7) ) ) #Layer transparency
         #Labeling
-        if 'label' in self.style:
+        if self.style.get('label') is not None:
             palyr = QgsPalLayerSettings()
             palyr.readFromLayer( layer )
             palyr.enabled = True
@@ -215,15 +215,15 @@ class VectorItem(TableItem):
             palyr.bufferDraw = True
             palyr.bufferSize = int(self.style.get('labelOutlineWidth', 1))
             palyr.textFont.setPointSize( int(self.style.get('labelFontSize', 12)) )
-            palyr.textColor = self.parseHexColor(self.style.get('labelFontColor', '#000000') )
+            palyr.textColor = self.hex2QColor( self.style.get('labelFontColor', '#000000') )
             palyr.writeToLayer( layer )
         layer.triggerRepaint()
     
     def createSymbol( self, symbolClass, data ):
         """ Create QGIS symblo from DIVI style definition """
         return symbolClass.createSimple({
-                'color': self.parseHexColor( data.get('fillColor', '#abcdea') ), #Fill color
-                'outline_color': self.parseHexColor( data.get('strokeColor', '#aeabea') ), #Outline color
+                'color': self.hex2str( data.get('fillColor', '#abcdea') ), #Fill color
+                'outline_color': self.hex2str( data.get('strokeColor', '#aeabea') ), #Outline color
                 'outline_width': str( float(data.get('strokeWidth', 3))/10), #Outline width
                 'size' : str( float(data.get('pointRadius', 6))/5 ) #Point size
             })
@@ -232,8 +232,8 @@ class VectorItem(TableItem):
         """ Create SVG  """
         return QgsSvgMarkerSymbolLayerV2.create( {
                 'name' : self.getIcon(data['externalGraphic']),
-                'color': self.parseHexColor( data.get('fillColor', '#abcdea') ), #Fill color
-                'outline_color': self.parseHexColor( data.get('strokeColor', '#aeabea') ), #Outline color
+                'color': self.hex2str( data.get('fillColor', '#abcdea') ), #Fill color
+                'outline_color': self.hex2str( data.get('strokeColor', '#aeabea') ), #Outline color
                 'outline_width': str( float(data.get('strokeWidth', 3))/10), #Outline width
                 'size' : str( float(data.get('pointRadius', 6))/2 ) #Point size
             })
@@ -270,6 +270,12 @@ class VectorItem(TableItem):
             return float(value)
         return value
     
+    def hex2QColor( self, value ):
+        return QColor( *self.parseHexColor(value) )
+    
+    def hex2str( self, value ):
+        return '{},{},{},{}'.format( *self.parseHexColor(value) )
+    
     @staticmethod
     def parseHexColor( value, qgisString=True ):
         """ Converse HEX colors to RGBA """
@@ -284,10 +290,7 @@ class VectorItem(TableItem):
             g = int(c[2:4], 16)
             b = int(c[4:6], 16)
             a = int(c[6:8], 16)
-        if qgisString:
-            return '{},{},{},{}'.format(r, g, b, a)
-        else:
-            return QColor(r, g, b, a)
+        return r, g, b, a
     
     @staticmethod
     def parseTransparency( value ):
