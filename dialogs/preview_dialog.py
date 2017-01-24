@@ -90,7 +90,7 @@ class DiviPluginPreviewDialog(QDialog, FORM_CLASS):
     def attachmentsChanged(self):
         """ Reaload data if window is visible """
         if self.isVisible():
-            self.plugin.previewDialog()
+            self.plugin.showPreviewDialog()
     
     def showFullImage(self, index, previous=None):
         """ Show image """

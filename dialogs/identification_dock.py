@@ -27,8 +27,9 @@ from PyQt4.QtGui import QDockWidget, QIcon, QFileDialog, QInputDialog, \
     QMessageBox, QMenu, QImageReader
 import os.path as op
 from .preview_dialog import DiviPluginPreviewDialog
+from .history_dialog import DiviPluginHistoryDialog
 from ..models.ActivitiesModel import ActivitiesModel, ActivitiesProxyModel, \
-    AttachmentItem, ActivitiesItem, RasterItem, HTMLDelegate
+    AttachmentItem, ActivitiesItem, RasterItem, HTMLDelegate, ChangeItem
 from ..utils.files import readFile
 import os.path as op
 
@@ -72,9 +73,10 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         self.btnAddAttachment.clicked.connect( self.addAttachment )
         self.btnRemoveAttachment.clicked.connect( self.removeAttachment )
         self.btnAddComment.clicked.connect( self.addComment )
-        self.btnPreview.clicked.connect( self.previewDialog )
+        self.btnPreview.clicked.connect( self.showPreviewDialog )
         #GUI
-        self.dlg = None
+        self.previewDialog = None
+        self.historyDialog = None
     
     def setEnabled( self, enabled ):
         #Set widgets enable state by connection status
@@ -87,6 +89,8 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         item = index.data(Qt.UserRole)
         if isinstance(item, AttachmentItem):
             self.saveFile( item.name )
+        if isinstance(item, ChangeItem):
+            self.showHistoryDialog()
     
     def treeSelectionChanged(self, new, old):
         item = new.data(Qt.UserRole)
@@ -209,11 +213,11 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
             return
         QSettings().setValue('divi/expanded/%s' % item.type, expanded)
     
-    def previewDialog(self):
+    def showPreviewDialog(self):
         """ Show images preview dialog """
-        if self.dlg is None:
+        if self.previewDialog is None:
             #Create window if not exists
-            self.dlg = DiviPluginPreviewDialog(self)
+            self.previewDialog = DiviPluginPreviewDialog(self)
         model = self.tvIdentificationResult.model().sourceModel()
         item = model.findItem('attachments')
         image_items = []
@@ -224,4 +228,13 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
             if ext in supportedFormats:
                 image_items.append( itm )
         fid = self.tvIdentificationResult.model().sourceModel().currentFeature
-        self.dlg.show(fid, image_items)
+        self.previewDialog.show(fid, image_items)
+    
+    def showHistoryDialog(self):
+        #index.parent().data(Qt.UserRole).childItems
+        if self.historyDialog is None:
+            #Create window if not exists
+            self.historyDialog = DiviPluginHistoryDialog(self)
+        model = self.tvIdentificationResult.model().sourceModel()
+        item = model.findItem('history')
+        self.historyDialog.show( item.childItems )
