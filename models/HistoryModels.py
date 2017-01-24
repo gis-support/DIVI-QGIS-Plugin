@@ -27,50 +27,13 @@ import os.path as op
 from tempfile import NamedTemporaryFile
 from datetime import datetime
 
-class HistoryModel(QAbstractTableModel):
-    
+class BaseModle(QAbstractTableModel):
     def __init__(self, parent=None):
-        super(HistoryModel, self).__init__(parent)
+        super(BaseModel, self).__init__(parent)
         self.items = []
     
     def rowCount(self, parent=QModelIndex()):
         return len(self.items)
- 
-    def columnCount(self, parent=QModelIndex()):
-        return 4
-    
-    def data(self, index, role):
-        if not index.isValid():
-            return None
-        item = self.items[index.row()]
-        if role == Qt.DisplayRole:
-            if index.column()==0:
-                return item.user
-            elif index.column()==1:
-                if 'geom' in item.description:
-                    return 'X'
-            elif index.column()==2:
-                if 'atr' in item.description:
-                    return 'X'
-            elif index.column()==3:
-                return item.displayDate
-        elif role == Qt.SizeHintRole:
-            if index.column() in (1, 2):
-                return QSize(100, 10)
-        elif role == Qt.UserRole:
-            #Return item itself
-            return item
-    
-    def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            if section == 0:
-                return self.tr('User')
-            elif section == 1:
-                return self.tr('Geom')
-            elif section == 2:
-                return self.tr('Attrs')
-            elif section == 3:
-                return self.tr('Date')
     
     def insertRows(self, position, rows, parent=QModelIndex()):
         self.beginInsertRows(parent, position, position + len(rows) - 1)
@@ -108,10 +71,50 @@ class HistoryModel(QAbstractTableModel):
             else:
                 return indexes[0].data(role=Qt.UserRole)
 
+class HistoryModel(BaseModel):
+ 
+    def columnCount(self, parent=QModelIndex()):
+        return 2
+    
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        item = self.items[index.row()]
+        if role == Qt.DisplayRole:
+            if index.column()==0:
+                return item.user
+            elif index.column()==1:
+                '''
+                if 'geom' in item.description:
+                    return 'X'
+            elif index.column()==2:
+                if 'atr' in item.description:
+                    return 'X'
+            elif index.column()==3:'''
+                return item.displayDate
+            '''elif role == Qt.SizeHintRole:
+            if index.column() in (1, 2):
+                return QSize(100, 10)'''
+        elif role == Qt.UserRole:
+            #Return item itself
+            return item
+    
+    def headerData(self, section, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            if section == 0:
+                return self.tr('User')
+            elif section == 1:
+                '''
+                return self.tr('Geom')
+            elif section == 2:
+                return self.tr('Attrs')
+            elif section == 3:'''
+                return self.tr('Date')
+
 class HistoryProxyModel(QSortFilterProxyModel):
     pass
 
-class ChangeModel(HistoryModel):
+class ChangeModel(BaseModel):
     
     def columnCount(self, parent=QModelIndex()):
         return 3

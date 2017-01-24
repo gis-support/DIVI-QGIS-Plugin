@@ -89,7 +89,7 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         menu.aboutToShow.connect(self.addMenuShow)
         self.btnAddLayer.setMenu(menu)
         self.btnAddLayer.clicked.connect( self.addItems )
-        self.btnRefresh.clicked.connect(lambda checked: self.refreshItems( self.tvData.selectedIndexes()[0] ))
+        self.btnRefresh.clicked.connect(lambda checked: self.refreshItems( self.tvData.selectedIndexes()[0] if self.tvData.selectedIndexes() else None ))
         self.btnRefresh.setIcon( QgsApplication.getThemeIcon('/mActionDraw.svg') )
     
     def getConnector(self, auto_login=True):
@@ -396,6 +396,8 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                 self.iface.legendInterface().moveLayer(layer, idx)
     
     def refreshItems(self, index):
+        if index is None:
+            return
         index = self.tvData.model().mapToSource(index)
         item = index.data( role=Qt.UserRole )
         if isinstance(item, LayerItem):

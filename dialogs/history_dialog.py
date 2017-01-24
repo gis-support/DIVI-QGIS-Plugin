@@ -127,5 +127,6 @@ class DiviPluginHistoryDialog(QDialog, FORM_CLASS):
             if extent is not None:
                 extent.grow(0.01)
                 self.mapCanvas.setExtent( extent )
+                self.mapCanvas.refresh()
         if data.get('what_attributes', []):
             self.tblChanges.model().insertRows( 0, data.get('what_attributes', []) )

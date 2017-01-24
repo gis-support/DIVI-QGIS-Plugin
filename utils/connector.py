@@ -41,8 +41,7 @@ class DiviConnector(QObject):
     downloadingProgress = pyqtSignal(float)
     uploadingProgress = pyqtSignal(float)
     
-    #DIVI_HOST = 'https://divi.io'
-    DIVI_HOST = 'http://0.0.0.0:5034'
+    DIVI_HOST = 'https://divi.io'
     
     def __init__(self, iface=None, auto_login=True):
         QObject.__init__(self)
@@ -87,7 +86,7 @@ class DiviConnector(QObject):
         elif status_code == 500:
             if self.iface is not None:
                 self.iface.messageBar().pushMessage(self.tr("Error"),
-                    self.tr("Error 500: Internal Server Error. DIVI QGIS Plugin couldn't connect to server."),
+                    self.tr("Error 500: Internal Server Error"),
                     level=QgsMessageBar.CRITICAL, duration=0)
             return
         elif status_code == 409:
