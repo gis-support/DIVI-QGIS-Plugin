@@ -27,7 +27,7 @@ import os.path as op
 from tempfile import NamedTemporaryFile
 from datetime import datetime
 
-class BaseModle(QAbstractTableModel):
+class BaseModel(QAbstractTableModel):
     def __init__(self, parent=None):
         super(BaseModel, self).__init__(parent)
         self.items = []
