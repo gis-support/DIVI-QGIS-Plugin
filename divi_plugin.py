@@ -372,6 +372,7 @@ class DiviPlugin(QObject):
     def loadLayerType(self, item, geom_type):
         layer = QgsVectorLayer("%s?crs=epsg:4326" % geom_type, item.name, "memory")
         layer.setCustomProperty('DiviId', item.id)
+        item.setQgisStyle(layer)
         self.loadLayer(layer, add_empty=True)
     
     def addLayer(self, features, layer, permissions={}):
