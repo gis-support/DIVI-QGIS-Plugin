@@ -308,7 +308,7 @@ class DiviPlugin(QObject):
         #Cache is used for storing data while reading project to prevent multiple connections for one layer with many geometry types
         with Cache(self):
             for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues():
-                self.loadLayer(layer)
+                self.loadLayer(layer, add_empty=True)
     
     def loadLayer(self, mapLayer, add_empty=False):
         divi_id = mapLayer.customProperty('DiviId')
@@ -488,25 +488,10 @@ class DiviPlugin(QObject):
             if int(QSettings().value('divi/status', 3)) > 2:
                 layer.setReadOnly( not bool(permissions.get(layerid, False)) )
             if not layer.isReadOnly():
-                print '---', layer.name()
-                print layer.receivers( SIGNAL("beforeCommitChanges()") )
-                print layer.receivers( SIGNAL("committedFeaturesAdded(QString,QgsFeatureList)") )
-                print layer.receivers( SIGNAL("editingStarted()") )
-                print layer.receivers( SIGNAL("editingStopped()") )
-                if not layer.receivers( SIGNAL("beforeCommitChanges()") ):
-                    layer.beforeCommitChanges.connect(self.onLayerCommit)
-                if not layer.receivers( SIGNAL("committedFeaturesAdded(QString,QgsFeatureList)") ):
-                    layer.committedFeaturesAdded.connect(self.onFeaturesAdded)
-                if not layer.receivers( SIGNAL("editingStarted()") ):
-                    layer.editingStarted.connect(self.onStartEditing )
-                if not layer.receivers( SIGNAL("editingStopped()") ):
-                    layer.editingStopped.connect(self.onStopEditing)
-                print '---'
-                print layer.receivers( SIGNAL("beforeCommitChanges()") )
-                print layer.receivers( SIGNAL("committedFeaturesAdded(QString,QgsFeatureList)") )
-                print layer.receivers( SIGNAL("editingStarted()") )
-                print layer.receivers( SIGNAL("editingStopped()") )
-                print '==='
+                layer.beforeCommitChanges.connect(self.onLayerCommit)
+                layer.committedFeaturesAdded.connect(self.onFeaturesAdded)
+                layer.editingStarted.connect(self.onStartEditing )
+                layer.editingStopped.connect(self.onStopEditing)
             for i, field in enumerate(fields):
                 layer.addAttributeAlias(i, field['name'])
                 if field['type'] == 'dropdown':

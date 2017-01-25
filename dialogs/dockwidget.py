@@ -158,7 +158,6 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                 layerItem = layerIndex.data(role=Qt.UserRole)
                 if layer not in layerItem.items:
                     fields = [] if isinstance(layer, QgsRasterLayer) else layerItem.fields
-                    self.plugin.registerLayer(layer, divi_id, [], {}, False, fields)
                     layerItem.items.append(layer)
                     model.dataChanged.emit(layerIndex, layerIndex)
                     if isinstance(layer, QgsRasterLayer):
