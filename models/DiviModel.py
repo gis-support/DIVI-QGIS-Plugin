@@ -327,7 +327,10 @@ class DiviModel(QAbstractItemModel):
         
         item = index.internalPointer()
         if role == Qt.DisplayRole:
-            return item.name
+            if isinstance(item, VectorItem):
+                return '%s [%d]' % (item.name, len(item.items))
+            else:
+                return item.name
         elif role == Qt.DecorationRole and hasattr(item, 'icon'):
             return item.icon
         elif role == Qt.FontRole:

@@ -21,7 +21,7 @@
  ***************************************************************************/
 """
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt,\
-    QVariant, QObject, QPyNullVariant, QDateTime
+    QVariant, QObject, QPyNullVariant, QDateTime, SIGNAL
 from PyQt4.QtGui import QAction, QIcon
 from PyQt4.QtXml import QDomDocument, QDomElement
 from qgis.core import QgsProject, QGis, QgsVectorLayer, QgsMessageLog,\
@@ -39,8 +39,10 @@ import os.path
 from functools import partial
 from base64 import b64decode
 
+from .utils.commons import Cache
 from .utils.connector import DiviConnector
-from .utils.widgets import ProgressMessageBar
+from .widgets.ProgressMessageBar import ProgressMessageBar
+
 
 class DiviPlugin(QObject):
     """QGIS Plugin Implementation."""
@@ -304,11 +306,9 @@ class DiviPlugin(QObject):
     def loadLayers(self):
         """ Load DIVI layers after openig project """
         #Cache is used for storing data while reading project to prevent multiple connections for one layer with many geometry types
-        self.cache = {}
-        for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues():
-            self.loadLayer(layer)
-        #Clear cache
-        self.cache = {}
+        with Cache(self):
+            for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues():
+                self.loadLayer(layer)
     
     def loadLayer(self, mapLayer, add_empty=False):
         divi_id = mapLayer.customProperty('DiviId')
@@ -373,7 +373,8 @@ class DiviPlugin(QObject):
         layer = QgsVectorLayer("%s?crs=epsg:4326" % geom_type, item.name, "memory")
         layer.setCustomProperty('DiviId', item.id)
         item.setQgisStyle(layer)
-        self.loadLayer(layer, add_empty=True)
+        with Cache(self):
+            self.loadLayer(layer, add_empty=True)
     
     def addLayer(self, features, layer, permissions={}):
         #Layers have CRS==4326
@@ -487,10 +488,25 @@ class DiviPlugin(QObject):
             if int(QSettings().value('divi/status', 3)) > 2:
                 layer.setReadOnly( not bool(permissions.get(layerid, False)) )
             if not layer.isReadOnly():
-                layer.beforeCommitChanges.connect(self.onLayerCommit)
-                layer.committedFeaturesAdded.connect(self.onFeaturesAdded)
-                layer.editingStarted.connect(self.onStartEditing )
-                layer.editingStopped.connect(self.onStopEditing)
+                print '---', layer.name()
+                print layer.receivers( SIGNAL("beforeCommitChanges()") )
+                print layer.receivers( SIGNAL("committedFeaturesAdded(QString,QgsFeatureList)") )
+                print layer.receivers( SIGNAL("editingStarted()") )
+                print layer.receivers( SIGNAL("editingStopped()") )
+                if not layer.receivers( SIGNAL("beforeCommitChanges()") ):
+                    layer.beforeCommitChanges.connect(self.onLayerCommit)
+                if not layer.receivers( SIGNAL("committedFeaturesAdded(QString,QgsFeatureList)") ):
+                    layer.committedFeaturesAdded.connect(self.onFeaturesAdded)
+                if not layer.receivers( SIGNAL("editingStarted()") ):
+                    layer.editingStarted.connect(self.onStartEditing )
+                if not layer.receivers( SIGNAL("editingStopped()") ):
+                    layer.editingStopped.connect(self.onStopEditing)
+                print '---'
+                print layer.receivers( SIGNAL("beforeCommitChanges()") )
+                print layer.receivers( SIGNAL("committedFeaturesAdded(QString,QgsFeatureList)") )
+                print layer.receivers( SIGNAL("editingStarted()") )
+                print layer.receivers( SIGNAL("editingStopped()") )
+                print '==='
             for i, field in enumerate(fields):
                 layer.addAttributeAlias(i, field['name'])
                 if field['type'] == 'dropdown':

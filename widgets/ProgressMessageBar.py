@@ -5,7 +5,7 @@
                                  A QGIS plugin
  Integracja QGIS z platformą DIVI firmy GIS Support sp. z o. o.
                              -------------------
-        begin                : 2016-02-09
+        begin                : 2017-01-25
         git sha              : $Format:%H$
         copyright            : (C) 2016 by GIS Support sp. z o. o.
         email                : info@gis-support.pl
@@ -21,10 +21,9 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import QObject, QPyNullVariant, QDate, Qt
+from PyQt4.QtCore import QObject, QPyNullVariant
 from PyQt4.QtGui import QProgressBar
 from qgis.core import QgsMessageLog
-import json
 
 class ProgressMessageBar(QObject):
     
@@ -69,12 +68,3 @@ class ProgressMessageBar(QObject):
             self.iface.messageBar().clearWidgets()
             self.progress = None
             self.msgBar = None
-
-class DiviJsonEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, QPyNullVariant):
-            return None
-        elif isinstance(obj, QDate):
-            return obj.toString(Qt.ISODate)
-        # Let the base class default method raise the TypeError
-        return json.JSONEncoder.default(self, obj)

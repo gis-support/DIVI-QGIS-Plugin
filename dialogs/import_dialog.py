@@ -31,7 +31,8 @@ from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorFileWriter,\
     QgsCoordinateReferenceSystem, QgsVectorLayer, QgsRasterFileWriter, QGis
 from ..utils.connector import DiviConnector
 from ..utils.files import readFile
-from ..utils.widgets import ProgressMessageBar, DiviJsonEncoder
+from ..utils.commons import DiviJsonEncoder
+from ..widgets.ProgressMessageBar import ProgressMessageBar
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'import_dialog.ui'))

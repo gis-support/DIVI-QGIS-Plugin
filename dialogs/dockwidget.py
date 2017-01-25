@@ -34,7 +34,8 @@ from qgis.gui import QgsMessageBar, QgsFilterLineEdit
 from ..utils.connector import DiviConnector
 from ..models.DiviModel import DiviModel, DiviProxyModel, LayerItem, TableItem, \
     ProjectItem, VectorItem, RasterItem
-from ..utils.widgets import ProgressMessageBar
+from ..widgets.ProgressMessageBar import ProgressMessageBar
+from ..utils.commons import Cache
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'dockwidget.ui'))
@@ -299,11 +300,12 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                 duration = 3
             )
             return
-        for lyr in layers:
-            lyr.dataProvider().deleteFeatures(lyr.allFeatureIds())
-            self.plugin.unregisterLayer(lyr)
-            layer_meta = self.plugin.loadLayer(lyr)
-            lyr.triggerRepaint()
+        with Cache(self.plugin):
+            for lyr in layers:
+                lyr.dataProvider().deleteFeatures(lyr.allFeatureIds())
+                self.plugin.unregisterLayer(lyr)
+                layer_meta = self.plugin.loadLayer(lyr)
+                lyr.triggerRepaint()
         item.items = layers[:]
         item.updateData(layer_meta)
     
