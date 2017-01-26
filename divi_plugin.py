@@ -249,12 +249,12 @@ class DiviPlugin(QObject):
         
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.identification_dock)
-        
+        '''
         if QGis.QGIS_VERSION_INT >= 21600:
             #Style panel
             from .widgets.StylePanel import DiviStylePanelFactory
             self.diviPanelFactory = DiviStylePanelFactory()
-            self.iface.registerMapLayerConfigWidgetFactory(self.diviPanelFactory)
+            self.iface.registerMapLayerConfigWidgetFactory(self.diviPanelFactory)'''
 
 
     #--------------------------------------------------------------------------

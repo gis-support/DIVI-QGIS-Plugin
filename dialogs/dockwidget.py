@@ -236,7 +236,7 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             if not layers:
                 #User can select geometry type in message bar
                 widget = self.iface.messageBar().createMessage(
-                    self.tr("Warining"),
+                    self.tr("Warning"),
                     self.tr(u"Layer '%s' is empty. To open it in QGIS you need to select geometry type.") % item.name
                 )
                 button = QToolButton(widget)
