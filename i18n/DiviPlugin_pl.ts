@@ -4,22 +4,22 @@
 <context>
     <name>ActivitiesItem</name>
     <message>
-        <location filename="../models/ActivitiesModel.py" line="102"/>
+        <location filename="../models/ActivitiesModel.py" line="91"/>
         <source>Attachments</source>
         <translation>Załączniki</translation>
     </message>
     <message>
-        <location filename="../models/ActivitiesModel.py" line="95"/>
+        <location filename="../models/ActivitiesModel.py" line="93"/>
         <source>Comments</source>
         <translation>Komentarze</translation>
     </message>
     <message>
-        <location filename="../models/ActivitiesModel.py" line="98"/>
+        <location filename="../models/ActivitiesModel.py" line="95"/>
         <source>History</source>
         <translation>Historia zmian</translation>
     </message>
     <message>
-        <location filename="../models/ActivitiesModel.py" line="101"/>
+        <location filename="../models/ActivitiesModel.py" line="97"/>
         <source>Raster</source>
         <translation>Raster</translation>
     </message>
@@ -27,9 +27,27 @@
 <context>
     <name>AttachmentItem</name>
     <message>
-        <location filename="../models/ActivitiesModel.py" line="126"/>
+        <location filename="../models/ActivitiesModel.py" line="120"/>
         <source>&lt;b&gt;Added by:&lt;/b&gt; {username}&lt;br/&gt;&lt;b&gt;Time:&lt;/b&gt; {posted_at}</source>
         <translation>&lt;b&gt;Dodał:&lt;/b&gt; {username}&lt;br/&gt;&lt;b&gt;Czas:&lt;/b&gt; {posted_at}</translation>
+    </message>
+</context>
+<context>
+    <name>ChangeModel</name>
+    <message>
+        <location filename="../models/HistoryModels.py" line="151"/>
+        <source>Field</source>
+        <translation>Pole</translation>
+    </message>
+    <message>
+        <location filename="../models/HistoryModels.py" line="153"/>
+        <source>Was</source>
+        <translation>Było</translation>
+    </message>
+    <message>
+        <location filename="../models/HistoryModels.py" line="155"/>
+        <source>Is</source>
+        <translation>Jest</translation>
     </message>
 </context>
 <context>
@@ -40,32 +58,32 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../dialogs/import_dialog.ui" line="137"/>
+        <location filename="../dialogs/import_dialog.ui" line="123"/>
         <source>OK</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../dialogs/import_dialog.ui" line="25"/>
+        <location filename="../dialogs/import_dialog.ui" line="28"/>
         <source>Layer:</source>
         <translation>Warstwa:</translation>
     </message>
     <message>
         <location filename="../dialogs/import_dialog.ui" line="49"/>
         <source>Account:</source>
-        <translation>Konto:</translation>
+        <translation type="obsolete">Konto:</translation>
     </message>
     <message>
-        <location filename="../dialogs/import_dialog.ui" line="66"/>
+        <location filename="../dialogs/import_dialog.ui" line="52"/>
         <source>Project:</source>
         <translation>Projekt:</translation>
     </message>
     <message>
-        <location filename="../dialogs/import_dialog.ui" line="83"/>
+        <location filename="../dialogs/import_dialog.ui" line="69"/>
         <source>Layer name:</source>
         <translation>Nazwa warstwy:</translation>
     </message>
     <message>
-        <location filename="../dialogs/import_dialog.ui" line="130"/>
+        <location filename="../dialogs/import_dialog.ui" line="116"/>
         <source>Cancel</source>
         <translation>Anuluj</translation>
     </message>
@@ -73,7 +91,7 @@
 <context>
     <name>DiviConnector</name>
     <message>
-        <location filename="../utils/connector.py" line="115"/>
+        <location filename="../utils/connector.py" line="121"/>
         <source>Error</source>
         <translation>Błąd</translation>
     </message>
@@ -83,25 +101,30 @@
         <translation>Serwer odrzucił żądanie</translation>
     </message>
     <message>
-        <location filename="../utils/connector.py" line="109"/>
+        <location filename="../utils/connector.py" line="115"/>
         <source>Error 404: requested resource could not be found </source>
         <translation>Błąd 404: nie znaleziono zasobu</translation>
     </message>
     <message>
-        <location filename="../utils/connector.py" line="115"/>
+        <location filename="../utils/connector.py" line="121"/>
         <source>Error 423: requested resource is locked</source>
         <translation>Błąd 423: żądany zasób jest zablokowany do edycji</translation>
     </message>
     <message>
-        <location filename="../utils/connector.py" line="91"/>
+        <location filename="../utils/connector.py" line="97"/>
         <source>Error 409: DIVI QGIS Plugin is not supported in version &apos;%s&apos;. Please upgrade to version &apos;%s&apos; or higher. </source>
         <translation>Błąd 409: DIVI QGIS Plugin jest w nieobsługiwanej wersji &apos;%s&apos;. Zaktualizuj wtyczkę do wersji &apos;%s&apos; lub wyższej. </translation>
+    </message>
+    <message>
+        <location filename="../utils/connector.py" line="90"/>
+        <source>Error 500: Internal Server Error</source>
+        <translation>Błąd 500: Wewnętrzny błąd serwera </translation>
     </message>
 </context>
 <context>
     <name>DiviModel</name>
     <message>
-        <location filename="../models/DiviModel.py" line="213"/>
+        <location filename="../models/DiviModel.py" line="352"/>
         <source>Data</source>
         <translation>Dane</translation>
     </message>
@@ -109,82 +132,82 @@
 <context>
     <name>DiviPlugin</name>
     <message>
-        <location filename="../divi_plugin.py" line="266"/>
+        <location filename="../divi_plugin.py" line="278"/>
         <source>&amp;DIVI QGIS Plugin</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="215"/>
+        <location filename="../divi_plugin.py" line="217"/>
         <source>DIVI QGIS Plugin</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="237"/>
+        <location filename="../divi_plugin.py" line="239"/>
         <source>Upload layer</source>
         <translation>Prześlij warstwę</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="285"/>
+        <location filename="../divi_plugin.py" line="297"/>
         <source>Loading new layer will be possible after current operation.</source>
         <translation>Załadowanie nowej warstwy będzie możliwe dopiero po zakończeniu trwającej operacji.</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="309"/>
+        <location filename="../divi_plugin.py" line="319"/>
         <source>Downloading layer &apos;%s&apos;...</source>
         <translation>Pobieranie warstwy &apos;%s&apos;...</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="510"/>
+        <location filename="../divi_plugin.py" line="522"/>
         <source>Saving layer %s</source>
         <translation>Zapisywanie warstwy &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="554"/>
+        <location filename="../divi_plugin.py" line="566"/>
         <source>Error occured while removing features. Not all features where deleted.</source>
         <translation>Podczas usuwania obiektów wystąpił błąd. Nie wszystkie obiekty zostały usunięte.</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="579"/>
+        <location filename="../divi_plugin.py" line="591"/>
         <source>Saving features to layer %s</source>
         <translation>Zapisywanie obiektów do warstwy &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="591"/>
+        <location filename="../divi_plugin.py" line="603"/>
         <source>Error occured while adding new features. Not all features where added.</source>
         <translation>Podczas dodawania nowych obiektów wystąpił. Nie wszystkie obiekty zostały dodane.</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="686"/>
+        <location filename="../divi_plugin.py" line="698"/>
         <source>No vector layers.</source>
         <translation>Brak warstw wektorowych.</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="522"/>
+        <location filename="../divi_plugin.py" line="534"/>
         <source>Warning:</source>
         <translation>Uwaga:</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="522"/>
+        <location filename="../divi_plugin.py" line="534"/>
         <source>Table schema was changed. You need to reload layers that are related to changed layer.</source>
         <translation>Zmieniono strukturę warstwy powiązanej z innymi wczytanymi warstwami DIVI.  Wczytaj ponownie warstwy aby zaktualizować ich strukturę.</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="96"/>
+        <location filename="../divi_plugin.py" line="98"/>
         <source>DIVI Toolbar</source>
         <translation>Pasek narzedzi DIVI</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="285"/>
+        <location filename="../divi_plugin.py" line="297"/>
         <source>ERROR</source>
         <translation>BŁĄÐ</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="221"/>
+        <location filename="../divi_plugin.py" line="223"/>
         <source>DIVI identification panel</source>
         <translation>Panel identyfikacji DIVI</translation>
     </message>
     <message>
-        <location filename="../divi_plugin.py" line="229"/>
+        <location filename="../divi_plugin.py" line="231"/>
         <source>Identify</source>
         <translation>Identyfikuj</translation>
     </message>
@@ -197,7 +220,7 @@
         <translation type="obsolete">Zalogowany: &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="131"/>
+        <location filename="../dialogs/dockwidget.py" line="132"/>
         <source>Disconnect</source>
         <translation>Rozłącz</translation>
     </message>
@@ -207,7 +230,7 @@
         <translation type="obsolete">Niezalogowany</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="136"/>
+        <location filename="../dialogs/dockwidget.py" line="137"/>
         <source>Connect</source>
         <translation>Połącz</translation>
     </message>
@@ -217,87 +240,87 @@
         <translation>Pobieranie warstwy &apos;%s&apos;...</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="237"/>
+        <location filename="../dialogs/dockwidget.py" line="244"/>
         <source>QGIS 2.14 or later is required for loading DIVI tables.</source>
         <translation>Aby załadować tabelę DIVI wymagane jest posiadanie QGIS w wersji 2.14 lub nowszej.</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="243"/>
+        <location filename="../dialogs/dockwidget.py" line="250"/>
         <source>Downloading table &apos;%s&apos;...</source>
         <translation>Pobieranie tabeli &apos;%s&apos;...</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="289"/>
+        <location filename="../dialogs/dockwidget.py" line="296"/>
         <source>One of related layers is in edit mode. End edit mode of that layer to continue.</source>
         <translation>Jedna z powiązanych warstw jest w trybie edycji. Zakończ edycję aby kontynuować.</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="310"/>
+        <location filename="../dialogs/dockwidget.py" line="318"/>
         <source>Add layer</source>
         <translation>Dodaj warstwę</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="312"/>
+        <location filename="../dialogs/dockwidget.py" line="320"/>
         <source>Add layer as...</source>
         <translation>Dodaj warstwę jako...</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="317"/>
+        <location filename="../dialogs/dockwidget.py" line="325"/>
         <source>Change layer name...</source>
         <translation>Zmień nazwę warstwy...</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="319"/>
+        <location filename="../dialogs/dockwidget.py" line="327"/>
         <source>Reload data</source>
         <translation>Pobierz ponownie</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="321"/>
+        <location filename="../dialogs/dockwidget.py" line="329"/>
         <source>Add all layers from project</source>
         <translation>Dodaj warstwy z projektu</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="335"/>
+        <location filename="../dialogs/dockwidget.py" line="341"/>
         <source>Removing layer %s</source>
         <translation>Usuń warstwę &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="355"/>
+        <location filename="../dialogs/dockwidget.py" line="361"/>
         <source>Change name</source>
         <translation>Zmień nazwę</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="355"/>
+        <location filename="../dialogs/dockwidget.py" line="361"/>
         <source>Enter new layer name for %s</source>
         <translation>Podaj nową nazwę dla warstwy &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="361"/>
+        <location filename="../dialogs/dockwidget.py" line="367"/>
         <source>Name of layer %s was changed to %s.</source>
         <translation>Nazwa warstwy &apos;%s&apos; została zmieniona na&apos;%s&apos;. </translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="368"/>
+        <location filename="../dialogs/dockwidget.py" line="374"/>
         <source>Error occured while changing name.</source>
         <translation>Wystąpił błąd podczas zmiany nazwy.</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="314"/>
+        <location filename="../dialogs/dockwidget.py" line="322"/>
         <source>Points</source>
         <translation>Punkty</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="315"/>
+        <location filename="../dialogs/dockwidget.py" line="323"/>
         <source>Linestring</source>
         <translation>Linie</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="316"/>
+        <location filename="../dialogs/dockwidget.py" line="324"/>
         <source>Polygons</source>
         <translation>Poligony</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="84"/>
+        <location filename="../dialogs/dockwidget.py" line="85"/>
         <source>Search...</source>
         <translation>Szukaj...</translation>
     </message>
@@ -307,17 +330,17 @@
         <translation>Dodaj jako...</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="230"/>
+        <location filename="../dialogs/dockwidget.py" line="237"/>
         <source>Layer &apos;%s&apos; is empty. To open it in QGIS you need to select geometry type.</source>
         <translation>Warstwa &apos;%s&apos; jest pusta. Aby ją wczytać do QGIS musisz wskazać typ geometrii.</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="258"/>
+        <location filename="../dialogs/dockwidget.py" line="265"/>
         <source>QGIS 2.18 or later is required for loading DIVI rasters.</source>
         <translation>Aby załadować raster DIVI wymagane jest posiadanie QGIS w wersji 2.18 lub nowszej.</translation>
     </message>
     <message>
-        <location filename="../dialogs/dockwidget.py" line="324"/>
+        <location filename="../dialogs/dockwidget.py" line="330"/>
         <source>Refresh items</source>
         <translation>Odśwież</translation>
     </message>
@@ -378,32 +401,32 @@
 <context>
     <name>DiviPluginIdentificationPanel</name>
     <message>
-        <location filename="../dialogs/identification_dock.py" line="106"/>
+        <location filename="../dialogs/identification_dock.py" line="117"/>
         <source>No attachments</source>
         <translation>Brak załączników</translation>
     </message>
     <message>
-        <location filename="../dialogs/identification_dock.py" line="108"/>
+        <location filename="../dialogs/identification_dock.py" line="119"/>
         <source>Download all</source>
         <translation>Pobierz wszystko</translation>
     </message>
     <message>
-        <location filename="../dialogs/identification_dock.py" line="130"/>
+        <location filename="../dialogs/identification_dock.py" line="139"/>
         <source>Save file to...</source>
         <translation>Zapisz plik do...</translation>
     </message>
     <message>
-        <location filename="../dialogs/identification_dock.py" line="149"/>
+        <location filename="../dialogs/identification_dock.py" line="168"/>
         <source>Select attachment(s)</source>
         <translation>Wybierz załącznik(i)</translation>
     </message>
     <message>
-        <location filename="../dialogs/identification_dock.py" line="167"/>
+        <location filename="../dialogs/identification_dock.py" line="186"/>
         <source>Remove attachment &apos;%s&apos;?</source>
         <translation>Usunąć załącznik &apos;%s&apos;?</translation>
     </message>
     <message>
-        <location filename="../dialogs/identification_dock.py" line="183"/>
+        <location filename="../dialogs/identification_dock.py" line="202"/>
         <source>Add new comment</source>
         <translation>Dodaj nowy komentarz</translation>
     </message>
@@ -411,15 +434,141 @@
 <context>
     <name>DiviPluginImportDialog</name>
     <message>
-        <location filename="../dialogs/import_dialog.py" line="107"/>
+        <location filename="../dialogs/import_dialog.py" line="95"/>
         <source>Uploading layer &apos;%s&apos;...</source>
         <translation>Ładowanie warstwy &apos;%s&apos;...</translation>
     </message>
 </context>
 <context>
+    <name>Form</name>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="14"/>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="22"/>
+        <source>Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="30"/>
+        <source>Single symbol</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="35"/>
+        <source>Unique values</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="40"/>
+        <source>Gradual symbol</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="60"/>
+        <source>Fill:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="77"/>
+        <source>Stroke:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="94"/>
+        <source>Stroke width:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="104"/>
+        <source>Point radius:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="230"/>
+        <source>Attribute:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="248"/>
+        <source>Classify</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="160"/>
+        <source>MIN color:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="177"/>
+        <source>MAX color:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="194"/>
+        <source>Classes:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="204"/>
+        <source>Method:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="212"/>
+        <source>Jenks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="217"/>
+        <source>Equal interval</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="222"/>
+        <source>Quantile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="268"/>
+        <source>Transparency:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="282"/>
+        <source>Label:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="296"/>
+        <source>Load from layer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../widgets/StylePanel.ui" line="316"/>
+        <source>Save to DIVI</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>HistoryModel</name>
+    <message>
+        <location filename="../models/HistoryModels.py" line="107"/>
+        <source>User</source>
+        <translation>Użytkownik</translation>
+    </message>
+    <message>
+        <location filename="../models/HistoryModels.py" line="114"/>
+        <source>Date</source>
+        <translation>Data</translation>
+    </message>
+</context>
+<context>
     <name>LoadingItem</name>
     <message>
-        <location filename="../models/DiviModel.py" line="87"/>
+        <location filename="../models/DiviModel.py" line="94"/>
         <source>Downloading data...</source>
         <translation>Pobieranie danych...</translation>
     </message>
@@ -427,7 +576,7 @@
 <context>
     <name>ProgressMessageBar</name>
     <message>
-        <location filename="../utils/widgets.py" line="56"/>
+        <location filename="../widgets/ProgressMessageBar.py" line="55"/>
         <source>Loading layer {} %</source>
         <translation>Ładowanie warstwy {} %</translation>
     </message>
@@ -435,7 +584,7 @@
 <context>
     <name>RasterItem</name>
     <message>
-        <location filename="../models/ActivitiesModel.py" line="180"/>
+        <location filename="../models/ActivitiesModel.py" line="183"/>
         <source>Band %d: %s</source>
         <translation>Kanał %d: %s</translation>
     </message>
