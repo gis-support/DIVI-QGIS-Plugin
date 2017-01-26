@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>248</width>
+    <width>254</width>
     <height>409</height>
    </rect>
   </property>
@@ -104,6 +104,23 @@
        </item>
        <item>
         <widget class="QToolButton" name="btnPreview">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="autoRaise">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line_3">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="btnHistory">
          <property name="text">
           <string/>
          </property>

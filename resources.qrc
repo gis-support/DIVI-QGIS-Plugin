@@ -44,4 +44,7 @@
     <qresource prefix="/plugins/DiviPlugin" >
         <file>images/images.png</file>
     </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/book.png</file>
+    </qresource>
 </RCC>

@@ -58,6 +58,7 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         self.btnDownloadAttachment.setIcon( QIcon(':/plugins/DiviPlugin/images/attachment_download.png') )
         self.btnAddComment.setIcon( QIcon(':/plugins/DiviPlugin/images/comment_add.png') )
         self.btnPreview.setIcon( QIcon(':/plugins/DiviPlugin/images/images.png') )
+        self.btnHistory.setIcon( QIcon(':/plugins/DiviPlugin/images/book.png') )
         menu = QMenu()
         menu.aboutToShow.connect(self.downloadMenuShow)
         self.btnDownloadAttachment.setMenu(menu)
@@ -74,6 +75,7 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         self.btnRemoveAttachment.clicked.connect( self.removeAttachment )
         self.btnAddComment.clicked.connect( self.addComment )
         self.btnPreview.clicked.connect( self.showPreviewDialog )
+        self.btnHistory.clicked.connect( self.showHistoryDialog )
         #GUI
         self.previewDialog = None
         self.historyDialog = None
