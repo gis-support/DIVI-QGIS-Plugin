@@ -234,11 +234,23 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             self.plugin.msgBar.close()
             self.plugin.msgBar = None
             if not layers:
-                self.iface.messageBar().pushMessage('Warning',
-                    self.tr(u"Layer '%s' is empty. To open it in QGIS you need to select geometry type.") % item.name,
-                    QgsMessageBar.WARNING,
-                    duration = 5
+                #User can select geometry type in message bar
+                widget = self.iface.messageBar().createMessage(
+                    self.tr("Warining"),
+                    self.tr(u"Layer '%s' is empty. To open it in QGIS you need to select geometry type.") % item.name
                 )
+                button = QToolButton(widget)
+                button.setText(self.tr("Add layer as..."))
+                button.setPopupMode(QToolButton.InstantPopup)
+                menu = QMenu(button)
+                load_layer_as = partial(self.plugin.loadLayerType, item=item)
+                menu.addAction(QgsApplication.getThemeIcon('/mIconPointLayer.svg'), self.tr('Points'), lambda: load_layer_as(geom_type='MultiPoint'))
+                menu.addAction(QgsApplication.getThemeIcon('/mIconLineLayer.svg'), self.tr('Linestring'), lambda: load_layer_as(geom_type='MultiLineString'))
+                menu.addAction(QgsApplication.getThemeIcon('/mIconPolygonLayer.svg'), self.tr('Polygons'), lambda: load_layer_as(geom_type='MultiPolygon'))
+                button.setMenu( menu )
+                widget.layout().addWidget(button)
+                self.iface.messageBar().pushWidget(widget, QgsMessageBar.WARNING)
+
         elif isinstance(item, TableItem):
             if QGis.QGIS_VERSION_INT < 21400:
                 self.iface.messageBar().pushMessage('DIVI',

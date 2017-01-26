@@ -54,10 +54,8 @@ class DiviConnector(QObject):
     def sendRequest(self, endpoint, params, method, data=None, headers={}, as_unicode=True):
         def send(params):
             url = self.formatUrl(endpoint, params)
-            print url
             request = QNetworkRequest(url)
             headers['User-Agent'] = 'Divi QGIS Plugin/%s' % PLUGIN_VERSION
-            print headers
             for key, value in headers.iteritems():
                 request.setRawHeader(key, value)
             if method == 'delete':
