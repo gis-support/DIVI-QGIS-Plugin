@@ -212,6 +212,8 @@ class DiviPlugin(QObject):
         self.uploadAction = QAction(self.iface.mainWindow())
         
         self.dockwidget = DiviPluginDockWidget(self)
+        #Reload all DIVI layers
+        self.loadLayers()
         
         #Add actions to toolbar
         self.add_action(
@@ -316,6 +318,8 @@ class DiviPlugin(QObject):
             return
         layer_meta = None
         if divi_id is not None and not isinstance(mapLayer, QgsRasterLayer):
+            #Delete all features from layer
+            mapLayer.dataProvider().deleteFeatures( mapLayer.allFeatureIds() )
             self.msgBar = ProgressMessageBar(self.iface, self.tr(u"Downloading layer '%s'...")%mapLayer.name(), 5, 5)
             connector = DiviConnector()
             connector.downloadingProgress.connect(self.updateDownloadProgress)
