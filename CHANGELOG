@@ -1,3 +1,12 @@
+1.3
+- support for DIVI2 API
+- remove account from main list as root item
+- set layer style and labeling settings from DIVI
+- image preview dialog for attachments
+- changes preview for features history
+- select geometry type for empty DIVI layers from message bar
+- update loaded DIVI layers on plugin startup
+
 1.2
 - load DIVI rasters, QGIS 2.18+ required
 - add identification panel
