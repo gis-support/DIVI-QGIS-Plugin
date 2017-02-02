@@ -266,9 +266,9 @@ class DiviPlugin(QObject):
         
         self.iface.projectRead.disconnect(self.loadLayers)
         QgsMapLayerRegistry.instance().layersWillBeRemoved.disconnect( self.dockwidget.layersRemoved )
-        
+        '''
         if QGis.QGIS_VERSION_INT >= 21600:
-            self.iface.unregisterMapLayerConfigWidgetFactory(self.diviPanelFactory)
+            self.iface.unregisterMapLayerConfigWidgetFactory(self.diviPanelFactory)'''
         
         #Disconnect layers signal
         for layer in [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]:
