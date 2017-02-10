@@ -110,9 +110,11 @@ class DiviConnector(QObject):
             content = reply.readAll()
         elif status_code == 404:
             if self.iface is not None:
+                msg = self.tr("Error 404: Bad login or password") \
+                            if reply.url().path() == '/authenticate' else \
+                            self.tr("Error 404: requested resource could not be found ")
                 self.iface.messageBar().pushMessage(self.tr("Error"),
-                    self.tr("Error 404: requested resource could not be found "),
-                    level=QgsMessageBar.CRITICAL, duration=3)
+                    msg, level=QgsMessageBar.CRITICAL, duration=3)
             return
         elif status_code == 423:
             if self.iface is not None:
