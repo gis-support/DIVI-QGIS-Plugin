@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- files
+ rasters
                                  A QGIS plugin
  Integracja QGIS z platformą DIVI firmy GIS Support sp. z o. o.
                              -------------------
-        begin                : 2016-11-25
+        begin                : 2017-02-10
         git sha              : $Format:%H$
         copyright            : (C) 2016 by GIS Support sp. z o. o.
         email                : info@gis-support.pl
@@ -21,30 +21,21 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import QFile, QIODevice, QSettings
-from PyQt4.QtGui import QFileDialog
-from os import path as op, remove
-from .commons import translate
+from PyQt4.QtGui import QProgressDialog
+from qgis.core import QgsRasterFileWriter
+import os.path as op
+from tempfile import NamedTemporaryFile
+from .files import readFile
 
-def readFile(path, delete_after=False):
-    data_file = QFile( path )
-    data_file.open(QIODevice.ReadOnly)
-    data = data_file.readAll()
-    data_file.close()
-    if delete_after:
-        remove( path )
+def raster2tiff( layer ):
+    """ Konwert raster layer to GeoTIFF and return as stream """
+    with NamedTemporaryFile() as f:
+        #Show raster copy progress
+        progress = QProgressDialog()
+        writer = QgsRasterFileWriter( f.name )
+        writer.setCreateOptions(['COMPRESS=DEFLATE'])
+        writer.writeRaster( layer.pipe(), layer.width(), layer.height(), layer.dataProvider().extent(), layer.crs(), progress )
+        del writer
+        del progress
+        data = readFile( f.name )
     return data
-
-def getSavePath(fileName):
-    """ get path to save from user """
-    ext = op.splitext(fileName)[-1]
-    settings = QSettings()
-    defaultDir = settings.value('divi/last_dir', '')
-    defaultPath = op.join(defaultDir, fileName)
-    #filePath = QFileDialog.getSaveFileName(None, 'Save file to...',
-    filePath = QFileDialog.getSaveFileName(None, translate('Save file to...'),
-        defaultPath, filter = ext)
-    if not filePath:
-        return
-    settings.setValue('divi/last_dir', op.dirname(filePath))
-    return filePath

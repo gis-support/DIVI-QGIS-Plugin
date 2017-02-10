@@ -21,7 +21,7 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import QDate, Qt
+from PyQt4.QtCore import QDate, Qt, QCoreApplication
 from contextlib import contextmanager
 import json
 
@@ -39,3 +39,6 @@ def Cache(plugin):
     plugin.cache = {}
     yield
     plugin.cache = {}
+
+def translate( message ):
+    return QCoreApplication.translate('DiviPlugin', message)

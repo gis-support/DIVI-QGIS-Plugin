@@ -347,6 +347,9 @@ class DiviConnector(QObject):
     def getRasterIdentification(self, layerid, point ):
         return self.getJson( self.sendGetRequest('/sample_raster/%s'%layerid, {'token':self.token, 'locs':'%f %f' % tuple(point) }) )
     
+    def downloadRaster( self, rasterid ):
+        return self.sendGetRequest('/download_raster/%s'%rasterid, {'token':self.token }, as_unicode=False)
+    
     #Edit data
     
     def addNewFeatures(self, layerid, data, transaction):

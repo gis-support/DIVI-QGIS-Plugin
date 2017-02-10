@@ -32,6 +32,7 @@ from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorFileWriter,\
 from ..utils.connector import DiviConnector
 from ..utils.files import readFile
 from ..utils.commons import DiviJsonEncoder
+from ..utils.rasters import raster2tiff
 from ..widgets.ProgressMessageBar import ProgressMessageBar
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -172,15 +173,7 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
             data = readFile( layer.source() )
         else:
             #Copy raster to GeoTIFF
-            #Show raster copy progress
-            progress = QtGui.QProgressDialog()
-            out_file = os.path.join(tempfile.gettempdir(), '%s.tiff' % layer.name())
-            writer = QgsRasterFileWriter( out_file )
-            writer.setCreateOptions(['COMPRESS=DEFLATE'])
-            writer.writeRaster( layer.pipe(), layer.width(), layer.height(), layer.dataProvider().extent(), layer.crs(), progress )
-            del writer
-            del progress
-            data = readFile( out_file, True )
+            data = raster2tiff( layer )
         self.msgBar.setBoundries(60, 35)
         self.msgBar.setValue(60)
         project = self.cmbProjects.itemData(self.cmbProjects.currentIndex())

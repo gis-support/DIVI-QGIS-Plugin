@@ -36,6 +36,7 @@ from ..models.DiviModel import DiviModel, DiviProxyModel, LayerItem, TableItem, 
     ProjectItem, VectorItem, RasterItem
 from ..widgets.ProgressMessageBar import ProgressMessageBar
 from ..utils.commons import Cache
+from ..utils.files import getSavePath
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'dockwidget.ui'))
@@ -334,6 +335,8 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                     open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPointLayer.svg'), self.tr('Points'), lambda: load_layer_as(geom_type='MultiPoint'))
                     open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconLineLayer.svg'), self.tr('Linestring'), lambda: load_layer_as(geom_type='MultiLineString'))
                     open_as_menu.addAction(QgsApplication.getThemeIcon('/mIconPolygonLayer.svg'), self.tr('Polygons'), lambda: load_layer_as(geom_type='MultiPolygon'))
+            elif isinstance(item, RasterItem):
+                menu.addAction(QgsApplication.getThemeIcon('/mActionAddMap.png'), self.tr('Download raster'), lambda: self.downloadRaster(index))
             menu.addAction(QgsApplication.getThemeIcon('/mActionToggleEditing.svg'), self.tr('Change layer name...'), lambda: self.editLayerName(index))
             if item.items:
                 menu.addAction(QgsApplication.getThemeIcon('/mActionDraw.svg'), self.tr('Reload data'), lambda: self.refreshData(item))
@@ -422,6 +425,16 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         layers, tables = connector.diviGetProjectItems(projectid=item.id)
         model.addProjectItems(item, layers, tables)
         self.getLoadedDiviLayers()
+    
+    def downloadRaster(self, index):
+        item = index.data(Qt.UserRole)
+        filePath = getSavePath( '%s.tiff' % item.name )
+        if filePath is None:
+            return
+        connector = self.getConnector()
+        fileData = connector.downloadRaster( item.id )
+        with open(filePath, 'wb') as f:
+                f.write(fileData)
     
     def unregisterLayers(self, item):
         for child in item.childItems:

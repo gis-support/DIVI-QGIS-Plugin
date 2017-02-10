@@ -30,7 +30,7 @@ from .preview_dialog import DiviPluginPreviewDialog
 from .history_dialog import DiviPluginHistoryDialog
 from ..models.ActivitiesModel import ActivitiesModel, ActivitiesProxyModel, \
     AttachmentItem, ActivitiesItem, RasterItem, HTMLDelegate, ChangeItem
-from ..utils.files import readFile
+from ..utils.files import readFile, getSavePath
 import os.path as op
 
 FORM_CLASS, _ = uic.loadUiType(op.join(
@@ -130,25 +130,12 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
                 return self.itemActivated(index)
         self.saveFile( 'attachments.zip', True )
     
-    def getSavePath(self, fileName):
-        """ get path to save from user """
-        ext = op.splitext(fileName)[-1]
-        settings = QSettings()
-        defaultDir = settings.value('divi/last_dir', '')
-        defaultPath = op.join(defaultDir, fileName)
-        filePath = QFileDialog.getSaveFileName(self, self.tr('Save file to...'),
-            defaultPath, filter = ext)
-        if not filePath:
-            return
-        settings.setValue('divi/last_dir', op.dirname(filePath))
-        return filePath
-    
     def saveFile(self, fileName, allFiles=False):
         """ Save file to disk """
         featureid = self.tvIdentificationResult.model().sourceModel().currentFeature
         if featureid is None:
             return
-        filePath = self.getSavePath( fileName )
+        filePath = getSavePath( fileName )
         if filePath is None:
             return
         connector = self.plugin.dockwidget.getConnector()
