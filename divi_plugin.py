@@ -223,7 +223,7 @@ class DiviPlugin(QObject):
             parent=self.iface.mainWindow())
         
         self.add_action(
-            ':/plugins/DiviPlugin/images/identification.svg',
+            ':/plugins/DiviPlugin/images/identification.png',
             text=self.tr(u'DIVI identification panel'),
             action = self.identification_dock.toggleViewAction(),
             parent=self.iface.mainWindow())
@@ -231,7 +231,7 @@ class DiviPlugin(QObject):
         enabled = self.dockwidget.token is not None
         
         self.add_action(
-            QgsApplication.getThemeIcon('mActionIdentify.svg'),
+            ':/plugins/DiviPlugin/images/tool_identify.png',
             self.tr('Identify'),
             action = self.identifyAction,
             callback = self.identifyTool.toggleMapTool,
@@ -239,7 +239,7 @@ class DiviPlugin(QObject):
             enabled_flag=enabled)
         
         self.uploadAction = self.add_action(
-            QgsApplication.getThemeIcon('/mActionSharingImport.svg'),
+            ':/plugins/DiviPlugin/images/upload.png',
             text=self.tr(u'Upload layer'),
             action=self.uploadAction,
             callback = self.importDialog,

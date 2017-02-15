@@ -39,12 +39,18 @@
         <file>images/history.png</file>
     </qresource>
     <qresource prefix="/plugins/DiviPlugin" >
-        <file>images/identification.svg</file>
+        <file>images/identification.png</file>
     </qresource>
     <qresource prefix="/plugins/DiviPlugin" >
         <file>images/images.png</file>
     </qresource>
     <qresource prefix="/plugins/DiviPlugin" >
         <file>images/book.png</file>
+    </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/upload.png</file>
+    </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/tool_identify.png</file>
     </qresource>
 </RCC>
