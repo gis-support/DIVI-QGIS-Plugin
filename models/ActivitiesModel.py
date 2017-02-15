@@ -117,7 +117,7 @@ class AttachmentItem(BaseActivityItem):
         super(AttachmentItem, self).__init__(self, parent)
         self.name = attachment['url']
         self.getIcon()
-        self.tooltip = self.tr('<b>Added by:</b> {username}<br/><b>Time:</b> {posted_at}').format( **attachment )
+        self.tooltip = self.tr('<b>Added by:</b> {email}<br/><b>Time:</b> {posted_at}').format( **attachment )
     
     def getIcon(self):
         ext = op.splitext(self.name)[-1]
