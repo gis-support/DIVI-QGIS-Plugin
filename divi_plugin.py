@@ -663,6 +663,15 @@ class DiviPlugin(QObject):
             item_type = 'vector'
             layer_type = 'layers'
         item = self.dockwidget.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
+        if item is None and self.dockwidget.token is None:
+            #User is not connected to DIVI
+            self.iface.messageBar().pushMessage(self.tr('ERROR'),
+                self.tr("You're offline. Please connect to DIVI and try again."),
+                self.iface.messageBar().CRITICAL,
+                duration = 3
+            )
+            layer.rollBack()
+            return
         if item.transaction is not None:
             return
         QgsMessageLog.logMessage('Start editing layer %s' % layer.name(), 'DIVI')
@@ -686,6 +695,8 @@ class DiviPlugin(QObject):
             item_type = 'vector'
             layer_type = 'layers'
         item = self.dockwidget.tvData.model().sourceModel().findItem(divi_id, item_type=item_type)
+        if item is None:
+            return
         #Check if other geometries for this DIVI layer are edited
         if any( lyr.isEditable() for lyr in item.items if lyr is not layer ):
             return
