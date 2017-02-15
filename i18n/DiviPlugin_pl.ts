@@ -214,17 +214,27 @@
     <message>
         <location filename="../divi_plugin.py" line="225"/>
         <source>DIVI identification panel</source>
-        <translation>Panel identyfikacji DIVI</translation>
+        <translation type="obsolete">Panel identyfikacji DIVI</translation>
     </message>
     <message>
         <location filename="../divi_plugin.py" line="233"/>
         <source>Identify</source>
-        <translation>Identyfikuj</translation>
+        <translation type="obsolete">Identyfikuj</translation>
     </message>
     <message>
         <location filename="../divi_plugin.py" line="668"/>
         <source>You&apos;re offline. Please connect to DIVI and try again.</source>
         <translation>Jesteś offline. Połącz się z DIVI i spróbuj ponownie.</translation>
+    </message>
+    <message>
+        <location filename="../divi_plugin.py" line="225"/>
+        <source>Feature information panel</source>
+        <translation>Panel informacji o obiekcie</translation>
+    </message>
+    <message>
+        <location filename="../divi_plugin.py" line="233"/>
+        <source>Identify tool</source>
+        <translation>Narzędzie identyfikacji</translation>
     </message>
 </context>
 <context>
@@ -400,7 +410,7 @@
     <message>
         <location filename="../dialogs/identification_dock.ui" line="17"/>
         <source>DIVI QGIS Plugin - identification</source>
-        <translation>DIVI QGIS Plugin - identyfikacja</translation>
+        <translation type="obsolete">DIVI QGIS Plugin - identyfikacja</translation>
     </message>
     <message>
         <location filename="../dialogs/identification_dock.ui" line="36"/>
@@ -421,6 +431,21 @@
         <location filename="../dialogs/identification_dock.ui" line="88"/>
         <source>Add comment</source>
         <translation>Dodaj komentarz</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/identification_dock.ui" line="17"/>
+        <source>Feature informations</source>
+        <translation>Informacje o obiekcie</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/identification_dock.ui" line="108"/>
+        <source>Preview images ...</source>
+        <translation>Przeglądanie obrazów ...</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/identification_dock.ui" line="128"/>
+        <source>Preview history ...</source>
+        <translation>Przeglądanie historii zmian ...</translation>
     </message>
 </context>
 <context>

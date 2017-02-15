@@ -224,7 +224,7 @@ class DiviPlugin(QObject):
         
         self.add_action(
             ':/plugins/DiviPlugin/images/identification.png',
-            text=self.tr(u'DIVI identification panel'),
+            text=self.tr(u'Feature information panel'),
             action = self.identification_dock.toggleViewAction(),
             parent=self.iface.mainWindow())
         
@@ -232,7 +232,7 @@ class DiviPlugin(QObject):
         
         self.add_action(
             ':/plugins/DiviPlugin/images/tool_identify.png',
-            self.tr('Identify'),
+            self.tr('Identify tool'),
             action = self.identifyAction,
             callback = self.identifyTool.toggleMapTool,
             parent=self.iface.mainWindow(),
