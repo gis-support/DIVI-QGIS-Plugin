@@ -29,6 +29,7 @@ from PyQt4 import QtGui, uic
 from PyQt4.QtCore import QSettings, Qt
 from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorFileWriter,\
     QgsCoordinateReferenceSystem, QgsVectorLayer, QgsRasterFileWriter, QGis
+from qgis.gui import QgsMessageBar
 from ..utils.connector import DiviConnector
 from ..utils.files import readFile
 from ..utils.commons import DiviJsonEncoder
@@ -100,17 +101,23 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         self.connector.uploadingProgress.connect(self.updateDownloadProgress)
         if isinstance(layer, QgsVectorLayer):
             if layer.geometryType()==QGis.NoGeometry:
-                self.uploadTable(layer)
+                result = self.uploadTable(layer)
             else:
-                self.uploadVectorLayer(layer)
+                result = self.uploadVectorLayer(layer)
         else:
-            self.uploadRasterLayer(layer)
+            result = self.uploadRasterLayer(layer)
         self.msgBar.setValue(95)
         self.msgBar.setValue(100)
         self.msgBar.close()
         self.msgBar = None
         self.connector = None
-        self.close()
+        if result:
+            self.close()
+        else:
+            #Error
+            self.iface.messageBar().pushMessage(self.tr("Error"),
+                self.tr("Error 406: Data validation error"),
+                level=QgsMessageBar.CRITICAL)
     
     def uploadTable(self, table):
         """ Upload non-spatial tables """
@@ -127,6 +134,7 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
             project,
             tables = [ self.connector.diviGetTable(result['inserted']) ]
         )
+        return True
     
     def uploadVectorLayer(self, layer):
         """ Upload vector layers """
@@ -160,11 +168,14 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
             },
             params={'token':token})
         result = json.loads(content)
+        if 'error' in result:
+            return False
         #Refresh list
         self.plugin.dockwidget.tvData.model().sourceModel().addProjectItems(
             project,
             layers = [ self.connector.diviGetLayer(layerid) for layerid in result['uploaded'] ]
         )
+        return True
     
     def uploadRasterLayer(self, layer):
         """ Upload raster layers """
@@ -184,3 +195,4 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
             project,
             [ self.connector.diviGetLayer( result['inserted'] ) ]
         )
+        return True
