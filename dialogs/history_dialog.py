@@ -30,6 +30,7 @@ from qgis.gui import QgsMapCanvas, QgsRubberBand, QgsMapCanvasLayer, QgsMapToolP
 import os.path as op
 import json
 from osgeo.ogr import CreateGeometryFromJson
+from ..config import *
 from ..models.HistoryModels import HistoryModel, HistoryProxyModel, ChangeModel
 from ..utils.geometry import SetLocale_CtxDec
 

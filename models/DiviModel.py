@@ -28,6 +28,7 @@ from qgis.core import QgsMessageLog, QgsDataSourceURI, QgsPalLayerSettings, QGis
     QgsGraduatedSymbolRendererV2, QgsRendererCategoryV2, QgsCategorizedSymbolRendererV2,\
     QgsSvgMarkerSymbolLayerV2
 from ..utils.connector import DiviConnector
+from ..config import *
 import locale
 from tempfile import gettempdir
 from os import path as op, mkdir
@@ -308,7 +309,7 @@ class RasterItem(LayerItem):
         return 'raster@%s' % self.id
     
     def getUri(self, token):
-        uri = 'url=%s/tiles/%s/%s/{z}/{x}/{y}.png?token=%s' % (DiviConnector.DIVI_HOST, self.parent().id, self.id, token)
+        uri = 'url=%s/tiles/%s/%s/{z}/{x}/{y}.png?token=%s' % (DIVI_HOST, self.parent().id, self.id, token)
         return '%s&type=xyz&zmax=20' %  str(QgsDataSourceURI(uri).encodedUri())
 
 class DiviModel(QAbstractItemModel):

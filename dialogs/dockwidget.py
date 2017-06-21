@@ -31,6 +31,7 @@ from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis,\
     QgsCoordinateTransform
 from PyQt4.QtGui import QDockWidget, QInputDialog, QMenu, QToolButton
 from qgis.gui import QgsMessageBar, QgsFilterLineEdit
+from ..config import *
 from ..utils.connector import DiviConnector
 from ..models.DiviModel import DiviModel, DiviProxyModel, LayerItem, TableItem, \
     ProjectItem, VectorItem, RasterItem
@@ -60,8 +61,8 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.plugin = plugin
         self.iface = plugin.iface
-        self.token = QSettings().value('divi/token', None)
-        self.user = QSettings().value('divi/email', None)
+        self.token = QSettings().value('%s/token' % CONFIG_NAME, None)
+        self.user = QSettings().value('%s/email' % CONFIG_NAME, None)
         self.setupUi(self)
         self.initGui()
         proxyModel = DiviProxyModel()
@@ -122,9 +123,10 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             connector.diviLogout()
             self.btnAddLayer.setEnabled(False)
             self.btnRefresh.setEnabled(False)
-        QSettings().remove('divi/token')
-        QSettings().remove('divi/id')
-        QSettings().remove('divi/status')
+        settings = QSettings()
+        settings.remove('%s/token' % CONFIG_NAME)
+        settings.remove('%s/id' % CONFIG_NAME)
+        settings.remove('%s/status' % CONFIG_NAME)
         self.setLogginStatus(False)
     
     def setLogginStatus(self, logged):

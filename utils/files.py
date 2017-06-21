@@ -24,6 +24,7 @@
 from PyQt4.QtCore import QFile, QIODevice, QSettings
 from PyQt4.QtGui import QFileDialog
 from os import path as op, remove
+from ..config import *
 from .commons import translate
 
 def readFile(path, delete_after=False):
@@ -39,12 +40,12 @@ def getSavePath(fileName):
     """ get path to save from user """
     ext = op.splitext(fileName)[-1]
     settings = QSettings()
-    defaultDir = settings.value('divi/last_dir', '')
+    defaultDir = settings.value('%s/last_dir' % CONFIG_NAME, '')
     defaultPath = op.join(defaultDir, fileName)
     #filePath = QFileDialog.getSaveFileName(None, 'Save file to...',
     filePath = QFileDialog.getSaveFileName(None, translate('Save file to...'),
         defaultPath, filter = ext)
     if not filePath:
         return
-    settings.setValue('divi/last_dir', op.dirname(filePath))
+    settings.setValue('%s/last_dir' % CONFIG_NAME, op.dirname(filePath))
     return filePath

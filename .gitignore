@@ -1,3 +1,4 @@
 *.pyc
 DiviPlugin.zip
 help/build/
+local_config.py

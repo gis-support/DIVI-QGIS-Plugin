@@ -39,6 +39,7 @@ import os.path
 from functools import partial
 from base64 import b64decode
 
+from .config import *
 from .utils.commons import Cache
 from .utils.connector import DiviConnector
 from .widgets.ProgressMessageBar import ProgressMessageBar
@@ -489,7 +490,7 @@ class DiviPlugin(QObject):
         if isinstance(layer, QgsVectorLayer):
             #Only vector layers
             layer.dataProvider().addFeatures(features)
-            if int(QSettings().value('divi/status', 3)) > 2:
+            if int(QSettings().value('%s/status' % CONFIG_NAME, 3)) > 2:
                 layer.setReadOnly( not bool(permissions.get(layerid, False)) )
             if not layer.isReadOnly():
                 layer.beforeCommitChanges.connect(self.onLayerCommit)

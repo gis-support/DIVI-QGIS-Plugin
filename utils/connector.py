@@ -30,6 +30,7 @@ from qgis.gui import QgsMessageBar
 import json
 import ConfigParser
 import os.path as op
+from ..config import *
 
 config = ConfigParser.ConfigParser()
 config.read(op.join(op.dirname(__file__),'../metadata.txt'))
@@ -41,13 +42,11 @@ class DiviConnector(QObject):
     downloadingProgress = pyqtSignal(float)
     uploadingProgress = pyqtSignal(float)
     
-    DIVI_HOST = 'https://divi.io'
-    
     def __init__(self, iface=None, auto_login=True):
         QObject.__init__(self)
         self.iface = iface
         self.auto_login = auto_login
-        self.token = QSettings().value('divi/token', None)
+        self.token = QSettings().value('%s/token' % CONFIG_NAME, None)
     
     #Sending requests to DIVI
     
@@ -167,7 +166,7 @@ class DiviConnector(QObject):
         QgsMessageLog.logMessage('Fetching token', 'DIVI')
         settings = QSettings()
         (success, email, password) = QgsCredentials.instance().get( 
-            'Logowanie DIVI', settings.value('divi/email', None), None )
+            'Logowanie DIVI', settings.value('%s/email' % CONFIG_NAME, None), None )
         if not success:
             return
         content = self.sendPostRequest('/authenticate', {
@@ -180,10 +179,10 @@ class DiviConnector(QObject):
         except TypeError:
             return
         self.token = data['token']
-        settings.setValue('divi/email', email)
-        settings.setValue('divi/token', self.token)
-        settings.setValue('divi/status', data['status'])
-        settings.setValue('divi/id', data['id'])
+        settings.setValue('%s/email' % CONFIG_NAME, email)
+        settings.setValue('%s/token' % CONFIG_NAME, self.token)
+        settings.setValue('%s/status' % CONFIG_NAME, data['status'])
+        settings.setValue('%s/id' % CONFIG_NAME, data['id'])
         self.diviLogged.emit(email, self.token)
         return self.token
     
@@ -245,7 +244,7 @@ class DiviConnector(QObject):
             userid = self.getUserId()
         if userid is None:
             return
-        if int(QSettings().value('divi/status', 3)) < 3:
+        if int(QSettings().value('%s/status' % CONFIG_NAME, 3)) < 3:
             return { layerid : 1 }
         QgsMessageLog.logMessage('Fecthing permissions to %s %s for user %s' % (item_type, layerid, userid), 'DIVI')
         perm = self.getJson(self.sendGetRequest('/user_%ss/%s/%s'%(item_type, userid, layerid), {'token':self.token}))
@@ -414,23 +413,23 @@ class DiviConnector(QObject):
         reply.ignoreSslErrors()
     
     def formatUrl(self, endpoint, params={}):
-        url = QUrl(self.DIVI_HOST + endpoint)
+        url = QUrl(DIVI_HOST + endpoint)
         url.setQueryItems(list(params.iteritems()))
         return url
     
     def getUserId(self):
         settings = QSettings()
-        userid = settings.value('divi/id', None)
+        userid = settings.value('%s/id' % CONFIG_NAME, None)
         if userid is None:
-            username = settings.value('divi/email', None)
+            username = settings.value('%s/email' % CONFIG_NAME, None)
             users = self.getJson(self.sendGetRequest('/users', {'token':self.token}))
             if not users or username is None:
                 return
             for data in users['data']:
                 if data['email'] == username:
                     userid = data['id']
-                    settings.setValue('divi/id', userid)
-                    settings.setValue('divi/status', data['status'])
+                    settings.setValue('%s/id' % CONFIG_NAME, userid)
+                    settings.setValue('%s/status' % CONFIG_NAME, data['status'])
                     break
             else:
                 return

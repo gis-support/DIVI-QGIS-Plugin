@@ -28,6 +28,7 @@ from PyQt4.QtGui import QDockWidget, QIcon, QFileDialog, QInputDialog, \
 import os.path as op
 from .preview_dialog import DiviPluginPreviewDialog
 from .history_dialog import DiviPluginHistoryDialog
+from ..config import *
 from ..models.ActivitiesModel import ActivitiesModel, ActivitiesProxyModel, \
     AttachmentItem, ActivitiesItem, RasterItem, HTMLDelegate, ChangeItem
 from ..utils.files import readFile, getSavePath
@@ -151,7 +152,7 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         if fid is None:
             return
         settings = QSettings()
-        defaultDir = settings.value('divi/last_dir', '')
+        defaultDir = settings.value('%s/last_dir' % CONFIG_NAME, '')
         files = QFileDialog.getOpenFileNames(self, self.tr('Select attachment(s)'), defaultDir)
         if not files:
             return
@@ -200,7 +201,7 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         item = index.data(Qt.UserRole)
         if not isinstance(item, ActivitiesItem):
             return
-        QSettings().setValue('divi/expanded/%s' % item.type, expanded)
+        QSettings().setValue('%s/expanded/%s' % (CONFIG_NAME, item.type), expanded)
     
     def showPreviewDialog(self):
         """ Show images preview dialog """

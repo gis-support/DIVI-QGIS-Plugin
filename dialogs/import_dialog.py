@@ -30,6 +30,7 @@ from PyQt4.QtCore import QSettings, Qt
 from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorFileWriter,\
     QgsCoordinateReferenceSystem, QgsVectorLayer, QgsRasterFileWriter, QGis
 from qgis.gui import QgsMessageBar
+from ..config import *
 from ..utils.connector import DiviConnector
 from ..utils.files import readFile
 from ..utils.commons import DiviJsonEncoder
@@ -124,7 +125,7 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         project = self.cmbProjects.itemData(self.cmbProjects.currentIndex())
         fields = [ field.name() for field in table.fields() ]
         data = [ feature.attributes() for feature in table.getFeatures() ]
-        token = QSettings().value('divi/token', None)
+        token = QSettings().value('%s/token' % CONFIG_NAME, None)
         content = self.connector.sendPostRequest('/tables_tabular', 
             {'header':fields, 'data':data, 'project':project.id, 'name':self.eLayerName.text()},
             params={'token':token})
@@ -150,7 +151,7 @@ class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
         data = self.connector.sendGeoJSON(data, self.eLayerName.text(),
             project.id, data_format
         )
-        token = QSettings().value('divi/token', None)
+        token = QSettings().value('%s/token' % CONFIG_NAME, None)
         #Add data to DIVI
         self.msgBar.setBoundries(60, 35)
         self.msgBar.setValue(60)

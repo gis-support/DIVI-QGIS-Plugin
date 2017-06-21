@@ -29,6 +29,7 @@ from PyQt4.QtGui import QSortFilterProxyModel, QIcon, QFileIconProvider, \
 import os.path as op
 from tempfile import NamedTemporaryFile
 from datetime import datetime
+from ..config import *
 from ..utils.connector import DiviConnector
 
 ICONS_CACHE = {}
@@ -321,7 +322,6 @@ class ActivitiesModel(QAbstractItemModel):
         self.removeAll()
         self.layerType = layerType
         self.layerTypeChanged.emit( self.layerType )
-        settings = QSettings()
         if layerType=='vector':
             self.beginInsertRows(self.index(0,0), 0, 2)
             ActivitiesItem('attachments', self.rootItem)
@@ -337,7 +337,6 @@ class ActivitiesModel(QAbstractItemModel):
     def clearItems( self ):
         #Clear identification tree
         self.removeAll()
-        settings = QSettings()
         if self.layerType=='vector':
             self.beginInsertRows(self.index(0,0), 0, 2)
             ActivitiesItem('attachments', self.rootItem)
@@ -353,7 +352,7 @@ class ActivitiesModel(QAbstractItemModel):
     def setExpand(self):
         def expand( itemTypes ):
             for itemType in itemTypes:
-                if settings.value('divi/expanded/%s' % itemType, False, bool):
+                if settings.value('%s/expanded/%s' % (CONFIG_NAME, itemType), False, bool):
                     self.expand.emit( self.findItem(itemType, True) )
         
         settings = QSettings()
