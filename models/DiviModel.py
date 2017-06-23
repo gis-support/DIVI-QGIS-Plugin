@@ -255,7 +255,7 @@ class VectorItem(TableItem):
   </g>
 </svg>
 """
-        data = urllib.urlopen( '%s/icons/%s' % (DiviConnector.DIVI_HOST, name) )
+        data = urllib.urlopen( '%s/icons/%s' % (DIVI_HOST, name) )
         svgFile = '%s.svg' % name.replace('/', '_')
         svgPath = op.join(path, svgFile)
         b64response = base64.b64encode(data.read())
