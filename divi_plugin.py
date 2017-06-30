@@ -470,6 +470,10 @@ class DiviPlugin(QObject):
                 continue
             if self.msgBar is not None:
                 self.msgBar.setProgress(i/count)
+                QgsApplication.processEvents()
+                if self.msgBar.aborted:
+                    #Użytkownik anulował operację
+                    return []
         #Add only layers that have features
         result = []
         register = partial(self.registerLayer, layerid=layerid, permissions=permissions,

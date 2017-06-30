@@ -41,9 +41,12 @@ class DiviConnector(QObject):
     diviLogged = pyqtSignal(str, str)
     downloadingProgress = pyqtSignal(float)
     uploadingProgress = pyqtSignal(float)
+    abort_sig = pyqtSignal()
     
     def __init__(self, iface=None, auto_login=True):
         QObject.__init__(self)
+        self.total = -1
+        self.aborted = False
         self.iface = iface
         self.auto_login = auto_login
         self.token = QSettings().value('%s/token' % CONFIG_NAME, None)
@@ -67,9 +70,12 @@ class DiviConnector(QObject):
             loop = QEventLoop()
             reply.uploadProgress.connect(self.uploadProgress)
             reply.downloadProgress.connect(self.downloadProgress)
+            reply.metaDataChanged.connect(self.metaDataChanged)
             #reply.error.connect(self._error)
             reply.finished.connect(loop.exit)
+            self.abort_sig.connect( reply.abort )
             loop.exec_()
+            self.abort_sig.disconnect( reply.abort )
             return reply
         manager = QNetworkAccessManager()
         manager.sslErrors.connect(self._sslError)
@@ -124,6 +130,11 @@ class DiviConnector(QObject):
         if as_unicode:
             content = unicode(content)
         return content
+    
+    def abort(self):
+        """ Przerwanie operacji przez użytkownika """
+        self.abort_sig.emit()
+        self.aborted = True
     
     def sendPostRequest(self, endpoint, data, params={}, headers={}):
         headers.update({"Content-Type":"application/json"})
@@ -397,9 +408,18 @@ class DiviConnector(QObject):
     
     #Helpers
     
+    def metaDataChanged(self):
+        reply = self.sender()
+        if reply.hasRawHeader('Content-Length'):
+            self.total = int(reply.rawHeader('Content-Length'))
+        elif reply.hasRawHeader('Data-Length'):
+            self.total = int(reply.rawHeader('Data-Length'))
+        else:
+            self.total = -1
+    
     def downloadProgress(self, received, total):
-        if total!=0:
-            self.downloadingProgress.emit( float(received)/total )
+        if self.total>0:
+            self.downloadingProgress.emit( float(received)/self.total )
         else:
             self.downloadingProgress.emit( 1. )
     

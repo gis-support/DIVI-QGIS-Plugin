@@ -214,9 +214,9 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             return
         addedData = []
         if isinstance(item, VectorItem):
-            self.plugin.msgBar = ProgressMessageBar(self.iface, self.tr("Downloading layer '%s'...")%item.name)
-            self.plugin.msgBar.setValue(10)
             connector = self.getConnector()
+            self.plugin.msgBar = ProgressMessageBar(self.iface, self.tr("Downloading layer '%s'...")%item.name, connector=connector)
+            self.plugin.msgBar.setValue(10)
             connector.downloadingProgress.connect(self.plugin.updateDownloadProgress)
             data = connector.diviGetLayerFeatures(item.id)
             layers = []
@@ -234,9 +234,12 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                 addedData.extend( layers )
                 item.items.extend( addedData )
             self.plugin.msgBar.setValue(100)
+            aborted = self.plugin.msgBar.aborted
             self.plugin.msgBar.close()
             self.plugin.msgBar = None
-            if not layers:
+            if aborted:
+                print 'Aborted'
+            elif not layers:
                 #User can select geometry type in message bar
                 widget = self.iface.messageBar().createMessage(
                     self.tr("Warning"),

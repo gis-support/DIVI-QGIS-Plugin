@@ -22,23 +22,29 @@
 """
 
 from PyQt4.QtCore import QObject, QPyNullVariant
-from PyQt4.QtGui import QProgressBar
+from PyQt4.QtGui import QProgressBar, QPushButton
 from qgis.core import QgsMessageLog
 
 class ProgressMessageBar(QObject):
     
-    def __init__(self, iface, message, minValue=10, delta=40):
+    def __init__(self, iface, message, minValue=10, delta=40, connector=None):
         super(ProgressMessageBar, self).__init__()
         self.iface = iface
         self.minValue = minValue
         self.delta = delta
         self.progress = None
         self.msgBar = None
+        self.aborted = False
         if self.iface is not None:
             self.msgBar = self.iface.messageBar().createMessage('DIVI',message)
             self.progress = QProgressBar()
+            self.button = QPushButton(self.tr('Abort'))
             self.msgBar.layout().addWidget(self.progress)
+            self.msgBar.layout().addWidget(self.button)
             self.iface.messageBar().pushWidget(self.msgBar, self.iface.messageBar().INFO)
+            if connector is not None:
+                self.button.clicked.connect(connector.abort)
+                self.button.clicked.connect(self.abort)
     
     def setProgress(self, value):
         try:
@@ -62,6 +68,9 @@ class ProgressMessageBar(QObject):
             self.minValue = minValue
         if delta is not None:
             self.delta = delta
+    
+    def abort(self):
+        self.aborted = True
     
     def close(self):
         if self.iface is not None:
