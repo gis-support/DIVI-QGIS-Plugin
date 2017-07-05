@@ -85,23 +85,20 @@ class DiviIdentifyTool(QgsMapToolIdentify):
             self.identifyRaster( point, layer.customProperty('DiviId') )
             self.geometry.addPoint( point )
             return
+        self.on_activities.emit( {
+            'attachments':[],
+            'comments':[],
+            'changes':[]} )
         if layer.customProperty('DiviId') is None:
             #Selected layer is not from DIVI
-            self.on_activities.emit( {
-                'attachments':[],
-                'comments':[],
-                'changes':[]} )
             return
         result = self.identify(event.x(), event.y(), [layer], QgsMapToolIdentify.ActiveLayer)
         if not result:
             #Clear activities panel and return if no feaure was found
             if self.indentifying:
                 self.abortIdentification()
-            self.on_activities.emit( {
-                'attachments':[],
-                'comments':[],
-                'changes':[]} )
             return
+        self.parent.identification_dock.tvIdentificationResult.model().sourceModel().setLoading()
         feature = result[0].mFeature
         self.geometry.setToGeometry(feature.geometry(), layer)
         if self.indentifying:
@@ -125,15 +122,27 @@ class DiviIdentifyTool(QgsMapToolIdentify):
             self.parent.identification_dock.show()
         self.parent.identification_dock.raise_()
         fid = self.parent.ids_map[self.parent.iface.activeLayer().id()][feature.id()]
+        self.on_feature.emit( fid )
         QgsMessageLog.logMessage(self.tr('Feature start identification: %d (diviID:%d)') % (feature.id(), fid), 'DIVI')
-        changes = self.connector.getChanges( fid ) or {}
+        if not self.indentifying:
+            return
         attachments = self.connector.getAttachments( fid ) or {}
-        comments = self.connector.getComments( fid ) or {}
-        if self.indentifying:
-            self.on_feature.emit( fid )
+        if not self.indentifying:
+            return
+        else:
             self.on_activities.emit( {
-                'attachments':attachments.get('data', []),
-                'comments':comments.get('data', []),
+                'attachments':attachments.get('data', []) } )
+        comments = self.connector.getComments( fid ) or {}
+        if not self.indentifying:
+            return
+        else:
+            self.on_activities.emit( {
+                'comments':comments.get('data', [])} )
+        changes = self.connector.getChanges( fid ) or {}
+        if not self.indentifying:
+            return
+        else:
+            self.on_activities.emit( {
                 'changes':changes.get('data', [])} )
         QgsMessageLog.logMessage(self.tr('Feature end identification: %d (diviID:%d)') % (feature.id(), fid), 'DIVI')
         self.indentifying = False

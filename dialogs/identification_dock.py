@@ -88,6 +88,12 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         if not enabled:
             self.tvIdentificationResult.model().sourceModel().clearItems()
     
+    def setActiveFeature(self, fid):
+        if fid is not None:
+            self.setWindowTitle( self.tr('Feature informations: %d') % fid )
+        else:
+            self.setWindowTitle( self.tr('Feature informations') )
+    
     def itemActivated(self, index):
         item = index.data(Qt.UserRole)
         if isinstance(item, AttachmentItem):

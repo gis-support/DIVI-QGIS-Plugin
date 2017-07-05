@@ -102,7 +102,9 @@ class ActivitiesItem(TreeItem):
         return self.type
     
     def text(self):
-        return '%s [%d]' % (self.name, self.childCount())
+        #Don't count LoadingItem
+        childCount = len([ child for child in self.childItems if not type(child) is LoadingItem ])
+        return '%s [%d]' % (self.name, childCount )
 
 class BaseActivityItem(TreeItem):
     
@@ -111,6 +113,13 @@ class BaseActivityItem(TreeItem):
     
     def text(self):
         return self.name
+
+class LoadingItem(BaseActivityItem):
+    
+    def __init__(self, data,parent):
+        super(LoadingItem, self).__init__(self, parent)
+        self.name = self.tr(u'Downloading data...')
+        self.icon = QIcon(':/plugins/DiviPlugin/images/downloading.png')
 
 class AttachmentItem(BaseActivityItem):
     
@@ -292,6 +301,17 @@ class ActivitiesModel(QAbstractItemModel):
             for item in data:
                 model( item, parent_item )
             self.endInsertRows()
+    
+    def setLoading(self):
+        attachment_index = self.findItem('attachments', as_model=True)
+        if attachment_index is not None:
+            self.addItems(attachment_index, [None], LoadingItem)
+        comment_index = self.findItem('comments', as_model=True)
+        if comment_index is not None:
+            self.addItems(comment_index, [None], LoadingItem)
+        history_index = self.findItem('history', as_model=True)
+        if history_index is not None:
+            self.addItems(history_index, [None], LoadingItem)
     
     def findItem(self, identifier, as_model=False):
         if identifier is None:
