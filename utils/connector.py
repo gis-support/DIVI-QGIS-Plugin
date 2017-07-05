@@ -133,6 +133,7 @@ class DiviConnector(QObject):
     
     def abort(self):
         """ Przerwanie operacji przez użytkownika """
+        QgsMessageLog.logMessage(self.tr('Abort operation'), 'DIVI')
         self.abort_sig.emit()
         self.aborted = True
     
@@ -312,12 +313,15 @@ class DiviConnector(QObject):
         return self.getJson(content)
     
     def getAttachments(self, featureid):
+        QgsMessageLog.logMessage(self.tr('Attachments for %d') % featureid, 'DIVI')
         return self.getJson(self.sendGetRequest('/files', {'token':self.token, 'feature':str(featureid)}))
     
     def getComments(self, featureid):
+        QgsMessageLog.logMessage(self.tr('Comments for %d') % featureid, 'DIVI')
         return self.getJson(self.sendGetRequest('/comments/%s' % featureid, {'token':self.token}))
     
     def getChanges(self, featureid):
+        QgsMessageLog.logMessage(self.tr('Changes for %d') % featureid, 'DIVI')
         return self.getJson(self.sendGetRequest('/changes', {'token':self.token, 'feature':str(featureid)}))
     
     def getChange(self, cid):

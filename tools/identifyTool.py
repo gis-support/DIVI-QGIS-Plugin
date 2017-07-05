@@ -25,12 +25,12 @@ from PyQt4.QtCore import pyqtSignal
 from PyQt4.QtGui import QCursor, QPixmap, QColor
 from qgis.core import QgsFeature, QgsRasterLayer, QgsCoordinateTransform, \
     QgsCoordinateReferenceSystem
-from qgis.core import QGis
+from qgis.core import QGis, QgsMessageLog
 from qgis.gui import QgsMapToolIdentify, QgsRubberBand
 
 class DiviIdentifyTool(QgsMapToolIdentify):
     
-    on_feature = pyqtSignal(int)
+    on_feature = pyqtSignal(object)
     on_activities = pyqtSignal(dict)
     on_raster = pyqtSignal(list)
     
@@ -62,6 +62,8 @@ class DiviIdentifyTool(QgsMapToolIdentify):
         self.parent = parent
         self.iface = parent.iface
         self.canvas = parent.iface.mapCanvas()
+        self.indentifying = False
+        self.currentFid = None
         self.geometry = QgsRubberBand(self.canvas, QGis.Point)
         self.geometry.setColor(QColor('red'))
         self.geometry.setFillColor(QColor(255, 0, 0, 100))
@@ -93,6 +95,8 @@ class DiviIdentifyTool(QgsMapToolIdentify):
         result = self.identify(event.x(), event.y(), [layer], QgsMapToolIdentify.ActiveLayer)
         if not result:
             #Clear activities panel and return if no feaure was found
+            if self.indentifying:
+                self.abortIdentification()
             self.on_activities.emit( {
                 'attachments':[],
                 'comments':[],
@@ -100,6 +104,8 @@ class DiviIdentifyTool(QgsMapToolIdentify):
             return
         feature = result[0].mFeature
         self.geometry.setToGeometry(feature.geometry(), layer)
+        if self.indentifying:
+            self.abortIdentification()
         self.identifyVector( feature )
     
     def activate(self):
@@ -114,18 +120,23 @@ class DiviIdentifyTool(QgsMapToolIdentify):
         del self.connector
     
     def identifyVector(self, feature):
+        self.indentifying = True
         if not self.parent.identification_dock.isVisible():
             self.parent.identification_dock.show()
         self.parent.identification_dock.raise_()
         fid = self.parent.ids_map[self.parent.iface.activeLayer().id()][feature.id()]
-        attachments = self.connector.getAttachments( fid )
-        comments = self.connector.getComments( fid )
-        changes = self.connector.getChanges( fid )
-        self.on_feature.emit( fid )
-        self.on_activities.emit( {
-            'attachments':attachments.get('data', []),
-            'comments':comments.get('data', []),
-            'changes':changes.get('data', [])} )
+        QgsMessageLog.logMessage(self.tr('Feature start identification: %d (diviID:%d)') % (feature.id(), fid), 'DIVI')
+        changes = self.connector.getChanges( fid ) or {}
+        attachments = self.connector.getAttachments( fid ) or {}
+        comments = self.connector.getComments( fid ) or {}
+        if self.indentifying:
+            self.on_feature.emit( fid )
+            self.on_activities.emit( {
+                'attachments':attachments.get('data', []),
+                'comments':comments.get('data', []),
+                'changes':changes.get('data', [])} )
+        QgsMessageLog.logMessage(self.tr('Feature end identification: %d (diviID:%d)') % (feature.id(), fid), 'DIVI')
+        self.indentifying = False
     
     def identifyRaster(self, point, layerid):
         transform = QgsCoordinateTransform(self.canvas.mapSettings().destinationCrs(), self.wgs84)
@@ -134,6 +145,11 @@ class DiviIdentifyTool(QgsMapToolIdentify):
         if not isinstance(result, list):
             result = [result]
         self.on_raster.emit( result )
+    
+    def abortIdentification(self):
+        self.connector.abort()
+        self.indentifying = False
+        self.on_feature.emit( None )
     
     def toggleMapTool(self, state):
         if state:
