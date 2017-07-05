@@ -136,7 +136,7 @@ class CommentItem(BaseActivityItem):
         self.comment = '<br/>'.join(comment['content'].splitlines())
         self.user = comment['id_users']
         self.date = datetime.utcfromtimestamp( comment['posted_at'] )
-        self.displayDate = self.date.strftime('%Y-%m-%d %H:%M:%S')
+        self.displayDate = self.date.replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
     
     @property
     def tooltip(self):
@@ -156,11 +156,8 @@ class ChangeItem(BaseActivityItem):
         self.description = change['what']
         self.user = change['email']
         self.date = datetime.strptime( change['when'], "%Y-%m-%d %H:%M:%S.%f" )
+        self.displayDate = self.date.replace(microsecond=0).strftime('%d.%m.%Y %H:%M:%S')
         self.details = None
-    
-    @property
-    def displayDate(self):
-        return self.date.strftime('%d.%m.%Y %H:%M:%S')
     
     @property
     def tooltip(self):
@@ -168,7 +165,7 @@ class ChangeItem(BaseActivityItem):
     
     @property
     def name(self):
-        return u'<b>{}</b><br/><i>{}</i><br/>{}'.format( self.user, self.date, self.description )
+        return u'<b>{}</b><br/><i>{}</i><br/>{}'.format( self.user, self.displayDate, self.description )
     
     def getDetails(self):
         if self.details is None:
