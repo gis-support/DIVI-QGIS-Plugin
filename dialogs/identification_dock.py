@@ -168,7 +168,7 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         if fid is None:
             return
         connector.sendAttachments( fid, to_send )
-        attachments = connector.getAttachments( str(fid) )
+        attachments = connector.get_attachments( str(fid) )
         self.plugin.identifyTool.on_activities.emit( {'attachments':attachments.get('data', [])} )
     
     def removeAttachment(self):
@@ -187,7 +187,7 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
             return
         connector = self.plugin.dockwidget.getConnector()
         connector.removeAttachment( fid, item.name )
-        attachments = connector.getAttachments( str(fid) )
+        attachments = connector.get_attachments( str(fid) )
         self.plugin.identifyTool.on_activities.emit( {'attachments':attachments.get('data', [])} )
     
     def addComment(self):
@@ -201,7 +201,7 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         if fid is None:
             return
         connector.addComment(fid, text)
-        comments = connector.getComments( str(fid) )
+        comments = connector.get_comments( str(fid) )
         self.plugin.identifyTool.on_activities.emit( {'comments':comments.get('data', [])} )
     
     def itemViewChanged(self, index, expanded):
