@@ -312,15 +312,15 @@ class DiviConnector(QObject):
         content = self.sendDeleteRequest('/transactions/%s/%s'%(data_type, transaction), params={'token':self.token})
         return self.getJson(content)
     
-    def getAttachments(self, featureid):
-        QgsMessageLog.logMessage(self.tr('Attachments for %d') % featureid, 'DIVI')
+    def get_attachments(self, featureid):
+        QgsMessageLog.logMessage(self.tr('Attachments for %d') % int(featureid), 'DIVI')
         return self.getJson(self.sendGetRequest('/files', {'token':self.token, 'feature':str(featureid)}))
     
-    def getComments(self, featureid):
+    def get_comments(self, featureid):
         QgsMessageLog.logMessage(self.tr('Comments for %d') % featureid, 'DIVI')
         return self.getJson(self.sendGetRequest('/comments/%s' % featureid, {'token':self.token}))
     
-    def getChanges(self, featureid):
+    def get_changes(self, featureid):
         QgsMessageLog.logMessage(self.tr('Changes for %d') % featureid, 'DIVI')
         return self.getJson(self.sendGetRequest('/changes', {'token':self.token, 'feature':str(featureid)}))
     

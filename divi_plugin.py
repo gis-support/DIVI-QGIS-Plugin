@@ -206,7 +206,6 @@ class DiviPlugin(QObject):
         self.identifyTool = DiviIdentifyTool(self)
         self.identifyAction = QAction(self.iface.mainWindow())
         self.identifyTool.setAction( self.identifyAction )
-        self.identifyTool.on_feature.connect( self.identification_dock.tvIdentificationResult.model().sourceModel().setCurrentFeature )
         self.identifyTool.on_feature.connect( self.identification_dock.setActiveFeature )
         self.identifyTool.on_activities.connect( self.identification_dock.tvIdentificationResult.model().sourceModel().addActivities )
         self.identifyTool.on_raster.connect( self.identification_dock.tvIdentificationResult.model().sourceModel().addRasterResult )

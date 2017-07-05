@@ -89,6 +89,7 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
             self.tvIdentificationResult.model().sourceModel().clearItems()
     
     def setActiveFeature(self, fid):
+        self.tvIdentificationResult.model().sourceModel().setCurrentFeature( fid )
         if fid is not None:
             self.setWindowTitle( self.tr('Feature informations: %d') % fid )
         else:
