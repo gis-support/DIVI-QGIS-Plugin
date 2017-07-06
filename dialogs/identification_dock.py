@@ -152,7 +152,7 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         else:
             fileData = connector.getFile( featureid, fileName )
         with open(filePath, 'wb') as f:
-                f.write(fileData)
+            f.write(fileData)
 
     def addAttachment(self):
         fid = self.tvIdentificationResult.model().sourceModel().currentFeature

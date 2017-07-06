@@ -687,6 +687,7 @@ class DiviPlugin(QObject):
             layer.rollBack()
             return
         item.transaction = result['inserted']
+        QgsMessageLog.logMessage('Transaction id: %s' % str(item.transaction), 'DIVI')
     
     def onStopEditing(self):
         layer = self.sender()
