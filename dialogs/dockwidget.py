@@ -34,7 +34,7 @@ from qgis.gui import QgsMessageBar, QgsFilterLineEdit
 from ..config import *
 from ..utils.connector import DiviConnector
 from ..models.DiviModel import DiviModel, DiviProxyModel, LayerItem, TableItem, \
-    ProjectItem, VectorItem, RasterItem
+    ProjectItem, VectorItem, RasterItem, WmsItem
 from ..widgets.ProgressMessageBar import ProgressMessageBar
 from ..utils.commons import Cache
 from ..utils.files import getSavePath
@@ -302,6 +302,14 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                 addedData.append( r )
                 item.items.extend( addedData )
                 QgsMapLayerRegistry.instance().addMapLayer(r)
+        elif isinstance(item, WmsItem):
+            uri = item.getUri()
+            QgsMessageLog.logMessage( uri, 'DIVI')
+            r = QgsRasterLayer(uri, item.name, 'wms')
+            r.setCustomProperty('DiviId', item.id)
+            addedData.append( r )
+            item.items.extend( addedData )
+            QgsMapLayerRegistry.instance().addMapLayer(r)
         else:
             return
         index.model().dataChanged.emit(index.parent().parent(), index)

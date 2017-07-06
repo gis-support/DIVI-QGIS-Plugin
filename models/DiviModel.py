@@ -312,6 +312,20 @@ class RasterItem(LayerItem):
         uri = 'url=%s/tiles/%s/%s/{z}/{x}/{y}.png?token=%s' % (DIVI_HOST, self.parent().id, self.id, token)
         return '%s&type=xyz&zmax=20' %  str(QgsDataSourceURI(uri).encodedUri())
 
+class WmsItem(LayerItem):
+    
+    def __init__(self, data, parent=None):
+        super(WmsItem, self).__init__(data, parent)
+        #self.extent = data.get('visual', {}).get('extent')
+        self.icon = QIcon(':/plugins/DiviPlugin/images/raster.png')
+        self.params = data['visual']
+    
+    def identifier(self):
+        return 'wms@%s' % self.id
+    
+    def getUri(self):
+        return 'url={url}&format={format}&layers={layer}&styles='.format( **self.params )
+
 class DiviModel(QAbstractItemModel):
     
     def __init__(self, parent=None):
@@ -376,6 +390,8 @@ class DiviModel(QAbstractItemModel):
             project = self.findItem(layer['id_projects'], 'project')
             if layer['data_type']=='vector':
                 item = VectorItem(layer, project )
+            elif layer['data_type']=='wms':
+                item = WmsItem(layer, project )
             else:
                 item = RasterItem(layer, project )
     

@@ -217,8 +217,9 @@ class DiviConnector(QObject):
         params = {'token':self.token}
         if projectid is not None:
             params['project'] = projectid
-        layers = self.getJson(self.sendGetRequest('/layers', params))
         tables = self.getJson(self.sendGetRequest('/tables', params))
+        params['include_wms'] = 'true'
+        layers = self.getJson(self.sendGetRequest('/layers', params))
         return layers['data'], tables['data']
     
     def diviGetLayerFeatures(self, layerid):
