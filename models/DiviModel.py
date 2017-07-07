@@ -316,8 +316,7 @@ class WmsItem(LayerItem):
     
     def __init__(self, data, parent=None):
         super(WmsItem, self).__init__(data, parent)
-        #self.extent = data.get('visual', {}).get('extent')
-        self.icon = QIcon(':/plugins/DiviPlugin/images/raster.png')
+        self.icon = QIcon(':/plugins/DiviPlugin/images/wms.png')
         self.params = data['visual']
     
     def identifier(self):

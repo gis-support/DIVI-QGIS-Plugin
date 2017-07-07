@@ -53,4 +53,10 @@
     <qresource prefix="/plugins/DiviPlugin" >
         <file>images/tool_identify.png</file>
     </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/wms.png</file>
+    </qresource>
+    <qresource prefix="/plugins/DiviPlugin" >
+        <file>images/basemap.png</file>
+    </qresource>
 </RCC>

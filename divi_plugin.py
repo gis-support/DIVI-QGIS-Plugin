@@ -760,7 +760,7 @@ class DiviPlugin(QObject):
     @staticmethod
     def getItemType(layer):
         if isinstance(layer, QgsRasterLayer):
-            return 'raster'
+            return 'wms' if layer.providerType()=='wms' else 'raster'
         else:
             return 'table' if layer.geometryType()==QGis.NoGeometry else 'vector'
     
