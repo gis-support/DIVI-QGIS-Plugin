@@ -10,7 +10,7 @@
 name=DIVI QGIS Plugin
 qgisMinimumVersion=2.0
 description=QGIS integration with DIVI system by GIS Support sp. z o.o. / Integracja QGIS z platformą DIVI firmy GIS Support sp. z o. o.
-version=1.4.1
+version=1.4.3
 author=Piotr Pociask, GIS Support sp. z o. o.
 email=info@gis-support.pl
 homepage=https://divi.io
