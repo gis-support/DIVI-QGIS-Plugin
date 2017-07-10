@@ -219,6 +219,7 @@ class DiviConnector(QObject):
             params['project'] = projectid
         tables = self.getJson(self.sendGetRequest('/tables', params))
         params['include_wms'] = 'true'
+        params['include_basemaps'] = 'true'
         layers = self.getJson(self.sendGetRequest('/layers', params))
         return layers['data'], tables['data']
     

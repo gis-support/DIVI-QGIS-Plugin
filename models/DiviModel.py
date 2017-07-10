@@ -325,6 +325,19 @@ class WmsItem(LayerItem):
     def getUri(self):
         return 'url={url}&format={format}&layers={layer}&styles='.format( **self.params )
 
+class BasemapItem(LayerItem):
+    
+    def __init__(self, data, parent=None):
+        super(BasemapItem, self).__init__(data, parent)
+        self.icon = QIcon(':/plugins/DiviPlugin/images/basemap.png')
+        self.url = data['visual']['url'].replace('${x}', '{x}').replace('${y}', '{y}').replace('${z}', '{z}')
+    
+    def identifier(self):
+        return 'basemap@%s' % self.id
+    
+    def getUri(self):
+        return 'url={}&type=xyz'.format( self.url )
+
 class DiviModel(QAbstractItemModel):
     
     def __init__(self, parent=None):
@@ -391,6 +404,8 @@ class DiviModel(QAbstractItemModel):
                 item = VectorItem(layer, project )
             elif layer['data_type']=='wms':
                 item = WmsItem(layer, project )
+            elif layer['data_type']=='basemap':
+                item = BasemapItem(layer, project )
             else:
                 item = RasterItem(layer, project )
     

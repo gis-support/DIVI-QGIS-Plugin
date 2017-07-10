@@ -34,7 +34,7 @@ from qgis.gui import QgsMessageBar, QgsFilterLineEdit
 from ..config import *
 from ..utils.connector import DiviConnector
 from ..models.DiviModel import DiviModel, DiviProxyModel, LayerItem, TableItem, \
-    ProjectItem, VectorItem, RasterItem, WmsItem
+    ProjectItem, VectorItem, RasterItem, WmsItem, BasemapItem
 from ..widgets.ProgressMessageBar import ProgressMessageBar
 from ..utils.commons import Cache
 from ..utils.files import getSavePath
@@ -163,7 +163,7 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                     fields = [] if isinstance(layer, QgsRasterLayer) else layerItem.fields
                     layerItem.items.append(layer)
                     model.dataChanged.emit(layerIndex, layerIndex)
-                    if isinstance(layer, QgsRasterLayer):
+                    if isinstance(layerItem, RasterItem):
                         self.plugin.updateRasterToken( layer, layerItem.getUri(self.token) )
     
     #SLOTS
@@ -303,6 +303,14 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                 item.items.extend( addedData )
                 QgsMapLayerRegistry.instance().addMapLayer(r)
         elif isinstance(item, WmsItem):
+            uri = item.getUri()
+            QgsMessageLog.logMessage( uri, 'DIVI')
+            r = QgsRasterLayer(uri, item.name, 'wms')
+            r.setCustomProperty('DiviId', item.id)
+            addedData.append( r )
+            item.items.extend( addedData )
+            QgsMapLayerRegistry.instance().addMapLayer(r)
+        elif isinstance(item, BasemapItem):
             uri = item.getUri()
             QgsMessageLog.logMessage( uri, 'DIVI')
             r = QgsRasterLayer(uri, item.name, 'wms')
