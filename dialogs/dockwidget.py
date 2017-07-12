@@ -29,7 +29,7 @@ from PyQt4.QtCore import pyqtSignal, QSettings, Qt, QRegExp
 from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis,\
     QgsApplication, QgsRasterLayer, QgsRectangle, QgsCoordinateReferenceSystem,\
     QgsCoordinateTransform
-from PyQt4.QtGui import QDockWidget, QInputDialog, QMenu, QToolButton
+from PyQt4.QtGui import QDockWidget, QInputDialog, QMenu, QToolButton, QMessageBox
 from qgis.gui import QgsMessageBar, QgsFilterLineEdit
 from ..config import *
 from ..utils.connector import DiviConnector
@@ -120,6 +120,17 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                 model.removeAll()
         else:
             #Disconnect
+            layers = [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]
+            if any(layer.isModified() for layer in layers):
+                result = QMessageBox.question(None, self.tr('Edited layers'), 
+                    self.tr('Some layers are modified. You need to save changes or rollback to continue. Do you want to revert all edits?'),
+                    QMessageBox.Yes | QMessageBox.No)
+                if result==QMessageBox.No:
+                    self.btnConnect.setChecked(True)
+                    return
+            for layer in layers:
+                if layer.isEditable():
+                    layer.rollBack()
             connector.diviLogout()
             self.btnAddLayer.setEnabled(False)
             self.btnRefresh.setEnabled(False)

@@ -103,7 +103,7 @@ class DiviIdentifyTool(QgsMapToolIdentify):
         feature = result[0].mFeature
         if feature.id()<0:
             #Added feature
-            self.iface.messageBar().pushMessage(self.tr("Error"), self.tr("Selected feature is not saved."), level=QgsMessageBar.CRITICAL)
+            self.iface.messageBar().pushMessage(self.tr("Error"), self.tr("Selected feature is not saved."), level=QgsMessageBar.CRITICAL, duration=3)
             return
         self.geometry.setToGeometry(feature.geometry(), layer)
         if self.indentifying:
