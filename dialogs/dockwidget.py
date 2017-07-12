@@ -114,7 +114,10 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             if data is not None:
                 model.addData( *data )
                 self.setLogginStatus(True)
-                self.getLoadedDiviLayers()
+                items = self.getLoadedDiviLayers()
+                #Refresh data after connect
+                for item in items:
+                    self.refreshData( item )
                 return
             else:
                 model.removeAll()
@@ -164,18 +167,21 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         if layers is None:
             layers = [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]
         model = self.tvData.model().sourceModel()
+        items = set()
         for layer in layers:
             divi_id = layer.customProperty('DiviId')
             item_type = self.plugin.getItemType(layer)
             layerIndex = model.findItem(divi_id, item_type, True)
             if layerIndex is not None:
                 layerItem = layerIndex.data(role=Qt.UserRole)
+                items.add(layerItem)
                 if layer not in layerItem.items:
                     fields = [] if isinstance(layer, QgsRasterLayer) else layerItem.fields
                     layerItem.items.append(layer)
                     model.dataChanged.emit(layerIndex, layerIndex)
                     if isinstance(layerItem, RasterItem):
                         self.plugin.updateRasterToken( layer, layerItem.getUri(self.token) )
+        return items
     
     #SLOTS
     
@@ -347,7 +353,10 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         with Cache(self.plugin):
             for lyr in layers:
                 lyr.dataProvider().deleteFeatures(lyr.allFeatureIds())
-                self.plugin.unregisterLayer(lyr)
+                try:
+                    self.plugin.unregisterLayer(lyr)
+                except TypeError:
+                    pass
                 layer_meta = self.plugin.loadLayer(lyr)
                 lyr.triggerRepaint()
         item.items = layers[:]
