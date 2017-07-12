@@ -323,6 +323,8 @@ class DiviPlugin(QObject):
             mapLayer.dataProvider().deleteFeatures( mapLayer.allFeatureIds() )
             self.msgBar = ProgressMessageBar(self.iface, self.tr(u"Downloading layer '%s'...")%mapLayer.name(), 5, 5)
             connector = DiviConnector()
+            #Set GUI if not connected
+            connector.diviLogged.connect(lambda a, b: self.dockwidget.diviConnection(True))
             connector.downloadingProgress.connect(self.updateDownloadProgress)
             self.msgBar.progress.setValue(5)
             
