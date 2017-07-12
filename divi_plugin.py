@@ -494,7 +494,7 @@ class DiviPlugin(QObject):
         if isinstance(layer, QgsVectorLayer):
             #Only vector layers
             layer.dataProvider().addFeatures(features)
-            if int(QSettings().value('%s/status' % CONFIG_NAME, 3)) > 2:
+            if int(QSettings().value('%s/status' % CONFIG_NAME, 3)) > 1:
                 layer.setReadOnly( not bool(permissions.get(layerid, False)) )
             if not layer.isReadOnly():
                 layer.beforeCommitChanges.connect(self.onLayerCommit)
@@ -680,7 +680,7 @@ class DiviPlugin(QObject):
         if item.transaction is not None:
             return
         QgsMessageLog.logMessage('Start editing layer %s' % layer.name(), 'DIVI')
-        connector = DiviConnector(self.iface)
+        connector = DiviConnector(self.iface, auto_login=False)
         result = connector.startTransaction(layer_type, divi_id)
         if result is None:
             QgsMessageLog.logMessage('Edycja zablokowana', 'DIVI')
