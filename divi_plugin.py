@@ -417,9 +417,9 @@ class DiviPlugin(QObject):
             if self.msgBar is not None:
                 self.msgBar.setProgress(i/count)
         #Map layer ids to db ids
-        result = self.registerLayer(layer=table, features=records_list, layerid=tableid,
+        result, added = self.registerLayer(layer=table, features=records_list, layerid=tableid,
             permissions={}, addToMap=True, fields=fields)
-        self.ids_map[table.id()] = dict(zip(table.allFeatureIds(), records_ids))
+        self.ids_map[table.id()] = dict(zip(added, records_ids))
         return result
     
     def addFeatures(self, layerid, features, fields, points=None, lines=None, polygons=None, permissions={}, add_empty=False):
@@ -481,21 +481,26 @@ class DiviPlugin(QObject):
         register = partial(self.registerLayer, layerid=layerid, permissions=permissions,
             addToMap=True, fields=fields)
         if points is not None and (points_list or add_empty):
-            result.append(register(layer=points, features=points_list))
+            lyr, added = register(layer=points, features=points_list)
+            result.append(lyr)
             self.ids_map[points.id()] = dict(zip(points.allFeatureIds(), points_ids))
         if lines is not None and (lines_list or add_empty):
-            result.append(register(layer=lines, features=lines_list))
+            lyr, added = register(layer=lines, features=lines_list)
+            result.append(lyr)
             self.ids_map[lines.id()] = dict(zip(lines.allFeatureIds(), lines_ids))
         if polygons is not None and (polygons_list or add_empty):
-            result.append(register(layer=polygons, features=polygons_list))
-            self.ids_map[polygons.id()] = dict(zip(polygons.allFeatureIds(), polygons_ids))
+            lyr, added = register(layer=polygons, features=polygons_list)
+            result.append(lyr)
+            self.ids_map[polygons.id()] = dict(zip(added, polygons_ids))
         return result
     
     def registerLayer(self, layer, layerid, features, permissions, addToMap, fields=[]):
         layer.setCustomProperty('DiviId', layerid)
+        added = None
         if isinstance(layer, QgsVectorLayer):
             #Only vector layers
-            layer.dataProvider().addFeatures(features)
+            _, added_feats = layer.dataProvider().addFeatures(features)
+            added = [ f.id() for f in added_feats ]
             if int(QSettings().value('%s/status' % CONFIG_NAME, 3)) > 1:
                 layer.setReadOnly( not bool(permissions.get(layerid, False)) )
             if not layer.isReadOnly():
@@ -517,7 +522,7 @@ class DiviPlugin(QObject):
                         u'calendar_popup': True} )
         if addToMap:
             QgsMapLayerRegistry.instance().addMapLayer(layer)
-        return layer
+        return layer, added
     
     def unregisterLayer(self, layer):
         if isinstance(layer, QgsVectorLayer) and not layer.isReadOnly():
@@ -762,13 +767,13 @@ class DiviPlugin(QObject):
     @staticmethod
     def getItemType(layer):
         if isinstance(layer, QgsRasterLayer):
-			if layer.providerType()=='wms':
-				if 'type=xyz' in layer.source():
-					return 'basemap'
-				else:
-					return 'wms'
-			else:
-				return 'raster'
+            if layer.providerType()=='wms':
+                if 'type=xyz' in layer.source():
+                    return 'basemap'
+                else:
+                    return 'wms'
+            else:
+                return 'raster'
         else:
             return 'table' if layer.geometryType()==QGis.NoGeometry else 'vector'
     
