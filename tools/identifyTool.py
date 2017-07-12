@@ -24,9 +24,8 @@
 from PyQt4.QtCore import pyqtSignal
 from PyQt4.QtGui import QCursor, QPixmap, QColor
 from qgis.core import QgsFeature, QgsRasterLayer, QgsCoordinateTransform, \
-    QgsCoordinateReferenceSystem
-from qgis.core import QGis, QgsMessageLog
-from qgis.gui import QgsMapToolIdentify, QgsRubberBand
+    QgsCoordinateReferenceSystem, QGis, QgsMessageLog
+from qgis.gui import QgsMapToolIdentify, QgsRubberBand, QgsMessageBar
 
 class DiviIdentifyTool(QgsMapToolIdentify):
     
@@ -102,6 +101,10 @@ class DiviIdentifyTool(QgsMapToolIdentify):
             return
         self.parent.identification_dock.tvIdentificationResult.model().sourceModel().setLoading()
         feature = result[0].mFeature
+        if feature.id()<0:
+            #Added feature
+            self.iface.messageBar().pushMessage(self.tr("Error"), self.tr("Selected feature is not saved."), level=QgsMessageBar.CRITICAL)
+            return
         self.geometry.setToGeometry(feature.geometry(), layer)
         if self.indentifying:
             self.abortIdentification()
