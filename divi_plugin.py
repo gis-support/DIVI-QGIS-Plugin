@@ -22,7 +22,7 @@
 """
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt,\
     QVariant, QObject, QPyNullVariant, QDateTime, SIGNAL
-from PyQt4.QtGui import QAction, QIcon
+from PyQt4.QtGui import QAction, QIcon, QMessageBox
 from PyQt4.QtXml import QDomDocument, QDomElement
 from qgis.core import QgsProject, QGis, QgsVectorLayer, QgsMessageLog,\
     QgsMapLayerRegistry, QgsField, QgsFeature, QgsGeometry, QgsFeatureRequest,\
@@ -525,6 +525,14 @@ class DiviPlugin(QObject):
         return layer, added
     
     def unregisterLayer(self, layer):
+        if isinstance(layer, QgsVectorLayer) and layer.isEditable():
+            if layer.isModified():
+                result = QMessageBox.question(None, self.tr('Layer editing'),
+                    self.tr('Layer '),
+                    QMessageBox.Yes | QMessageBox.No)
+                if result==QMessageBox.Yes:
+                    layer.commitChanges()
+            layer.rollBack()
         if isinstance(layer, QgsVectorLayer) and not layer.isReadOnly():
             layer.beforeCommitChanges.disconnect(self.onLayerCommit)
             layer.committedFeaturesAdded.disconnect(self.onFeaturesAdded)
