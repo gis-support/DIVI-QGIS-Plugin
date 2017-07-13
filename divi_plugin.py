@@ -213,6 +213,8 @@ class DiviPlugin(QObject):
         self.uploadAction = QAction(self.iface.mainWindow())
         
         self.dockwidget = DiviPluginDockWidget(self)
+        if self.dockwidget.token:
+            self.dockwidget.diviConnection(True, auto_login=False)
         #Reload all DIVI layers
         self.loadLayers()
         

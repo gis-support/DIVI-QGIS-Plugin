@@ -71,8 +71,6 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         self.tvData.setModel( proxyModel )
         self.tvData.setSortingEnabled(True)
         self.setLogginStatus(bool(self.token))
-        if self.token:
-            self.diviConnection(True, auto_login=False)
         #Signals
         self.btnConnect.clicked.connect(self.diviConnection)
         self.eSearch.textChanged.connect(self.searchData)
