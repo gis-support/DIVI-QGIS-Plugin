@@ -398,8 +398,9 @@ class DiviModel(QAbstractItemModel):
             item = ProjectItem( project, self.rootItem )
     
     def addLayers(self, layers):
+        projects = { project.id:project for project in self.rootItem.childItems }
         for layer in layers:
-            project = self.findItem(layer['id_projects'], 'project')
+            project = projects[layer['id_projects']]
             if layer['data_type']=='vector':
                 item = VectorItem(layer, project )
             elif layer['data_type']=='wms':
@@ -410,8 +411,9 @@ class DiviModel(QAbstractItemModel):
                 item = RasterItem(layer, project )
     
     def addTables(self, tables):
+        projects = { project.id:project for project in self.rootItem.childItems }
         for table in tables:
-            project = self.findItem(table['id_projects'], 'project')
+            project = projects[table['id_projects']]
             item = TableItem(table, project )
     
     def addProjectItems(self, project, layers=[], tables=[]):
