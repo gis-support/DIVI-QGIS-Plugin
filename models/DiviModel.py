@@ -95,6 +95,9 @@ class LoadingItem(TreeItem):
         self.name = self.tr(u'Downloading data...')
         
         self.icon = QIcon(':/plugins/DiviPlugin/images/downloading.png')
+    
+    def identifier(self):
+        return 'loading@%s' % self.name
 
 class ProjectItem(TreeItem):
     
@@ -491,10 +494,16 @@ class DiviProxyModel(QSortFilterProxyModel):
         This Model matches items which are descendants
         or ascendants of matching items.
     '''
- 
+    
+    types = ['loading']
+    
     def filterAcceptsRow(self, row_num, source_parent):
         ''' Overriding the parent function '''
- 
+        index = self.sourceModel().index(row_num, 0, source_parent)
+        item_type = index.data(Qt.UserRole+1).split('@')[0]
+        if item_type!='project' and item_type not in self.types:
+            return False
+        
         # Check if the current row matches
         if self.filter_accepts_row_itself(row_num, source_parent):
             return True
@@ -505,10 +514,10 @@ class DiviProxyModel(QSortFilterProxyModel):
  
         # Finally, check if any of the children match
         return self.has_accepted_children(row_num, source_parent)
- 
+    
     def filter_accepts_row_itself(self, row_num, parent):
         return super(DiviProxyModel, self).filterAcceptsRow(row_num, parent)
- 
+    
     def filter_accepts_any_parent(self, parent):
         ''' Traverse to the root node and check if any of the
             ancestors match the filter
@@ -518,7 +527,7 @@ class DiviProxyModel(QSortFilterProxyModel):
                 return True
             parent = parent.parent()
         return False
- 
+    
     def has_accepted_children(self, row_num, parent):
         ''' Starting from the current node as root, traverse all
             the descendants and test if any of the children match
