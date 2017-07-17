@@ -71,8 +71,6 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         self.tvData.setModel( proxyModel )
         self.tvData.setSortingEnabled(True)
         self.setLogginStatus(bool(self.token))
-        if self.token:
-            self.diviConnection(True, auto_login=False)
         #Signals
         self.btnConnect.clicked.connect(self.diviConnection)
         self.eSearch.textChanged.connect(self.searchData)
@@ -80,6 +78,13 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         self.tvData.customContextMenuRequested.connect(self.showMenu)
         self.tvData.selectionModel().currentChanged.connect(self.treeSelectionChanged)
         QgsMapLayerRegistry.instance().layersWillBeRemoved.connect( self.layersRemoved )
+        self.gbFilters.collapsedStateChanged.connect(self.toggleFilters)
+        self.cbVectors.stateChanged.connect(self.setSearchFilter)
+        self.cbTables.stateChanged.connect(self.setSearchFilter)
+        self.cbRasters.stateChanged.connect(self.setSearchFilter)
+        self.cbWms.stateChanged.connect(self.setSearchFilter)
+        self.cbBasemaps.stateChanged.connect(self.setSearchFilter)
+        self.setSearchFilter(None)
     
     def initGui(self):
         self.eSearch = QgsFilterLineEdit(self.dockWidgetContents)
@@ -94,6 +99,14 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         self.btnAddLayer.clicked.connect( self.addItems )
         self.btnRefresh.clicked.connect(lambda checked: self.refreshItems( self.tvData.selectedIndexes()[0] if self.tvData.selectedIndexes() else None ))
         self.btnRefresh.setIcon( QgsApplication.getThemeIcon('/mActionDraw.svg') )
+        #Filters
+        settings = QSettings()
+        self.gbFilters.setCollapsed( not settings.value( '{}/filters/filters'.format(CONFIG_NAME), False, bool ) )
+        self.cbVectors.setChecked( settings.value( '{}/filters/vectors'.format(CONFIG_NAME), True, bool ) )
+        self.cbTables.setChecked( settings.value( '{}/filters/tables'.format(CONFIG_NAME), True, bool ) )
+        self.cbRasters.setChecked( settings.value( '{}/filters/rasters'.format(CONFIG_NAME), True, bool ) )
+        self.cbWms.setChecked( settings.value( '{}/filters/wms'.format(CONFIG_NAME), True, bool ) )
+        self.cbBasemaps.setChecked( settings.value( '{}/filters/basmeaps'.format(CONFIG_NAME), True, bool ) )
     
     def getConnector(self, auto_login=True):
         connector = DiviConnector(iface=self.iface, auto_login=auto_login)
@@ -411,6 +424,31 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             self.tvData.expandAll()
         else:
             self.tvData.collapseAll()
+    
+    def setSearchFilter(self, value):
+        settings = QSettings()
+        settings.setValue( '{}/filters/vectors'.format(CONFIG_NAME), self.cbVectors.isChecked() )
+        settings.setValue( '{}/filters/tables'.format(CONFIG_NAME), self.cbTables.isChecked() )
+        settings.setValue( '{}/filters/rasters'.format(CONFIG_NAME), self.cbRasters.isChecked() )
+        settings.setValue( '{}/filters/wms'.format(CONFIG_NAME), self.cbWms.isChecked() )
+        settings.setValue( '{}/filters/basmeaps'.format(CONFIG_NAME), self.cbBasemaps.isChecked() )
+        filters = ['loading']
+        if self.cbVectors.isChecked():
+            filters.append('vector')
+        if self.cbTables.isChecked():
+            filters.append('table')
+        if self.cbRasters.isChecked():
+            filters.append('raster')
+        if self.cbWms.isChecked():
+            filters.append('wms')
+        if self.cbBasemaps.isChecked():
+            filters.append('basemap')
+        self.tvData.model().types = filters
+        self.tvData.model().invalidateFilter()
+    
+    def toggleFilters(self, collapsed):
+        print collapsed
+        QSettings().setValue( '{}/filters/filters'.format(CONFIG_NAME), not collapsed )
     
     def editLayerName(self, index):
         item = index.data(role=Qt.UserRole)
