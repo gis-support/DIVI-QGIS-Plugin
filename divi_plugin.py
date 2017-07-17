@@ -311,7 +311,12 @@ class DiviPlugin(QObject):
         """ Load DIVI layers after openig project """
         #Cache is used for storing data while reading project to prevent multiple connections for one layer with many geometry types
         if layers is None:
+            #Project read
             layers = QgsMapLayerRegistry.instance().mapLayers().itervalues()
+        else:
+            for layer in layers:
+                #refreshing loaded layers, so we need to unregisterthem before to avoid double signal connections
+                self.unregisterLayer( layer )
         with Cache(self):
             for layer in layers:
                 self.loadLayer(layer, add_empty=True)
