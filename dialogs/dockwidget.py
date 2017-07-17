@@ -210,7 +210,7 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
     def treeSelectionChanged(self, new, old):
         item = new.data(Qt.UserRole)
         self.btnAddLayer.setEnabled( isinstance(item, (LayerItem, ProjectItem)) )
-        self.btnRefresh.setEnabled(  not isinstance(item, LayerItem) )
+        self.btnRefresh.setEnabled( (not isinstance(item, LayerItem)) or (isinstance(item, TableItem)) )
     
     def addItems(self):
         indexes = self.tvData.selectedIndexes()
@@ -457,7 +457,10 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             return
         index = self.tvData.model().mapToSource(index)
         item = index.data( role=Qt.UserRole )
-        if isinstance(item, LayerItem):
+        if isinstance(item, TableItem):
+            self.plugin.loadLayers(item.items)
+            return
+        elif isinstance(item, LayerItem):
             return
         connector = self.getConnector()
         model = self.tvData.model().sourceModel()

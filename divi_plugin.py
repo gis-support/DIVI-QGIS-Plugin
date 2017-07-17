@@ -95,6 +95,7 @@ class DiviPlugin(QObject):
         self.ids_map = {}
         self.loading = False
         self.cache = {}
+        self.dockwidget = None
         
         self.toolbar = self.iface.addToolBar(self.tr(u'DIVI Toolbar'))
         self.toolbar.setObjectName('DIVI')
@@ -306,11 +307,13 @@ class DiviPlugin(QObject):
         self.loading = isLoading
         return True
     
-    def loadLayers(self):
+    def loadLayers(self, layers=None):
         """ Load DIVI layers after openig project """
         #Cache is used for storing data while reading project to prevent multiple connections for one layer with many geometry types
+        if layers is None:
+            layers = QgsMapLayerRegistry.instance().mapLayers().itervalues()
         with Cache(self):
-            for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues():
+            for layer in layers:
                 self.loadLayer(layer, add_empty=True)
     
     def loadLayer(self, mapLayer, add_empty=False):
@@ -373,6 +376,7 @@ class DiviPlugin(QObject):
             self.msgBar = None
         if self.dockwidget is not None:
             self.dockwidget.getLoadedDiviLayers([mapLayer])
+        mapLayer.triggerRepaint()
         self.setLoading(False)
         return layer_meta
     
