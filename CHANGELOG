@@ -1,3 +1,16 @@
+1.5
+- loading WMS and basemaps (QGIS 2.16+) layers
+- aborting download operations
+- add filter for layers types
+- allow refresh tables and vector layers
+- unify icons with DIVI webapp
+- show info about downloading data in activity panel
+- refreshing data after reconnecting
+- speedup layers list loading
+- handle upload errors
+- fix errors in identify tool
+- fix error with id mapping
+
 1.4
 - download DIVI rasters
 - new toolbar icons
