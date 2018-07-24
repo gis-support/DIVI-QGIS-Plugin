@@ -24,8 +24,8 @@
 from qgis.core import QgsMapLayer, QgsApplication
 from qgis.gui import QgsMapLayerConfigWidget, QgsMapLayerConfigWidgetFactory,\
     QgsFieldProxyModel
-from PyQt4.QtGui import QVBoxLayout, QIcon
-from PyQt4 import uic
+from PyQt5.QtGui import QVBoxLayout, QIcon
+from PyQt5 import uic
 import os.path as op
 
 panelWidget = uic.loadUi(op.join( op.dirname(__file__), 'StylePanel.ui') )

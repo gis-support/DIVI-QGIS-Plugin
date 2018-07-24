@@ -21,12 +21,14 @@
  ***************************************************************************/
 """
 
-from PyQt4 import uic
-from PyQt4.QtCore import Qt, QSettings
-from PyQt4.QtGui import QDialog, QColor, QItemSelectionModel
-from qgis.core import QgsPoint, QGis, QgsGeometry, QgsVectorLayer, \
+from qgis.PyQt import uic
+from qgis.PyQt.QtCore import Qt, QSettings
+from qgis.PyQt.QtWidgets import QDialog
+from qgis.PyQt.QtGui import QColor
+from qgis.PyQt.QtCore import QItemSelectionModel
+from qgis.core import QgsPoint, Qgis, QgsGeometry, QgsVectorLayer, \
     QgsCoordinateReferenceSystem, QgsFeature, QgsRectangle
-from qgis.gui import QgsMapCanvas, QgsRubberBand, QgsMapCanvasLayer, QgsMapToolPan
+from qgis.gui import QgsMapCanvas, QgsRubberBand, QgsMapToolPan
 import os.path as op
 import json
 from osgeo.ogr import CreateGeometryFromJson

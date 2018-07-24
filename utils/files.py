@@ -21,8 +21,8 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import QFile, QIODevice, QSettings
-from PyQt4.QtGui import QFileDialog
+from PyQt5.QtCore import QFile, QIODevice, QSettings
+from PyQt5.QtWidgets import QFileDialog
 from os import path as op, remove
 from ..config import *
 from .commons import translate

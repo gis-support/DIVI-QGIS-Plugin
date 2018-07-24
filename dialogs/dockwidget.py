@@ -20,16 +20,18 @@
  *                                                                         *
  ***************************************************************************/
 """
+from __future__ import print_function
 
+from builtins import str
 import os
 from functools import partial
 
-from PyQt4 import uic
-from PyQt4.QtCore import pyqtSignal, QSettings, Qt, QRegExp
-from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorLayer, QGis,\
+from qgis.PyQt import uic
+from qgis.PyQt.QtCore import pyqtSignal, QSettings, Qt, QRegExp
+from qgis.core import QgsMessageLog, QgsProject, QgsVectorLayer, Qgis,\
     QgsApplication, QgsRasterLayer, QgsRectangle, QgsCoordinateReferenceSystem,\
     QgsCoordinateTransform
-from PyQt4.QtGui import QDockWidget, QInputDialog, QMenu, QToolButton, QMessageBox
+from qgis.PyQt.QtWidgets import QDockWidget, QInputDialog, QMenu, QToolButton, QMessageBox
 from qgis.gui import QgsMessageBar, QgsFilterLineEdit
 from ..config import *
 from ..utils.connector import DiviConnector
@@ -48,7 +50,8 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
     closingPlugin = pyqtSignal()
     transform2mercator = QgsCoordinateTransform(
             QgsCoordinateReferenceSystem('EPSG:4326'),
-            QgsCoordinateReferenceSystem('EPSG:3857')
+            QgsCoordinateReferenceSystem('EPSG:3857'),
+			QgsProject.instance()
         )
 
     def __init__(self, plugin, parent=None):
@@ -77,7 +80,7 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         self.tvData.activated.connect(self.addLayer)
         self.tvData.customContextMenuRequested.connect(self.showMenu)
         self.tvData.selectionModel().currentChanged.connect(self.treeSelectionChanged)
-        QgsMapLayerRegistry.instance().layersWillBeRemoved.connect( self.layersRemoved )
+        QgsProject.instance().layersWillBeRemoved.connect( self.layersRemoved )
         self.gbFilters.collapsedStateChanged.connect(self.toggleFilters)
         self.cbVectors.stateChanged.connect(self.setSearchFilter)
         self.cbTables.stateChanged.connect(self.setSearchFilter)
@@ -136,7 +139,7 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                 model.removeAll()
         else:
             #Disconnect
-            layers = [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]
+            layers = [ layer for layer in QgsProject.instance().mapLayers().values() if layer.customProperty('DiviId') is not None ]
             if any(layer.isModified() for layer in layers):
                 result = QMessageBox.question(None, self.tr('Edited layers'), 
                     self.tr('Some layers are modified. You need to save changes or rollback to continue. Do you want to revert all edits?'),
@@ -178,7 +181,7 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
     
     def getLoadedDiviLayers(self, layers=None):
         if layers is None:
-            layers = [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]
+            layers = [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().values() if layer.customProperty('DiviId') is not None ]
         model = self.tvData.model().sourceModel()
         items = set()
         for layer in layers:
@@ -268,7 +271,8 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             self.plugin.msgBar.close()
             self.plugin.msgBar = None
             if aborted:
-                print 'Aborted'
+                # fix_print_with_import
+                print('Aborted')
             elif not layers:
                 #User can select geometry type in message bar
                 widget = self.iface.messageBar().createMessage(
@@ -447,7 +451,8 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         self.tvData.model().invalidateFilter()
     
     def toggleFilters(self, collapsed):
-        print collapsed
+        # fix_print_with_import
+        print(collapsed)
         QSettings().setValue( '{}/filters/filters'.format(CONFIG_NAME), not collapsed )
     
     def editLayerName(self, index):

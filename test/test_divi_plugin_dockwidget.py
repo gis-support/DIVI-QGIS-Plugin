@@ -14,7 +14,7 @@ __copyright__ = 'Copyright 2016, GIS Support sp. z o. o.'
 
 import unittest
 
-from PyQt4.QtGui import QDockWidget
+from PyQt5.QtWidgets import QDockWidget
 
 from divi_plugin_dockwidget import DiviPluginDockWidget
 

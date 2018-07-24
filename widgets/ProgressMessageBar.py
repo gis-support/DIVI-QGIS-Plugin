@@ -21,8 +21,9 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import QObject, QPyNullVariant
-from PyQt4.QtGui import QProgressBar, QPushButton
+from PyQt5.QtCore import QObject
+from PyQt5.QtWidgets import QProgressBar, QPushButton
+
 from qgis.core import QgsMessageLog
 
 class ProgressMessageBar(QObject):

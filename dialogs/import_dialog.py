@@ -25,10 +25,9 @@ import os
 import json
 import tempfile
 
-from PyQt4 import QtGui, uic
-from PyQt4.QtCore import QSettings, Qt
-from qgis.core import QgsMessageLog, QgsMapLayerRegistry, QgsVectorFileWriter,\
-    QgsCoordinateReferenceSystem, QgsVectorLayer, QgsRasterFileWriter, QGis
+from PyQt5 import QtGui, uic, QtWidgets
+from PyQt5.QtCore import QSettings, Qt
+from qgis.core import QgsMessageLog, QgsProject, QgsVectorFileWriter ,QgsCoordinateReferenceSystem, QgsVectorLayer, QgsRasterFileWriter, Qgis
 from qgis.gui import QgsMessageBar
 from ..config import *
 from ..utils.connector import DiviConnector
@@ -41,7 +40,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'import_dialog.ui'))
 
 
-class DiviPluginImportDialog(QtGui.QDialog, FORM_CLASS):
+class DiviPluginImportDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def __init__(self, plugin, parent=None):
         """Constructor."""

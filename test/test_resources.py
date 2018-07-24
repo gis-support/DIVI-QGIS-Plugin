@@ -14,7 +14,7 @@ __copyright__ = 'Copyright 2016, GIS Support sp. z o. o.'
 
 import unittest
 
-from PyQt4.QtGui import QIcon
+from PyQt5.QtGui import QIcon
 
 
 

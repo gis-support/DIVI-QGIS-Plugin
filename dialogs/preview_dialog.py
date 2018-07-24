@@ -25,9 +25,9 @@ import os
 import json
 import tempfile
 
-from PyQt4 import uic
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QDialog, QToolBar, QSplitter
+from PyQt5 import uic
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QDialog, QToolBar, QSplitter
 from qgis.core import QgsApplication
 from ..models.ThumbnailsModel import ThumbnailsModel
 from ..widgets.ImageViewerQt import ImageViewerQt

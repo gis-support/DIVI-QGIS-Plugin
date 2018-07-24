@@ -21,18 +21,18 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import QUrl, QObject, QEventLoop, pyqtSignal, QSettings, \
+from PyQt5.QtCore import QUrl, QUrlQuery, QObject, QEventLoop, pyqtSignal, QSettings, \
     QBuffer, qDebug
-from PyQt4.QtNetwork import QNetworkRequest, QNetworkAccessManager, \
+from PyQt5.QtNetwork import QNetworkRequest, QNetworkAccessManager, \
     QHttpMultiPart, QHttpPart, QNetworkReply, QHttpMultiPart, QHttpPart
-from qgis.core import QgsMessageLog, QgsCredentials
+from qgis.core import QgsMessageLog, QgsCredentials, Qgis
 from qgis.gui import QgsMessageBar
 import json
-import ConfigParser
+import configparser
 import os.path as op
 from ..config import *
 
-config = ConfigParser.ConfigParser()
+config = configparser.ConfigParser()
 config.read(op.join(op.dirname(__file__),'../metadata.txt'))
 
 PLUGIN_VERSION = config.get('general', 'version')
@@ -59,15 +59,15 @@ class DiviConnector(QObject):
             request = QNetworkRequest(url)
             headers['User-Agent'] = 'Divi QGIS Plugin/%s' % PLUGIN_VERSION
             QgsMessageLog.logMessage(str(headers), 'DIVI')
-            for key, value in headers.iteritems():
-                request.setRawHeader(key, value)
+            for key, value in headers.items():
+                request.setRawHeader(key.encode('utf-8'), value.encode('utf-8'))
             if method == 'delete':
                 reply = manager.sendCustomRequest(request, 'DELETE', data)
             else:
                 if not data:
                     reply = getattr(manager, method)(request)
                 else:
-                    reply = getattr(manager, method)(request, data)
+                    reply = getattr(manager, method)(request, data.encode('utf-8'))
             loop = QEventLoop()
             reply.uploadProgress.connect(self.uploadProgress)
             reply.downloadProgress.connect(self.downloadProgress)
@@ -87,21 +87,21 @@ class DiviConnector(QObject):
             if self.iface is not None:
                 self.iface.messageBar().pushMessage(self.tr("Error"),
                     self.trUtf8("Server rejected request"),
-                    level=QgsMessageBar.CRITICAL, duration=3)
+                    level=Qgis.Critical, duration=3)
             return
         elif status_code == 500:
             if self.iface is not None:
                 self.iface.messageBar().pushMessage(self.tr("Error"),
                     self.tr("Error 500: Internal Server Error"),
-                    level=QgsMessageBar.CRITICAL, duration=0)
+                    level=Qgis.Critical, duration=0)
             return
         elif status_code == 409:
             if self.iface is not None:
-                min_version = json.loads(unicode(content)).get('error', '')
+                min_version = json.loads(QString(content)).get('error', '')
                 self.iface.messageBar().pushMessage(self.tr("Error"),
                     self.tr("Error 409: DIVI QGIS Plugin is not supported in version '%s'. "
                             "Please upgrade to version '%s' or higher. ") % (PLUGIN_VERSION, min_version),
-                    level=QgsMessageBar.CRITICAL, duration=0)
+                    level=Qgis.Critical, duration=0)
             return
         elif status_code == 403:
             if not self.auto_login:
@@ -120,16 +120,16 @@ class DiviConnector(QObject):
                             if reply.url().path() == '/authenticate' else \
                             self.tr("Error 404: requested resource could not be found ")
                 self.iface.messageBar().pushMessage(self.tr("Error"),
-                    msg, level=QgsMessageBar.CRITICAL, duration=3)
+                    msg, level=Qgis.Critical, duration=3)
             return
         elif status_code == 423:
             if self.iface is not None:
                 self.iface.messageBar().pushMessage(self.tr("Error"),
                     self.tr("Error 423: requested resource is locked"),
-                    level=QgsMessageBar.CRITICAL, duration=3)
+                    level=Qgis.Critical, duration=3)
             return
         if as_unicode:
-            content = unicode(content)
+            content = str(content)
         return content
     
     def abort(self):
@@ -150,7 +150,7 @@ class DiviConnector(QObject):
         headers.update({"Content-Type":"application/json"})
         return self.sendRequest( endpoint, params,
                 'put',
-                json.dumps(data),
+                json.dumps(data.encode('utf-8')),
                 headers=headers
             )
     
@@ -188,6 +188,8 @@ class DiviConnector(QObject):
                 'remember': True
             })
         try:
+            #content = content.replace("b'", "").replace("'", "")
+            print (content)
             data = json.loads(content)
         except TypeError:
             return
@@ -417,10 +419,10 @@ class DiviConnector(QObject):
     
     def metaDataChanged(self):
         reply = self.sender()
-        if reply.hasRawHeader('Content-Length'):
-            self.total = int(reply.rawHeader('Content-Length'))
-        elif reply.hasRawHeader('Data-Length'):
-            self.total = int(reply.rawHeader('Data-Length'))
+        if reply.hasRawHeader(('Content-Length'.encode('utf-8'))):
+            self.total = int(reply.rawHeader('Content-Length'.encode('utf-8')))
+        elif reply.hasRawHeader('Data-Length'.encode('utf-8')):
+            self.total = int(reply.rawHeader('Data-Length'.encode('utf-8')))
         else:
             self.total = -1
     
@@ -441,7 +443,8 @@ class DiviConnector(QObject):
     
     def formatUrl(self, endpoint, params={}):
         url = QUrl(DIVI_HOST + endpoint)
-        url.setQueryItems(list(params.iteritems()))
+        qr = QUrlQuery(url)
+        qr.setQueryItems(list(params.items()))
         return url
     
     def getUserId(self):
