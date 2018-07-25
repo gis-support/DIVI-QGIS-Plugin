@@ -23,9 +23,9 @@
 
 from PyQt5.QtCore import QUrl, QUrlQuery, QObject, QEventLoop, pyqtSignal, QSettings, \
     QBuffer, qDebug
-from PyQt5.QtNetwork import QNetworkRequest, QNetworkAccessManager, \
-    QHttpMultiPart, QHttpPart, QNetworkReply, QHttpMultiPart, QHttpPart
-from qgis.core import QgsMessageLog, QgsCredentials, Qgis
+from PyQt5.QtNetwork import QNetworkRequest, QHttpMultiPart, QHttpPart, \
+    QNetworkReply, QHttpMultiPart, QHttpPart
+from qgis.core import QgsMessageLog, QgsCredentials, Qgis, QgsNetworkAccessManager
 from qgis.gui import QgsMessageBar
 import json
 import configparser
@@ -78,10 +78,10 @@ class DiviConnector(QObject):
             loop.exec_()
             self.abort_sig.disconnect( reply.abort )
             return reply
-        manager = QNetworkAccessManager()
+        manager = QgsNetworkAccessManager()
         manager.sslErrors.connect(self._sslError)
         reply = send(params)
-        content = reply.readAll()
+        content = str(reply.readAll(), 'utf-8')
         status_code = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
         if reply.error() == QNetworkReply.ConnectionRefusedError:
             if self.iface is not None:
@@ -113,7 +113,7 @@ class DiviConnector(QObject):
             #Set new token
             params['token'] = result
             reply = send(params)
-            content = reply.readAll()
+            content = str(reply.readAll(), 'utf-8')
         elif status_code == 404:
             if self.iface is not None:
                 msg = self.tr("Error 404: Bad login or password") \
@@ -189,7 +189,6 @@ class DiviConnector(QObject):
             })
         try:
             #content = content.replace("b'", "").replace("'", "")
-            print (content)
             data = json.loads(content)
         except TypeError:
             return
@@ -443,8 +442,9 @@ class DiviConnector(QObject):
     
     def formatUrl(self, endpoint, params={}):
         url = QUrl(DIVI_HOST + endpoint)
-        qr = QUrlQuery(url)
+        qr = QUrlQuery()
         qr.setQueryItems(list(params.items()))
+        url.setQuery( qr )
         return url
     
     def getUserId(self):
