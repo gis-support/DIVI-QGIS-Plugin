@@ -21,7 +21,7 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtGui import QProgressDialog
+from PyQt5.QtWidgets import QProgressDialog
 from qgis.core import QgsRasterFileWriter
 import os.path as op
 from tempfile import NamedTemporaryFile

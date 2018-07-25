@@ -21,10 +21,10 @@
  ***************************************************************************/
 """
 
-from PyQt4 import uic
-from PyQt4.QtCore import Qt, QSettings
-from PyQt4.QtGui import QDockWidget, QIcon, QFileDialog, QInputDialog, \
-    QMessageBox, QMenu, QImageReader
+from PyQt5 import uic
+from PyQt5.QtCore import Qt, QSettings
+from PyQt5.QtGui import QIcon, QImageReader
+from PyQt5.QtWidgets import QMessageBox, QDockWidget, QFileDialog, QInputDialog, QMenu
 import os.path as op
 from .preview_dialog import DiviPluginPreviewDialog
 from .history_dialog import DiviPluginHistoryDialog

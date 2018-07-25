@@ -21,10 +21,10 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import pyqtSignal
-from PyQt4.QtGui import QCursor, QPixmap, QColor
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QCursor, QPixmap, QColor
 from qgis.core import QgsFeature, QgsRasterLayer, QgsCoordinateTransform, \
-    QgsCoordinateReferenceSystem, QGis, QgsMessageLog
+    QgsCoordinateReferenceSystem, Qgis, QgsMessageLog, QgsProject, QgsVectorLayer, QgsWkbTypes
 from qgis.gui import QgsMapToolIdentify, QgsRubberBand, QgsMessageBar
 
 class DiviIdentifyTool(QgsMapToolIdentify):
@@ -63,7 +63,7 @@ class DiviIdentifyTool(QgsMapToolIdentify):
         self.canvas = parent.iface.mapCanvas()
         self.indentifying = False
         self.currentFid = None
-        self.geometry = QgsRubberBand(self.canvas, QGis.Point)
+        self.geometry = QgsRubberBand(self.canvas, QgsWkbTypes.PointGeometry)
         self.geometry.setColor(QColor('red'))
         self.geometry.setFillColor(QColor(255, 0, 0, 100))
         self.geometry.setIconSize(7)
@@ -71,7 +71,7 @@ class DiviIdentifyTool(QgsMapToolIdentify):
         super(DiviIdentifyTool, self).__init__(self.canvas)
     
     def canvasReleaseEvent(self, event ):
-        self.geometry.reset(QGis.Point)
+        self.geometry.reset(QgsWkbTypes.PointgGeometry)
         layer = self.iface.activeLayer()
         if layer is None:
             return

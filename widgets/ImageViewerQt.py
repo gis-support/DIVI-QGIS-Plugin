@@ -2,9 +2,9 @@
 """ ImageViewer.py: PyQt image viewer widget for a QPixmap in a QGraphicsView scene with mouse zooming and panning. """
 
 import os.path
-from PyQt4.QtCore import Qt, QRectF, pyqtSignal, QT_VERSION_STR
-from PyQt4.QtGui import QGraphicsView, QGraphicsScene, QImage, QPixmap, QPainterPath, QFileDialog
-
+from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QT_VERSION_STR
+from PyQt5.QtGui import QImage, QPixmap, QPainterPath
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog
 __author__ = "Marcel Goldschen-Ohm <marcel.goldschen@gmail.com>"
 __version__ = '0.9.0'
 

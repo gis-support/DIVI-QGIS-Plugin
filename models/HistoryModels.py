@@ -21,8 +21,8 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import QAbstractTableModel, Qt, QModelIndex, pyqtSignal, QSize
-from PyQt4.QtGui import QSortFilterProxyModel, QBrush, QColor
+from qgis.PyQt.QtCore import QAbstractTableModel, Qt, QModelIndex, pyqtSignal, QSize, QSortFilterProxyModel
+from PyQt5.QtGui import QBrush, QColor
 import os.path as op
 from tempfile import NamedTemporaryFile
 from datetime import datetime

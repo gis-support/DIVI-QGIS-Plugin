@@ -20,21 +20,26 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt,\
-    QVariant, QObject, QPyNullVariant, QDateTime, SIGNAL
-from PyQt4.QtGui import QAction, QIcon, QMessageBox
-from PyQt4.QtXml import QDomDocument, QDomElement
-from qgis.core import QgsProject, QGis, QgsVectorLayer, QgsMessageLog,\
-    QgsMapLayerRegistry, QgsField, QgsFeature, QgsGeometry, QgsFeatureRequest,\
+from __future__ import absolute_import
+from builtins import str
+from builtins import zip
+from builtins import range
+from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt,\
+	QVariant, QObject, QDateTime, pyqtSignal
+from PyQt5.QtWidgets import QAction, QMessageBox
+from PyQt5.QtGui import QIcon
+from PyQt5.QtXml import QDomDocument, QDomElement
+from qgis.core import QgsProject, Qgis, QgsVectorLayer, QgsMessageLog,\
+    QgsField, QgsFeature, QgsGeometry, QgsFeatureRequest,\
     QgsApplication, QgsRasterLayer
 # Initialize Qt resources from file resources.py
-import resources
+from . import resources
 
 # Import the code for the DockWidget
-from dialogs.identification_dock import DiviPluginIdentificationPanel
-from dialogs.dockwidget import DiviPluginDockWidget
-from dialogs.import_dialog import DiviPluginImportDialog
-from tools.identifyTool import DiviIdentifyTool
+from .dialogs.identification_dock import DiviPluginIdentificationPanel
+from .dialogs.dockwidget import DiviPluginDockWidget
+from .dialogs.import_dialog import DiviPluginImportDialog
+from .tools.identifyTool import DiviIdentifyTool
 import os.path
 from functools import partial
 from base64 import b64decode
@@ -254,7 +259,7 @@ class DiviPlugin(QObject):
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.identification_dock)
         '''
-        if QGis.QGIS_VERSION_INT >= 21600:
+        if Qgis.QGIS_VERSION_INT >= 21600:
             #Style panel
             from .widgets.StylePanel import DiviStylePanelFactory
             self.diviPanelFactory = DiviStylePanelFactory()
@@ -269,13 +274,13 @@ class DiviPlugin(QObject):
         #print "** UNLOAD DiviPlugin"
         
         self.iface.projectRead.disconnect(self.loadLayers)
-        QgsMapLayerRegistry.instance().layersWillBeRemoved.disconnect( self.dockwidget.layersRemoved )
+        QgsProject.instance().layersWillBeRemoved.disconnect( self.dockwidget.layersRemoved )
         '''
-        if QGis.QGIS_VERSION_INT >= 21600:
+        if Qgis.QGIS_VERSION_INT >= 21600:
             self.iface.unregisterMapLayerConfigWidgetFactory(self.diviPanelFactory)'''
         
         #Disconnect layers signal
-        for layer in [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().itervalues() if layer.customProperty('DiviId') is not None ]:
+        for layer in [ layer for layer in QgsProject.instance().mapLayers().values() if layer.customProperty('DiviId') is not None ]:
             self.unregisterLayer(layer)
         
         self.iface.mapCanvas().unsetMapTool( self.identifyTool )
@@ -314,7 +319,7 @@ class DiviPlugin(QObject):
         #Cache is used for storing data while reading project to prevent multiple connections for one layer with many geometry types
         if layers is None:
             #Project read
-            layers = QgsMapLayerRegistry.instance().mapLayers().itervalues()
+            layers = iter(QgsProject.instance().mapLayers().values())
         else:
             for layer in layers:
                 #refreshing loaded layers, so we need to unregisterthem before to avoid double signal connections
@@ -338,7 +343,7 @@ class DiviPlugin(QObject):
             connector.downloadingProgress.connect(self.updateDownloadProgress)
             self.msgBar.progress.setValue(5)
             
-            if mapLayer.geometryType() == QGis.NoGeometry:
+            if mapLayer.wkbType() == Qgis.NoGeometry:
                 layer_meta = connector.diviGetTable(divi_id)
                 self.msgBar.setBoundries(10, 35)
                 data = connector.diviGetTableRecords(divi_id)
@@ -361,11 +366,11 @@ class DiviPlugin(QObject):
                     data = connector.diviGetLayerFeatures(divi_id)
                     self.cache[divi_id] = {'data':data, 'meta':layer_meta}
                 if data:
-                    if mapLayer.geometryType() == QGis.Point:
+                    if mapLayer.wkbType() == Qgis.WKBPoint:
                         layer = {'points':mapLayer}
-                    elif mapLayer.geometryType() == QGis.Line:
+                    elif mapLayer.wkbType() == Qgis.WKBLine:
                         layer = {'lines':mapLayer}
-                    elif mapLayer.geometryType() == QGis.Polygon:
+                    elif mapLayer.wkbType() == Qgis.WKBPolygon:
                         layer = {'polygons':mapLayer}
                     else:
                         return
@@ -413,7 +418,7 @@ class DiviPlugin(QObject):
         qgis_fields = [ QgsField(field['key'], self.TYPES_MAP.get(field['type'], QVariant.String)) for field in fields ]
         provider = table.dataProvider()
         if provider.fields():
-            provider.deleteAttributes(range(len(provider.fields())))
+            provider.deleteAttributes(list(range(len(provider.fields()))))
         provider.addAttributes(qgis_fields)
         table.updateFields()
         count = float(len(records))
@@ -426,11 +431,12 @@ class DiviPlugin(QObject):
             r.setAttributes(record)
             records_list.append(r)
             if self.msgBar is not None:
-                self.msgBar.setProgress(i/count)
+                #self.msgBar.setProgress(i/count)
+                pass
         #Map layer ids to db ids
         result, added = self.registerLayer(layer=table, features=records_list, layerid=tableid,
             permissions={}, addToMap=True, fields=fields)
-        self.ids_map[table.id()] = dict(zip(added, records_ids))
+        self.ids_map[table.id()] = dict(list(zip(added, records_ids)))
         return result
     
     def addFeatures(self, layerid, features, fields, points=None, lines=None, polygons=None, permissions={}, add_empty=False):
@@ -439,19 +445,19 @@ class DiviPlugin(QObject):
         if points:
             points_pr = points.dataProvider()
             if points_pr.fields():
-                points_pr.deleteAttributes(range(len(points_pr.fields())))
+                points_pr.deleteAttributes(list(range(len(points_pr.fields()))))
             points_pr.addAttributes(qgis_fields)
             points.updateFields()
         if lines:
             lines_pr = lines.dataProvider()
             if lines_pr.fields():
-                lines_pr.deleteAttributes(range(len(lines_pr.fields())))
+                lines_pr.deleteAttributes(list(range(len(lines_pr.fields()))))
             lines_pr.addAttributes(qgis_fields)
             lines.updateFields()
         if polygons:
             polygons_pr = polygons.dataProvider()
             if polygons_pr.fields():
-                polygons_pr.deleteAttributes(range(len(polygons_pr.fields())))
+                polygons_pr.deleteAttributes(list(range(len(polygons_pr.fields()))))
             polygons_pr.addAttributes(qgis_fields)
             polygons.updateFields()
         #Lists of QGIS features
@@ -470,19 +476,20 @@ class DiviPlugin(QObject):
             f.setGeometry(geom)
             f.setAttributes([ feature['properties'].get(field['key']) for field in fields ])
             #Add feature to list by geometry type
-            if geom.type() == QGis.Point:
+            if geom.type() == Qgis.Point:
                 points_list.append(f)
                 points_ids.append(feature['id'])
-            elif geom.type() == QGis.Line:
+            elif geom.type() == Qgis.Line:
                 lines_list.append(f)
                 lines_ids.append(feature['id'])
-            elif geom.type() == QGis.Polygon:
+            elif geom.type() == Qgis.Polygon:
                 polygons_list.append(f)
                 polygons_ids.append(feature['id'])
             else:
                 continue
             if self.msgBar is not None:
-                self.msgBar.setProgress(i/count)
+                #self.msgBar.setProgress(i/count)
+                pass
                 QgsApplication.processEvents()
                 if self.msgBar.aborted:
                     #Użytkownik anulował operację
@@ -494,15 +501,15 @@ class DiviPlugin(QObject):
         if points is not None and (points_list or add_empty):
             lyr, added = register(layer=points, features=points_list)
             result.append(lyr)
-            self.ids_map[points.id()] = dict(zip(points.allFeatureIds(), points_ids))
+            self.ids_map[points.id()] = dict(list(zip(points.allFeatureIds(), points_ids)))
         if lines is not None and (lines_list or add_empty):
             lyr, added = register(layer=lines, features=lines_list)
             result.append(lyr)
-            self.ids_map[lines.id()] = dict(zip(lines.allFeatureIds(), lines_ids))
+            self.ids_map[lines.id()] = dict(list(zip(lines.allFeatureIds(), lines_ids)))
         if polygons is not None and (polygons_list or add_empty):
             lyr, added = register(layer=polygons, features=polygons_list)
             result.append(lyr)
-            self.ids_map[polygons.id()] = dict(zip(added, polygons_ids))
+            self.ids_map[polygons.id()] = dict(list(zip(added, polygons_ids)))
         return result
     
     def registerLayer(self, layer, layerid, features, permissions, addToMap, fields=[]):
@@ -514,7 +521,7 @@ class DiviPlugin(QObject):
             added = [ f.id() for f in added_feats ]
             if int(QSettings().value('%s/status' % CONFIG_NAME, 3)) > 1:
                 layer.setReadOnly( not bool(permissions.get(layerid, False)) )
-            if not layer.isReadOnly():
+            if not layer.ReadOnly():
                 layer.beforeCommitChanges.connect(self.onLayerCommit)
                 layer.committedFeaturesAdded.connect(self.onFeaturesAdded)
                 layer.editingStarted.connect(self.onStartEditing )
@@ -522,17 +529,17 @@ class DiviPlugin(QObject):
             for i, field in enumerate(fields):
                 layer.addAttributeAlias(i, field['name'])
                 if field['type'] == 'dropdown':
-                    layer.setEditorWidgetV2(i, 'ValueMap')
-                    layer.setEditorWidgetV2Config(i, { value:value for value in field['valuelist'].split(',') })
+                    layer.setEditFormConfig(i, 'ValueMap')
+                    layer.setEditFormConfig(i, { value:value for value in field['valuelist'].split(',') })
                 elif field['type'] == 'calendar':
-                    layer.setEditorWidgetV2(i, 'DateTime')
-                    layer.setEditorWidgetV2Config(i, 
+                    layer.setEditFormConfig(i, 'DateTime')
+                    layer.setEditFormConfig(i, 
                         {u'display_format': u'yyyy-MM-dd HH:mm:ss',
                         u'allow_null': True,
                         u'field_format': u'yyyy-MM-dd HH:mm:ss',
                         u'calendar_popup': True} )
         if addToMap:
-            QgsMapLayerRegistry.instance().addMapLayer(layer)
+            QgsProject.instance().addMapLayer(layer)
         return layer, added
     
     def unregisterLayer(self, layer):
@@ -544,7 +551,7 @@ class DiviPlugin(QObject):
                 if result==QMessageBox.Yes:
                     layer.commitChanges()
             layer.rollBack()
-        if isinstance(layer, QgsVectorLayer) and not layer.isReadOnly():
+        if isinstance(layer, QgsVectorLayer) and not layer.ReadOnly():
             layer.beforeCommitChanges.disconnect(self.onLayerCommit)
             layer.committedFeaturesAdded.disconnect(self.onFeaturesAdded)
             layer.editingStarted.disconnect(self.onStartEditing)
@@ -610,7 +617,7 @@ class DiviPlugin(QObject):
         #Changed features
         changedAttributes = editBuffer.changedAttributeValues()
         changedGeometries = editBuffer.changedGeometries()
-        fids = list(set(changedAttributes.keys()+changedGeometries.keys()))
+        fids = list(set(list(changedAttributes.keys())+list(changedGeometries.keys())))
         if fids:
             data = []
             request = QgsFeatureRequest().setFilterFids(fids)
@@ -755,7 +762,7 @@ class DiviPlugin(QObject):
     
     def map_attributes(self, attributes, fields_mapper):
         new_attributes = {}
-        for key, value in attributes.iteritems():
+        for key, value in attributes.items():
             if key in fields_mapper:
                 key = fields_mapper[key]
             new_attributes[key] = self.fix_value(value)

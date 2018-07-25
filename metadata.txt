@@ -8,7 +8,7 @@
 
 [general]
 name=DIVI QGIS Plugin
-qgisMinimumVersion=2.0
+qgisMinimumVersion=3.0
 description=QGIS integration with DIVI system by GIS Support sp. z o.o. / Integracja QGIS z platformą DIVI firmy GIS Support sp. z o. o.
 version=1.5
 author=Piotr Pociask, GIS Support sp. z o. o.
@@ -51,8 +51,6 @@ changelog=
 # Tags are comma separated with spaces allowed
 tags=network, web, webservice,divi
 
-homepage=https://divi.io
-category=Web
 icon=images/icon.png
 # experimental flag
 experimental=False

@@ -21,7 +21,7 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import QDate, Qt, QCoreApplication
+from PyQt5.QtCore import QDate, Qt, QCoreApplication
 from contextlib import contextmanager
 import json
 

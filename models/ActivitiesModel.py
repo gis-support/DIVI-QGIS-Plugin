@@ -21,11 +21,10 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import QObject, QAbstractItemModel, Qt, QModelIndex, SIGNAL, \
-    QFileInfo, QSize, QSettings, pyqtSignal
-from PyQt4.QtGui import QSortFilterProxyModel, QIcon, QFileIconProvider, \
-    QStyledItemDelegate, QStyleOptionViewItemV4, QApplication, QTextDocument, \
-    QStyle, QAbstractTextDocumentLayout
+from qgis.PyQt.QtCore import QObject, QSortFilterProxyModel, QAbstractItemModel, Qt, QModelIndex, pyqtSignal, \
+    QFileInfo, QSize, QSettings, QVariant, QObject
+from PyQt5.QtGui import QIcon, QTextDocument, QAbstractTextDocumentLayout
+from PyQt5.QtWidgets import QStyledItemDelegate, QFileIconProvider, QStyleOptionViewItem, QApplication, QStyle
 import os.path as op
 from tempfile import NamedTemporaryFile
 from datetime import datetime
@@ -39,6 +38,9 @@ class TreeItem(QObject):
     a python object used to return row/column data, and keep note of
     it's parents and/or children
     '''
+    itemRemoved = pyqtSignal(object)
+    itemChanged = pyqtSignal(object)
+    
     def __init__(self, item, parentItem):
         super(TreeItem, self).__init__(parentItem)
         self.childItems = []
@@ -63,20 +65,20 @@ class TreeItem(QObject):
     
     def appendChild(self, item):
         self.childItems.append(item)
-        self.connect(item, SIGNAL("itemRemoved"), self.childRemoved)
+        item.itemRemoved.connect(self.childRemoved)
     
     def childRemoved(self, child):
-        self.itemChanged()
+        self.itemChanged.emit(child)
     
-    def itemChanged(self):
-        self.emit( SIGNAL("itemChanged"), self )
+    #def itemChanged(self):
+     #   self.emit( SIGNAL("itemChanged"), self )
     
-    def itemRemoved(self):
-        self.emit(SIGNAL("itemRemoved"), self)
+    #def itemRemoved(self):
+    #    self.emit(SIGNAL("itemRemoved"), self)
     
     def removeChild(self, row):
         if row >= 0 and row < len(self.childItems):
-            self.disconnect(self.childItems[row], SIGNAL("itemRemoved"), self.childRemoved)
+            self.childItems[row].itemRemoved.disconnect(self.childRemoved)
             del self.childItems[row]
     
     def removeChilds(self):
@@ -400,7 +402,7 @@ class ActivitiesProxyModel(QSortFilterProxyModel):
 class HTMLDelegate(QStyledItemDelegate):
     """ http://stackoverflow.com/a/5443112 """
     def paint(self, painter, option, index):
-        options = QStyleOptionViewItemV4(option)
+        options = QStyleOptionViewItem(option)
         item = index.data(Qt.UserRole)
         if isinstance(item, (CommentItem, ChangeItem)):
             options.decorationAlignment = Qt.AlignHCenter
@@ -432,7 +434,7 @@ class HTMLDelegate(QStyledItemDelegate):
         painter.restore()
 
     def sizeHint(self, option, index):
-        options = QStyleOptionViewItemV4(option)
+        options = QStyleOptionViewItem(option)
         self.initStyleOption(options,index)
 
         doc = QTextDocument()

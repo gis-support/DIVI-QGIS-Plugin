@@ -21,12 +21,12 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import QObject, QAbstractItemModel, Qt, QModelIndex, SIGNAL
-from PyQt4.QtGui import QIcon, QFont, QSortFilterProxyModel, QColor
-from qgis.core import QgsMessageLog, QgsDataSourceURI, QgsPalLayerSettings, QGis,\
-    QgsLineSymbolV2, QgsFillSymbolV2, QgsMarkerSymbolV2, QgsRendererRangeV2,\
-    QgsGraduatedSymbolRendererV2, QgsRendererCategoryV2, QgsCategorizedSymbolRendererV2,\
-    QgsSvgMarkerSymbolLayerV2
+from qgis.PyQt.QtCore import QObject, QAbstractItemModel, Qt, QModelIndex, pyqtSignal, QSortFilterProxyModel
+from PyQt5.QtGui import QIcon, QFont, QColor
+from qgis.core import QgsMessageLog, QgsDataSourceUri, QgsPalLayerSettings, Qgis,\
+    QgsLineSymbol, QgsFillSymbol, QgsMarkerSymbol, QgsRendererRange,\
+    QgsGraduatedSymbolRenderer, QgsRendererCategory, QgsCategorizedSymbolRenderer,\
+    QgsSvgMarkerSymbolLayer
 from ..utils.connector import DiviConnector
 from ..config import *
 import locale
@@ -40,6 +40,9 @@ class TreeItem(QObject):
     a python object used to return row/column data, and keep note of
     it's parents and/or children
     '''
+    itemRemoved = pyqtSignal(object)
+    itemChanged = pyqtSignal(object)
+    
     def __init__(self, item, parentItem):
         super(TreeItem, self).__init__(parentItem)
         self.itemData = item
@@ -50,7 +53,7 @@ class TreeItem(QObject):
 
     def appendChild(self, item):
         self.childItems.append(item)
-        self.connect(item, SIGNAL("itemRemoved"), self.childRemoved)
+        item.itemRemoved.connect(self.childRemoved)
 
     def child(self, row):
         return self.childItems[row]
@@ -64,11 +67,11 @@ class TreeItem(QObject):
     def childRemoved(self, child):
         self.itemChanged()
 
-    def itemChanged(self):
-        self.emit( SIGNAL("itemChanged"), self )
+    #def itemChanged(self):
+        #self.emit( SIGNAL("itemChanged"), self )
     
-    def itemRemoved(self):
-        self.emit(SIGNAL("itemRemoved"), self)
+    #def itemRemoved(self):
+        #self.emit(SIGNAL("itemRemoved"), self)
     
     def data(self, column):
         return "" if column == 0 else None
@@ -80,8 +83,7 @@ class TreeItem(QObject):
     
     def removeChild(self, row):
         if row >= 0 and row < len(self.childItems):
-            self.childItems[row].itemData.deleteLater()
-            self.disconnect(self.childItems[row], SIGNAL("itemRemoved"), self.childRemoved)
+            self.childItems[row].itemRemoved.disconnect(self.childRemoved)
             del self.childItems[row]
     
     def removeChilds(self):
@@ -313,7 +315,7 @@ class RasterItem(LayerItem):
     
     def getUri(self, token):
         uri = 'url=%s/tiles/%s/%s/{z}/{x}/{y}.png?token=%s' % (DIVI_HOST, self.parent().id, self.id, token)
-        return '%s&type=xyz&zmax=20' %  str(QgsDataSourceURI(uri).encodedUri())
+        return '%s&type=xyz&zmax=20' %  str(QgsDataSourceUri(uri).encodedUri())
 
 class WmsItem(LayerItem):
     
