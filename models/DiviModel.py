@@ -26,7 +26,7 @@ from PyQt5.QtGui import QIcon, QFont, QColor
 from qgis.core import QgsMessageLog, QgsDataSourceUri, QgsPalLayerSettings, Qgis,\
     QgsLineSymbol, QgsFillSymbol, QgsMarkerSymbol, QgsRendererRange,\
     QgsGraduatedSymbolRenderer, QgsRendererCategory, QgsCategorizedSymbolRenderer,\
-    QgsSvgMarkerSymbolLayer
+    QgsSvgMarkerSymbolLayer, QgsWkbTypes, QgsTextFormat, QgsVectorLayerSimpleLabeling 
 from ..utils.connector import DiviConnector
 from ..config import *
 import locale
@@ -128,9 +128,12 @@ class LayerItem(TreeItem):
         self.items = []
     
     def updateData(self, data):
-        for key in ['fields', 'name', 'abstract']:
-            if key in data:
-                setattr(self, key, data[key])
+            for key in ['fields', 'name', 'abstract']:
+                try:
+                    if key in data:
+                        setattr(self, key, data[key])
+                except:
+                    pass
 
 class TableItem(LayerItem):
     
@@ -160,22 +163,22 @@ class VectorItem(TableItem):
             return
         styleType = self.style.get('type', 'single')
         #Get symbol class based on layer geoemtry type
-        if layer.geometryType()==QGis.Point:
-            symbolClass = QgsMarkerSymbolV2
-        elif layer.geometryType()==QGis.Line:
-            symbolClass =  QgsLineSymbolV2
+        if layer.geometryType() == QgsWkbTypes.PointGeometry:
+            symbolClass = QgsMarkerSymbol
+        elif layer.geometryType() == QgsWkbTypes.LineGeometry:
+            symbolClass =  QgsLineSymbol
         else:
-            symbolClass =  QgsFillSymbolV2
+            symbolClass =  QgsFillSymbol
         #Set style
         if styleType=='single':
             #Single symbol
             externalGraphic = self.style.get('externalGraphic')
             if externalGraphic:
                 symbol = self.createSvgSymbol( self.style )
-                layer.rendererV2().symbols()[0].changeSymbolLayer(0, symbol)
+                layer.renderer().symbols()[0].changeSymbolLayer(0, symbol)
             else:
                 symbol = self.createSymbol( symbolClass, self.style )
-                layer.rendererV2().setSymbol( symbol )
+                layer.renderer().setSymbol( symbol )
         else:
             rules = []
             attribute = self.style['attribute']['key']
@@ -195,8 +198,8 @@ class VectorItem(TableItem):
                         #Set SVG graphic as symbol
                         symbolSvg = self.createSvgSymbol( rule['symbol'] )
                         symbol.changeSymbolLayer(0, symbolSvg)
-                    rules.append( QgsRendererRangeV2( float(minVal), float(maxVal), symbol, '{} - {}'.format(minVal, maxVal)) )
-                renderer = QgsGraduatedSymbolRendererV2(attribute, rules)
+                    rules.append( QgsRendererRange( float(minVal), float(maxVal), symbol, '{} - {}'.format(minVal, maxVal)) )
+                renderer = QgsGraduatedSymbolRenderer(attribute, rules)
             elif styleType=='unique':
                 #Unique values symbol
                 attrType = self.style['attribute']['type']
@@ -207,22 +210,23 @@ class VectorItem(TableItem):
                         symbolSvg = self.createSvgSymbol( category['symbol'] )
                         symbol.changeSymbolLayer(0, symbolSvg)
                     value = category['filter']['val']
-                    rules.append( QgsRendererCategoryV2(self.parseValueType(value, attrType), symbol, value) )
-                renderer = QgsCategorizedSymbolRendererV2(attribute, rules)
-            layer.setRendererV2(renderer)
+                    rules.append( QgsRendererCategory(self.parseValueType(value, attrType), symbol, value) )
+                renderer = QgsCategorizedSymbolRenderer(attribute, rules)
+            layer.setRenderer(renderer)
         #Set layer transparency
-        layer.setLayerTransparency( self.parseTransparency( self.style.get('fillOpacity', 0.7) ) ) #Layer transparency
+        layer.setOpacity( self.parseTransparency( self.style.get('fillOpacity', 0.7) ) ) #Layer transparency
         #Labeling
         if self.style.get('label') is not None:
             palyr = QgsPalLayerSettings()
-            palyr.readFromLayer( layer )
             palyr.enabled = True
             palyr.fieldName = self.style['label']['key']
             palyr.bufferDraw = True
             palyr.bufferSize = int(self.style.get('labelOutlineWidth', 1))
-            palyr.textFont.setPointSize( int(self.style.get('labelFontSize', 12)) )
+            textFormat = QgsTextFormat()
+            textFormat.setSize( int(self.style.get('labelFontSize', 12)) )
             palyr.textColor = self.hex2QColor( self.style.get('labelFontColor', '#000000') )
-            palyr.writeToLayer( layer )
+            labeling = QgsVectorLayerSimpleLabeling(palyr)
+            layer.setLabeling(labeling)
         layer.triggerRepaint()
     
     def createSymbol( self, symbolClass, data ):
@@ -236,7 +240,7 @@ class VectorItem(TableItem):
     
     def createSvgSymbol( self, data ):
         """ Create SVG  """
-        return QgsSvgMarkerSymbolLayerV2.create( {
+        return QgsSvgMarkerSymbolLayer.create( {
                 'name' : self.getIcon(data['externalGraphic']),
                 'color': self.hex2str( data.get('fillColor', '#abcdea') ), #Fill color
                 'outline_color': self.hex2str( data.get('strokeColor', '#aeabea') ), #Outline color
@@ -260,7 +264,7 @@ class VectorItem(TableItem):
   </g>
 </svg>
 """
-        data = urllib.urlopen( '%s/icons/%s' % (DIVI_HOST, name) )
+        data = urllib.request.urlopen( '%s/icons/%s' % (DIVI_HOST, name) )
         svgFile = '%s.svg' % name.replace('/', '_')
         svgPath = op.join(path, svgFile)
         b64response = base64.b64encode(data.read())

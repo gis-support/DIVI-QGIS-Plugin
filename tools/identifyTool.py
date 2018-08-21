@@ -71,7 +71,7 @@ class DiviIdentifyTool(QgsMapToolIdentify):
         super(DiviIdentifyTool, self).__init__(self.canvas)
     
     def canvasReleaseEvent(self, event ):
-        self.geometry.reset(QgsWkbTypes.PointgGeometry)
+        self.geometry.reset(QgsWkbTypes.PointGeometry)
         layer = self.iface.activeLayer()
         if layer is None:
             return
@@ -145,13 +145,16 @@ class DiviIdentifyTool(QgsMapToolIdentify):
         self.indentifying = False
     
     def identifyRaster(self, point, layerid):
-        transform = QgsCoordinateTransform(self.canvas.mapSettings().destinationCrs(), self.wgs84)
-        point = transform.transform(point)
+        try:
+            transform = QgsCoordinateTransform(self.canvas.mapSettings().destinationCrs(), self.wgs84)
+            point = transform.transform(point)
+        except:
+            pass
         result = self.connector.getRasterIdentification( layerid, point )['data'][0]
         if not isinstance(result, list):
             result = [result]
         self.on_raster.emit( result )
-    
+
     def abortIdentification(self):
         self.connector.abort()
         self.indentifying = False

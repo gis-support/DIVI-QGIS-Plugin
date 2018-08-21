@@ -3,7 +3,7 @@
 
 import os.path
 from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QT_VERSION_STR
-from PyQt5.QtGui import QImage, QPixmap, QPainterPath
+from PyQt5.QtGui import QImage, QPixmap, QPainterPath, QWheelEvent
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog
 __author__ = "Marcel Goldschen-Ohm <marcel.goldschen@gmail.com>"
 __version__ = '0.9.0'
@@ -215,4 +215,4 @@ class ImageViewerQt(QGraphicsView):
     def wheelEvent(self, event):
         if not self.canZoom:
             return
-        self.zoom( event.delta()>0, event.pos() )
+        self.zoom( event.angleDelta().y()>0, event.pos() )

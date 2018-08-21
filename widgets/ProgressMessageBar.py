@@ -24,7 +24,7 @@
 from PyQt5.QtCore import QObject
 from PyQt5.QtWidgets import QProgressBar, QPushButton
 
-from qgis.core import QgsMessageLog
+from qgis.core import QgsMessageLog, Qgis
 
 class ProgressMessageBar(QObject):
     
@@ -42,7 +42,7 @@ class ProgressMessageBar(QObject):
             self.button = QPushButton(self.tr('Abort'))
             self.msgBar.layout().addWidget(self.progress)
             self.msgBar.layout().addWidget(self.button)
-            self.iface.messageBar().pushWidget(self.msgBar, self.iface.messageBar().INFO)
+            self.iface.messageBar().pushWidget(self.msgBar, Qgis.Info)
             if connector is not None:
                 self.button.clicked.connect(connector.abort)
                 self.button.clicked.connect(self.abort)

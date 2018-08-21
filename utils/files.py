@@ -28,7 +28,7 @@ from ..config import *
 from .commons import translate
 
 def readFile(path, delete_after=False):
-    data_file = QFile( path )
+    data_file = QFile( str(path) )
     data_file.open(QIODevice.ReadOnly)
     data = data_file.readAll()
     data_file.close()
@@ -47,5 +47,5 @@ def getSavePath(fileName):
         defaultPath, filter = ext)
     if not filePath:
         return
-    settings.setValue('%s/last_dir' % CONFIG_NAME, op.dirname(filePath))
+    settings.setValue('%s/last_dir' % CONFIG_NAME, op.dirname(str(filePath)))
     return filePath
