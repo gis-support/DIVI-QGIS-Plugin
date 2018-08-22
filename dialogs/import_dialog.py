@@ -27,7 +27,7 @@ import tempfile
 
 from PyQt5 import QtGui, uic, QtWidgets
 from PyQt5.QtCore import QSettings, Qt
-from qgis.core import QgsMessageLog, QgsProject, QgsVectorFileWriter ,QgsCoordinateReferenceSystem, QgsVectorLayer, QgsRasterFileWriter, Qgis
+from qgis.core import QgsMessageLog, QgsProject, QgsVectorFileWriter ,QgsCoordinateReferenceSystem, QgsVectorLayer, QgsRasterFileWriter, Qgis, QgsWkbTypes
 from qgis.gui import QgsMessageBar
 from ..config import *
 from ..utils.connector import DiviConnector
@@ -67,7 +67,7 @@ class DiviPluginImportDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def loadLayers(self):
         self.cmbLayers.clear()
-        for _, layer in QgsMapLayerRegistry.instance().mapLayers().iteritems():
+        for _, layer in QgsProject.instance().mapLayers().items():
             self.cmbLayers.addItem(layer.name(), layer)
     
     def loadProjects(self):
@@ -100,7 +100,7 @@ class DiviPluginImportDialog(QtWidgets.QDialog, FORM_CLASS):
         self.connector = DiviConnector()
         self.connector.uploadingProgress.connect(self.updateDownloadProgress)
         if isinstance(layer, QgsVectorLayer):
-            if layer.geometryType()==QGis.NoGeometry:
+            if layer.geometryType() == QgsWkbTypes.NoGeometry:
                 result = self.uploadTable(layer)
             else:
                 result = self.uploadVectorLayer(layer)
@@ -117,7 +117,7 @@ class DiviPluginImportDialog(QtWidgets.QDialog, FORM_CLASS):
             #Error
             self.iface.messageBar().pushMessage(self.tr("Error"),
                 self.tr("Error 406: Data validation error"),
-                level=QgsMessageBar.CRITICAL)
+                level=Qgis.Critical)
     
     def uploadTable(self, table):
         """ Upload non-spatial tables """
@@ -144,6 +144,7 @@ class DiviPluginImportDialog(QtWidgets.QDialog, FORM_CLASS):
         data = readFile( out_file, True )
         self.msgBar.setBoundries(30, 30)
         self.msgBar.setValue(30)
+
         project = self.cmbProjects.itemData(self.cmbProjects.currentIndex())
         data_format = '{"driver":"SQLite","name":"SpatiaLite","layer_options":["srs"],"allowed_ext":".sqlite,.db"}'
         #Send files to server
@@ -167,7 +168,7 @@ class DiviPluginImportDialog(QtWidgets.QDialog, FORM_CLASS):
                 }]
             },
             params={'token':token})
-        result = json.loads(content)
+        result = json.loads(content.encode('utf-8'))
         if 'error' in result:
             return False
         #Refresh list
@@ -179,7 +180,7 @@ class DiviPluginImportDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def uploadRasterLayer(self, layer):
         """ Upload raster layers """
-        if 'geotiff' in layer.metadata().lower() and os.path.exists(layer.source()):
+        if 'geotiff' in str(layer.metadata()).lower() and os.path.exists(layer.source()):
             #If source file is GeoTIFF than we can send it directly
             data = readFile( layer.source() )
         else:

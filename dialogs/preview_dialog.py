@@ -31,6 +31,7 @@ from PyQt5.QtWidgets import QDialog, QToolBar, QSplitter
 from qgis.core import QgsApplication
 from ..models.ThumbnailsModel import ThumbnailsModel
 from ..widgets.ImageViewerQt import ImageViewerQt
+from ..utils.files import readFile, getSavePath
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'preview_dialog.ui'))
@@ -56,6 +57,7 @@ class DiviPluginPreviewDialog(QDialog, FORM_CLASS):
         self.setWindowFlags( Qt.Window )
         self.lvThumbnails.setModel( ThumbnailsModel() )
         self.fid = None
+        #print (ImageViewerQt)
         self.viewer = ImageViewerQt()
         self.viewer.setToolTip(self.tr('Left mouse button: Pan\nRight mouse button: zoom to rectangle\nMouse wheel: Zoom In/Out'))
         self.frameLayout.addWidget(self.viewer)
@@ -117,7 +119,11 @@ class DiviPluginPreviewDialog(QDialog, FORM_CLASS):
         current_item = current_index.data( Qt.UserRole )
         if current_item is None:
             return
-        filePath = self.plugin.getSavePath( current_item.name )
+        #print (dir(self.plugin))
+        #print (current_item.name)
+        filePath = getSavePath( current_item.name )
+        filePath = str(filePath).split(',')[0].replace("'", "").replace("(", "")\
+            +str(str(filePath).split(',')[1]).strip().replace("'", "").replace(")", "")
         if filePath is None:
             return
         self.viewer._pixmapHandle.pixmap().save( filePath )

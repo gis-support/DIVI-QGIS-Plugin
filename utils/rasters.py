@@ -28,14 +28,15 @@ from tempfile import NamedTemporaryFile
 from .files import readFile
 
 def raster2tiff( layer ):
-    """ Konwert raster layer to GeoTIFF and return as stream """
+    """ Convert raster layer to GeoTIFF and return as stream """
     with NamedTemporaryFile() as f:
         #Show raster copy progress
-        progress = QProgressDialog()
+        #feedback = QgsFeedback
+        #progress = QProgressDialog()
         writer = QgsRasterFileWriter( f.name )
         writer.setCreateOptions(['COMPRESS=DEFLATE'])
-        writer.writeRaster( layer.pipe(), layer.width(), layer.height(), layer.dataProvider().extent(), layer.crs(), progress )
+        writer.writeRaster( layer.pipe(), layer.width(), layer.height(), layer.dataProvider().extent(), layer.crs())
         del writer
-        del progress
+        #del progress
         data = readFile( f.name )
     return data

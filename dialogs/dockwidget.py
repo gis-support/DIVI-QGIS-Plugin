@@ -41,6 +41,7 @@ from ..widgets.ProgressMessageBar import ProgressMessageBar
 from ..utils.commons import Cache
 from ..utils.files import getSavePath
 
+
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'dockwidget.ui'))
 
@@ -181,7 +182,7 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
     
     def getLoadedDiviLayers(self, layers=None):
         if layers is None:
-            layers = [ layer for layer in QgsMapLayerRegistry.instance().mapLayers().values() if layer.customProperty('DiviId') is not None ]
+            layers = [ layer for layer in QgsProject.instance().mapLayers().values() if layer.customProperty('DiviId') is not None ]
         model = self.tvData.model().sourceModel()
         items = set()
         for layer in layers:
@@ -239,7 +240,7 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         elif isinstance(item, ProjectItem):
             self.addProjectData(index)
     
-    def addLayer(self, index, old=None):
+    def addLayer(self, index, old=None, addToMap=True):
         item = index.data(role=Qt.UserRole)
         if not isinstance(item, LayerItem):
             return
@@ -258,11 +259,11 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                 self.plugin.msgBar.setBoundries(50, 50)
                 #Disable rendering for changing symbology
                 self.iface.mapCanvas().setRenderFlag(False)
-                layers = self.plugin.addLayer(data['features'], item, permissions)
+                layers = self.plugin.addLayer(data['features'], item, permissions, addToMap=addToMap)
                 for layer in layers:
                     #Set symbols based on layer geometry type
                     item.setQgisStyle(layer)
-                    self.iface.legendInterface().refreshLayerSymbology(layer)
+                    self.iface.layerTreeView().refreshLayerSymbology(layer.id())
                 self.iface.mapCanvas().setRenderFlag(True)
                 addedData.extend( layers )
                 item.items.extend( addedData )
@@ -289,13 +290,13 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                 menu.addAction(QgsApplication.getThemeIcon('/mIconPolygonLayer.svg'), self.tr('Polygons'), lambda: load_layer_as(geom_type='MultiPolygon'))
                 button.setMenu( menu )
                 widget.layout().addWidget(button)
-                self.iface.messageBar().pushWidget(widget, QgsMessageBar.WARNING)
+                self.iface.messageBar().pushWidget(widget, Qgis.Warning)
 
         elif isinstance(item, TableItem):
-            if QGis.QGIS_VERSION_INT < 21400:
+            if Qgis.QGIS_VERSION_INT < 21400:
                 self.iface.messageBar().pushMessage('DIVI',
                     self.tr(u'QGIS 2.14 or later is required for loading DIVI tables.'),
-                    QgsMessageBar.CRITICAL,
+                    Qgis.Critical,
                     duration = 3
                 )
             else:
@@ -307,20 +308,21 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                 if data:
                     permissions = connector.getUserPermission(item.id, 'table')
                     self.plugin.msgBar.setBoundries(50, 50)
-                    addedData.append( self.plugin.addTable(data['header'], data['data'], item, permissions) )
+                    addedData.append( self.plugin.addTable(data['header'], data['data'], item, permissions, addToMap=addToMap) )
                     item.items.extend( addedData )
                 self.plugin.msgBar.setValue(100)
                 self.plugin.msgBar.close()
                 self.plugin.msgBar = None
         elif isinstance(item, RasterItem):
-            if QGis.QGIS_VERSION_INT < 21800:
+            if Qgis.QGIS_VERSION_INT < 21800:
                 self.iface.messageBar().pushMessage('DIVI',
                     self.tr(u'QGIS 2.18 or later is required for loading DIVI rasters.'),
-                    QgsMessageBar.CRITICAL,
+                    Qgis.Critical,
                     duration = 3
                 )
             else:
                 uri = item.getUri(self.token)
+                uri = uri.replace("b'", "").replace("'", "")
                 QgsMessageLog.logMessage( uri, 'DIVI')
                 r = QgsRasterLayer(uri, item.name, 'wms')
                 r.setCustomProperty('DiviId', item.id)
@@ -335,7 +337,8 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                     r.setExtent( bbox )
                 addedData.append( r )
                 item.items.extend( addedData )
-                QgsMapLayerRegistry.instance().addMapLayer(r)
+                if addToMap:
+                    QgsProject.instance().addMapLayer(r)
         elif isinstance(item, WmsItem):
             uri = item.getUri()
             QgsMessageLog.logMessage( uri, 'DIVI')
@@ -343,7 +346,8 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             r.setCustomProperty('DiviId', item.id)
             addedData.append( r )
             item.items.extend( addedData )
-            QgsMapLayerRegistry.instance().addMapLayer(r)
+            if addToMap:
+                QgsProject.instance().addMapLayer(r)
         elif isinstance(item, BasemapItem):
             uri = item.getUri()
             QgsMessageLog.logMessage( uri, 'DIVI')
@@ -351,7 +355,8 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             r.setCustomProperty('DiviId', item.id)
             addedData.append( r )
             item.items.extend( addedData )
-            QgsMapLayerRegistry.instance().addMapLayer(r)
+            if addToMap:
+                QgsProject.instance().addMapLayer(r)
         else:
             return
         index.model().dataChanged.emit(index.parent().parent(), index)
@@ -360,16 +365,29 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
     
     def refreshData(self, item):
         layers = item.items[:]
-        if any( l.isEditable() for l in layers ):
-            self.iface.messageBar().pushMessage('DIVI',
-                self.tr(u'One of related layers is in edit mode. End edit mode of that layer to continue.'),
-                self.iface.messageBar().CRITICAL,
-                duration = 3
-            )
-            return
+        for l in layers:
+            if l.VectorLayer:
+                if l.isEditable():
+                    self.iface.messageBar().pushMessage('DIVI',
+                        self.tr(u'One of related layers is in edit mode. End edit mode of that layer to continue.'),
+                        Qgis.Critical,
+                        duration = 3
+                    )
+                    return
         with Cache(self.plugin):
             for lyr in layers:
-                lyr.dataProvider().deleteFeatures(lyr.allFeatureIds())
+                if lyr.RasterLayer:
+                    try:
+                        lyr.reload()
+                    except:
+                        self.iface.messageBar().pushMessage('Error',
+                        self.tr('Raster data was deleted from the view.'),
+                        Qgis.Critical,
+                        duration = 3
+                        )
+                        return
+                else:
+                    lyr.dataProvider().deleteFeatures(lyr.allFeatureIds())
                 try:
                     self.plugin.unregisterLayer(lyr)
                 except TypeError:
@@ -407,7 +425,7 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         removed_ids = set([])
         model = self.tvData.model().sourceModel()
         for lid in layers:
-            layer = QgsMapLayerRegistry.instance().mapLayer(lid)
+            layer = QgsProject.instance().mapLayer(lid)
             divi_id = layer.customProperty('DiviId')
             if divi_id is None:
                 continue
@@ -472,7 +490,7 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             else:
                 self.iface.messageBar().pushMessage('DIVI',
                     self.tr('Error occured while changing name.'),
-                    self.iface.messageBar().CRITICAL,
+                    Qgis.Critical,
                     duration = 3
                 )
     
@@ -489,11 +507,15 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         layers = []
         for i, data in enumerate(item.childItems):
             if isinstance(data, LayerItem):
-                layers.extend( self.addLayer( index.child(i, 0) ) )
+                layers.extend( self.addLayer( index.child(i, 0), addToMap=False ) )
         if layers:
-            idx = self.iface.legendInterface().addGroup(item.name, True)
-            for layer in reversed(layers):
-                self.iface.legendInterface().moveLayer(layer, idx)
+            idx2 = QgsProject.instance().layerTreeRoot().addGroup(item.name)
+            #idx = self.iface.legendInterface().addGroup(item.name, True)
+            #for layer in reversed(layers):
+                #self.iface.legendInterface().moveLayer(layer, idx)
+            for layer in layers:
+                idx2.addLayer(layer)
+
     
     def refreshItems(self, index):
         if index is None:
@@ -520,8 +542,14 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             return
         connector = self.getConnector()
         fileData = connector.downloadRaster( item.id )
-        with open(filePath, 'wb') as f:
+        filePath = str(filePath).split(',')[0].replace("'", "").replace("(", "")\
+            +str(str(filePath).split(',')[1]).strip().replace("'", "").replace(")", "")
+        
+        try:
+            with open(filePath, 'wb') as f:
                 f.write(fileData)
+        except:
+            pass
     
     def unregisterLayers(self, item):
         for child in item.childItems:

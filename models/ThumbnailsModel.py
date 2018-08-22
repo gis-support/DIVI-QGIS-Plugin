@@ -22,7 +22,7 @@
 """
 
 from qgis.PyQt.QtCore import QObject, QAbstractListModel, Qt, QModelIndex, pyqtSignal, \
-    QFileInfo, QSize, pyqtSignal, QBuffer, QSortFilterProxyModel
+    QFileInfo, QSize, pyqtSignal, QBuffer, QSortFilterProxyModel, QByteArray
 from PyQt5.QtGui import QIcon, QTextDocument, QAbstractTextDocumentLayout, QImageReader, QPixmap
 from PyQt5.QtWidgets import QFileIconProvider, QStyledItemDelegate, QStyleOptionViewItem, QApplication, QStyle
 import os.path as op

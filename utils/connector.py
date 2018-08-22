@@ -62,11 +62,13 @@ class DiviConnector(QObject):
             for key, value in headers.items():
                 request.setRawHeader(key.encode('utf-8'), value.encode('utf-8'))
             if method == 'delete':
-                reply = manager.sendCustomRequest(request, 'DELETE', data)
+                reply = manager.sendCustomRequest(request, 'DELETE'.encode('utf-8'), data)
             else:
                 if not data:
                     reply = getattr(manager, method)(request)
-                else:
+                elif isinstance(data, QHttpMultiPart) == True:
+                    reply = getattr(manager, method)(request, data)
+                elif isinstance(data, str) == True:
                     reply = getattr(manager, method)(request, data.encode('utf-8'))
             loop = QEventLoop()
             reply.uploadProgress.connect(self.uploadProgress)
@@ -81,7 +83,7 @@ class DiviConnector(QObject):
         manager = QgsNetworkAccessManager()
         manager.sslErrors.connect(self._sslError)
         reply = send(params)
-        content = str(reply.readAll(), 'utf-8')
+        content = reply.readAll()
         status_code = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
         if reply.error() == QNetworkReply.ConnectionRefusedError:
             if self.iface is not None:
@@ -150,14 +152,15 @@ class DiviConnector(QObject):
         headers.update({"Content-Type":"application/json"})
         return self.sendRequest( endpoint, params,
                 'put',
-                json.dumps(data.encode('utf-8')),
+                json.dumps(data),
                 headers=headers
             )
     
     def sendDeleteRequest(self, endpoint, data={}, params={}, headers={}):
         buff = QBuffer()
         buff.open(QBuffer.ReadWrite)
-        buff.write(json.dumps(data).decode('utf-8'))
+        d = json.dumps(data).encode('utf-8')
+        buff.write(d)
         buff.seek(0)
         headers.update({"Content-Type":"application/json"})
         content = self.sendRequest( endpoint, params,
@@ -188,7 +191,7 @@ class DiviConnector(QObject):
                 'remember': True
             })
         try:
-            #content = content.replace("b'", "").replace("'", "")
+            content = content.replace("b'", "").replace("'", "")
             data = json.loads(content)
         except TypeError:
             return
@@ -271,7 +274,7 @@ class DiviConnector(QObject):
         multi_part = QHttpMultiPart(QHttpMultiPart.FormDataType)
         format_part = QHttpPart()
         format_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="format"')
-        format_part.setBody(data_format)
+        format_part.setBody(str(data_format).encode('utf-8'))
         file_part = QHttpPart()
         file_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="file[0]"; filename="%s.sqlite"' % filename)
         file_part.setHeader(QNetworkRequest.ContentTypeHeader, "application/octet-stream")
@@ -288,10 +291,10 @@ class DiviConnector(QObject):
         multi_part = QHttpMultiPart(QHttpMultiPart.FormDataType)
         name_part = QHttpPart()
         name_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="name"')
-        name_part.setBody(filename)
+        name_part.setBody(filename.encode('utf-8'))
         crs_part = QHttpPart()
         crs_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="srs"')
-        crs_part.setBody(str(crs))
+        crs_part.setBody(str(crs).encode('utf-8'))
         file_part = QHttpPart()
         file_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="file[0]"; filename="%s.tiff"' % filename)
         file_part.setHeader(QNetworkRequest.ContentTypeHeader, "application/octet-stream")
@@ -303,7 +306,7 @@ class DiviConnector(QObject):
             'post',
             multi_part
         )
-        return json.loads(content)
+        return json.loads(content.encode('utf-8'))
     
     def startTransaction(self, data_type, layerid):
         QgsMessageLog.logMessage('Starting transaction for %s' % layerid, 'DIVI')
@@ -321,7 +324,7 @@ class DiviConnector(QObject):
         return self.getJson(self.sendGetRequest('/files', {'token':self.token, 'feature':str(featureid)}))
     
     def get_comments(self, featureid):
-        QgsMessageLog.logMessage(self.tr('Comments for %d') % featureid, 'DIVI')
+        QgsMessageLog.logMessage(self.tr('Comments for %s') % featureid, 'DIVI')
         return self.getJson(self.sendGetRequest('/comments/%s' % featureid, {'token':self.token}))
     
     def get_changes(self, featureid):
@@ -347,7 +350,7 @@ class DiviConnector(QObject):
     
     def sendAttachments(self, featureid, files):
         multi_part = QHttpMultiPart(QHttpMultiPart.FormDataType)
-        for fileName, fileData in files.iteritems():
+        for fileName, fileData in files.items():
             file_part = QHttpPart()
             file_part.setHeader(QNetworkRequest.ContentDispositionHeader, 'form-data; name="filedata"; filename="%s"' % fileName)
             file_part.setHeader(QNetworkRequest.ContentTypeHeader, "application/octet-stream")
@@ -468,5 +471,6 @@ class DiviConnector(QObject):
     @staticmethod
     def getJson(data):
         if data:
-            return json.loads(data)
+            print(data)
+            return json.loads(data.encode('utf-8'))
         return []

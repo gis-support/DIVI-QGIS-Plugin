@@ -151,8 +151,14 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
             fileData = connector.getFiles( featureid )
         else:
             fileData = connector.getFile( featureid, fileName )
-        with open(filePath, 'wb') as f:
-            f.write(fileData)
+        
+        filePath = str(filePath).split(',')[0].replace("'", "").replace("(", "")\
+            +str(str(filePath).split(',')[1]).strip().replace("'", "").replace(")", "")
+        try:
+            with open(filePath, 'wb') as f:
+                f.write(fileData)
+        except FileNotFoundError as ex:
+            pass
 
     def addAttachment(self):
         fid = self.tvIdentificationResult.model().sourceModel().currentFeature
@@ -163,6 +169,7 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         files = QFileDialog.getOpenFileNames(self, self.tr('Select attachment(s)'), defaultDir)
         if not files:
             return
+        files = files[0]
         to_send = { op.basename(f):readFile(f) for f in files }
         connector = self.plugin.dockwidget.getConnector()
         if fid is None:

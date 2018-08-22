@@ -70,9 +70,9 @@ class DiviPluginHistoryDialog(QDialog, FORM_CLASS):
         self.mapCanvas.setDestinationCrs( QgsCoordinateReferenceSystem('EPSG:4326') )
         zoomFactor = settings.value( "/qgis/zoom_factor", 2.0, type=float )
         action = settings.value( "/qgis/wheel_action", 0, type=int)
-        self.mapCanvas.setWheelAction( QgsMapCanvas.WheelAction(action), zoomFactor )
+        self.mapCanvas.setWheelFactor( zoomFactor )
         self.mapCanvas.enableAntiAliasing( settings.value( "/qgis/enable_anti_aliasing", False, type=bool ))
-        self.mapCanvas.useImageToRender( settings.value( "/qgis/use_qimage_to_render", False, type=bool ))
+        #self.mapCanvas.useImageToRender( settings.value( "/qgis/use_qimage_to_render", False, type=bool ))
         self.toolPan = QgsMapToolPan( self.mapCanvas )
         self.mapCanvas.setMapTool( self.toolPan )
         #Canvas items
