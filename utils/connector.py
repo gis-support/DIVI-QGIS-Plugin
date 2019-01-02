@@ -53,7 +53,7 @@ class DiviConnector(QObject):
     
     #Sending requests to DIVI
     
-    def sendRequest(self, endpoint, params, method, data=None, headers={}, as_unicode=True):
+    def sendRequest(self, endpoint, params, method, data=None, headers={}, as_str=True):
         def send(params):
             url = self.formatUrl(endpoint, params)
             request = QNetworkRequest(url)
@@ -83,12 +83,16 @@ class DiviConnector(QObject):
         manager = QgsNetworkAccessManager()
         manager.sslErrors.connect(self._sslError)
         reply = send(params)
+
         content = reply.readAll()
+        content = bytearray(content)
+        content = bytes(content)
+
         status_code = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
         if reply.error() == QNetworkReply.ConnectionRefusedError:
             if self.iface is not None:
                 self.iface.messageBar().pushMessage(self.tr("Error"),
-                    self.trUtf8("Server rejected request"),
+                    self.tr("Server rejected request"),
                     level=Qgis.Critical, duration=3)
             return
         elif status_code == 500:
@@ -99,7 +103,7 @@ class DiviConnector(QObject):
             return
         elif status_code == 409:
             if self.iface is not None:
-                min_version = json.loads(QString(content)).get('error', '')
+                min_version = json.loads(content.decode()).get('error', '')
                 self.iface.messageBar().pushMessage(self.tr("Error"),
                     self.tr("Error 409: DIVI QGIS Plugin is not supported in version '%s'. "
                             "Please upgrade to version '%s' or higher. ") % (PLUGIN_VERSION, min_version),
@@ -115,7 +119,9 @@ class DiviConnector(QObject):
             #Set new token
             params['token'] = result
             reply = send(params)
-            content = str(reply.readAll(), 'utf-8')
+            content = reply.readAll()
+            content = bytearray(content)
+            content = bytes(content)
         elif status_code == 404:
             if self.iface is not None:
                 msg = self.tr("Error 404: Bad login or password") \
@@ -130,8 +136,8 @@ class DiviConnector(QObject):
                     self.tr("Error 423: requested resource is locked"),
                     level=Qgis.Critical, duration=3)
             return
-        if as_unicode:
-            content = str(content)
+        if as_str:
+            content = content.decode()
         return content
     
     def abort(self):
@@ -171,9 +177,9 @@ class DiviConnector(QObject):
         buff.close()
         return content
     
-    def sendGetRequest(self, endpoint, data, as_unicode=True):
+    def sendGetRequest(self, endpoint, data, as_str=True):
         return self.sendRequest(endpoint, data, 'get',
-                as_unicode = as_unicode
+                as_str = as_str
             )
     
     #Login
@@ -191,7 +197,6 @@ class DiviConnector(QObject):
                 'remember': True
             })
         try:
-            content = content.replace("b'", "").replace("'", "")
             data = json.loads(content)
         except TypeError:
             return
@@ -210,7 +215,7 @@ class DiviConnector(QObject):
     #Fetching data from server
     
     def diviFeatchData(self):
-        QgsMessageLog.logMessage('Fecthing data', 'DIVI')
+        QgsMessageLog.logMessage('as_str data', 'DIVI')
         projects = self.getJson(self.sendGetRequest('/projects', {'token':self.token}))
         if not projects:
             return
@@ -228,31 +233,31 @@ class DiviConnector(QObject):
         return layers['data'], tables['data']
     
     def diviGetLayerFeatures(self, layerid):
-        QgsMessageLog.logMessage('Fecthing layer %s features' % layerid, 'DIVI')
+        QgsMessageLog.logMessage('Fetching layer %s features' % layerid, 'DIVI')
         layer = self.sendGetRequest('/features/%s'%layerid, {'token':self.token, 'geometry':'base64'})
         return self.getJson(layer)
     
     def diviGetTableRecords(self, tableid):
-        QgsMessageLog.logMessage('Fecthing table %s records' % tableid, 'DIVI')
+        QgsMessageLog.logMessage('Fetching table %s records' % tableid, 'DIVI')
         records = self.sendGetRequest('/records/%s'%tableid, {'token':self.token})
         return self.getJson(records)
     
     def diviGetLayer(self, layerid):
-        QgsMessageLog.logMessage('Fecthing layer %s' % layerid, 'DIVI')
+        QgsMessageLog.logMessage('Fetching layer %s' % layerid, 'DIVI')
         layer = self.sendGetRequest('/layers/%s'%layerid, {'token':self.token})
         return self.getJson(layer)
     
     def diviGetTable(self, tableid):
-        QgsMessageLog.logMessage('Fecthing table %s' % tableid, 'DIVI')
+        QgsMessageLog.logMessage('Fetching table %s' % tableid, 'DIVI')
         table = self.sendGetRequest('/tables/%s'%tableid, {'token':self.token})
         return self.getJson(table)
-    
+
     def getUserPermissions(self, item_type, userid=None):
         if userid is None:
             userid = self.getUserId()
         if userid is None:
             return
-        QgsMessageLog.logMessage('Fecthing permissions for user %s' % userid, 'DIVI')
+        QgsMessageLog.logMessage('Fetching permissions for user %s' % userid, 'DIVI')
         perms = self.getJson(self.sendGetRequest('/user_%s/%s'%(item_type, userid), {'token':self.token}))
         if not perms:
             return
@@ -265,7 +270,7 @@ class DiviConnector(QObject):
             return
         if int(QSettings().value('%s/status' % CONFIG_NAME, 3)) < 3:
             return { layerid : 1 }
-        QgsMessageLog.logMessage('Fecthing permissions to %s %s for user %s' % (item_type, layerid, userid), 'DIVI')
+        QgsMessageLog.logMessage('Fetching permissions to %s %s for user %s' % (item_type, layerid, userid), 'DIVI')
         perm = self.getJson(self.sendGetRequest('/user_%ss/%s/%s'%(item_type, userid, layerid), {'token':self.token}))
         if perm:
             return { layerid : perm.get('editing', 0) }
@@ -306,7 +311,7 @@ class DiviConnector(QObject):
             'post',
             multi_part
         )
-        return json.loads(content.encode('utf-8'))
+        return json.loads(content)
     
     def startTransaction(self, data_type, layerid):
         QgsMessageLog.logMessage('Starting transaction for %s' % layerid, 'DIVI')
@@ -338,10 +343,10 @@ class DiviConnector(QObject):
         params = {'token':self.token}
         if as_thumbnail:
             params['thumbnail'] = 'true'
-        return self.sendGetRequest('/files/%s/%s' % (featureid, fileName), params, as_unicode=False)
+        return self.sendGetRequest('/files/%s/%s' % (featureid, fileName), params, as_str=False)
     
     def getFiles(self, featureid):
-        return self.sendGetRequest('/download_files', {'token':self.token, 'ids':str([featureid])}, as_unicode=False)
+        return self.sendGetRequest('/download_files', {'token':self.token, 'ids':str([featureid])}, as_str=False)
     
     def addComment(self, featureid, text):
         return self.getJson(
@@ -369,7 +374,7 @@ class DiviConnector(QObject):
         return self.getJson( self.sendGetRequest('/sample_raster/%s'%layerid, {'token':self.token, 'locs':'%f %f' % tuple(point) }) )
     
     def downloadRaster( self, rasterid ):
-        return self.sendGetRequest('/download_raster/%s'%rasterid, {'token':self.token }, as_unicode=False)
+        return self.sendGetRequest('/download_raster/%s'%rasterid, {'token':self.token }, as_str=False)
     
     #Edit data
     
@@ -471,6 +476,6 @@ class DiviConnector(QObject):
     @staticmethod
     def getJson(data):
         if data:
-            print(data)
-            return json.loads(data.encode('utf-8'))
+            #print(data)
+            return json.loads(data)
         return []

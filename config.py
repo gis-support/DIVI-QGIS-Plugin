@@ -6,6 +6,6 @@ DIVI_HOST = 'https://divi.io'
 CONFIG_NAME = 'divi'
 
 try:
-    from local_config import *
+    from .local_config import *
 except ImportError:
-    pass
+    print("no local config")
