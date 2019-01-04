@@ -97,7 +97,7 @@ class DiviPluginImportDialog(QtWidgets.QDialog, FORM_CLASS):
         self.msgBar = ProgressMessageBar(self.iface, self.tr(u"Uploading layer '%s'...")%layer.name(), 5, 5)
         self.msgBar.setValue(5)
         self.msgBar.setBoundries(5, 25)
-        self.connector = DiviConnector()
+        self.connector = DiviConnector(iface = self.iface)
         self.connector.uploadingProgress.connect(self.updateDownloadProgress)
         if isinstance(layer, QgsVectorLayer):
             if layer.geometryType() == QgsWkbTypes.NoGeometry:
@@ -168,7 +168,7 @@ class DiviPluginImportDialog(QtWidgets.QDialog, FORM_CLASS):
                 }]
             },
             params={'token':token})
-        result = json.loads(content.encode('utf-8'))
+        result = json.loads(content)
         if 'error' in result:
             return False
         #Refresh list
@@ -192,8 +192,9 @@ class DiviPluginImportDialog(QtWidgets.QDialog, FORM_CLASS):
         content = self.connector.sendRaster(data, self.eLayerName.text(), project.id, layer.crs().postgisSrid() )
         result = content
         #Refresh list
-        self.plugin.dockwidget.tvData.model().sourceModel().addProjectItems(
-            project,
-            [ self.connector.diviGetLayer( result['inserted'] ) ]
-        )
+        if result:
+            self.plugin.dockwidget.tvData.model().sourceModel().addProjectItems(
+                project,
+                [ self.connector.diviGetLayer( result['inserted'] ) ]
+            )
         return True

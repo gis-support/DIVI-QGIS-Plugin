@@ -87,7 +87,6 @@ class DiviConnector(QObject):
         content = reply.readAll()
         content = bytearray(content)
         content = bytes(content)
-
         status_code = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
         if reply.error() == QNetworkReply.ConnectionRefusedError:
             if self.iface is not None:
@@ -108,6 +107,10 @@ class DiviConnector(QObject):
                     self.tr("Error 409: DIVI QGIS Plugin is not supported in version '%s'. "
                             "Please upgrade to version '%s' or higher. ") % (PLUGIN_VERSION, min_version),
                     level=Qgis.Critical, duration=0)
+            return
+        elif status_code == 402:
+            if self.iface is not None:
+                self.iface.messageBar().pushCritical(self.tr("Error"), self.tr("Error 402: User data limit exceeded"))
             return
         elif status_code == 403:
             if not self.auto_login:
@@ -311,7 +314,8 @@ class DiviConnector(QObject):
             'post',
             multi_part
         )
-        return json.loads(content)
+        if content:
+            return json.loads(content)
     
     def startTransaction(self, data_type, layerid):
         QgsMessageLog.logMessage('Starting transaction for %s' % layerid, 'DIVI')
@@ -427,12 +431,18 @@ class DiviConnector(QObject):
     def metaDataChanged(self):
         reply = self.sender()
         if reply.hasRawHeader(('Content-Length'.encode('utf-8'))):
-            self.total = int(reply.rawHeader('Content-Length'.encode('utf-8')))
+            content = reply.rawHeader('Content-Length'.encode('utf-8'))
         elif reply.hasRawHeader('Data-Length'.encode('utf-8')):
-            self.total = int(reply.rawHeader('Data-Length'.encode('utf-8')))
+            content = reply.rawHeader('Data-Length'.encode('utf-8'))
         else:
             self.total = -1
-    
+            return
+        content = bytes(bytearray(content)).decode()
+        #wartość nagłówka może być zdublowana
+        spl = content.split(",")
+        self.total = int(spl[0])
+        
+
     def downloadProgress(self, received, total):
         if self.total>0:
             self.downloadingProgress.emit( float(received)/self.total )
