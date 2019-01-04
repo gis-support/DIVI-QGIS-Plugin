@@ -116,6 +116,8 @@ class DiviPluginIdentificationPanel(QDockWidget, FORM_CLASS):
         self.btnAddAttachment.setEnabled( enabled )
         self.btnDownloadAttachment.setEnabled( enabled )
         self.btnAddComment.setEnabled( enabled )
+        self.btnHistory.setEnabled( enabled )
+        self.btnPreview.setEnabled( enabled )
     
     def downloadMenuShow(self):
         menu = self.sender()
