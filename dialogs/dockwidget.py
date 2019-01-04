@@ -141,7 +141,7 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         else:
             #Disconnect
             layers = [ layer for layer in QgsProject.instance().mapLayers().values() if layer.customProperty('DiviId') is not None ]
-            if any(layer.isModified() for layer in layers):
+            if any(layer.isModified() for layer in layers if layer.isEditable()):
                 result = QMessageBox.question(None, self.tr('Edited layers'), 
                     self.tr('Some layers are modified. You need to save changes or rollback to continue. Do you want to revert all edits?'),
                     QMessageBox.Yes | QMessageBox.No)
