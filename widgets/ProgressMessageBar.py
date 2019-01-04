@@ -75,6 +75,8 @@ class ProgressMessageBar(QObject):
     
     def close(self):
         if self.iface is not None:
-            self.iface.messageBar().clearWidgets()
+            print("pop")
+            self.iface.messageBar().popWidget(self.msgBar)
             self.progress = None
             self.msgBar = None
+            
