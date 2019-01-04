@@ -24,7 +24,8 @@
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QCursor, QPixmap, QColor
 from qgis.core import QgsFeature, QgsRasterLayer, QgsCoordinateTransform, \
-    QgsCoordinateReferenceSystem, Qgis, QgsMessageLog, QgsProject, QgsVectorLayer, QgsWkbTypes
+    QgsCoordinateReferenceSystem, Qgis, QgsMessageLog, QgsProject, QgsVectorLayer, QgsWkbTypes, \
+    QgsCoordinateTransformContext
 from qgis.gui import QgsMapToolIdentify, QgsRubberBand, QgsMessageBar
 
 class DiviIdentifyTool(QgsMapToolIdentify):
@@ -145,11 +146,10 @@ class DiviIdentifyTool(QgsMapToolIdentify):
         self.indentifying = False
     
     def identifyRaster(self, point, layerid):
-        try:
-            transform = QgsCoordinateTransform(self.canvas.mapSettings().destinationCrs(), self.wgs84)
+        canvas_crs = self.canvas.mapSettings().destinationCrs()
+        if canvas_crs.authid() != "EPSG:4326":
+            transform = QgsCoordinateTransform(canvas_crs, self.wgs84, QgsCoordinateTransformContext ())
             point = transform.transform(point)
-        except:
-            pass
         result = self.connector.getRasterIdentification( layerid, point )['data'][0]
         if not isinstance(result, list):
             result = [result]
