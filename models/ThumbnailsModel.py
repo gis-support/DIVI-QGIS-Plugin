@@ -107,6 +107,7 @@ class ImageItem(TreeItem):
         connector = DiviConnector()
         img = connector.getFile(self.fid, self.name, as_thumbnail=as_thumbnail)
         del connector
+        img = QByteArray(bytearray(img))
         b = QBuffer( img )
         im = QImageReader( b )
         return QPixmap.fromImageReader( im )
