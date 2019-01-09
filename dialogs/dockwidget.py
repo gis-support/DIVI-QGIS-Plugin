@@ -96,13 +96,13 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
         self.eSearch.setPlaceholderText(self.tr("Search..."))
         self.editLayout.addWidget(self.eSearch)
         #Toolbar
-        self.btnAddLayer.setIcon( QgsApplication.getThemeIcon('/mActionAddMap.png') )
+        self.btnAddLayer.setIcon( QgsApplication.getThemeIcon('/mActionAddMap.svg') )
         menu = QMenu()
         menu.aboutToShow.connect(self.addMenuShow)
         self.btnAddLayer.setMenu(menu)
         self.btnAddLayer.clicked.connect( self.addItems )
         self.btnRefresh.clicked.connect(lambda checked: self.refreshItems( self.tvData.selectedIndexes()[0] if self.tvData.selectedIndexes() else None ))
-        self.btnRefresh.setIcon( QgsApplication.getThemeIcon('/mActionDraw.svg') )
+        self.btnRefresh.setIcon( QgsApplication.getThemeIcon('/mActionReload.svg') )
         #Filters
         settings = QSettings()
         self.gbFilters.setCollapsed( not settings.value( '{}/filters/filters'.format(CONFIG_NAME), False, bool ) )
@@ -210,7 +210,7 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
             return
         item = indexes[0].data(Qt.UserRole)
         add_text = self.tr('Add layer') if isinstance(item, LayerItem) else self.tr(u'Add all layers from project')
-        add = menu.addAction(QgsApplication.getThemeIcon('/mActionAddMap.png'), add_text, lambda: self.addLayer(indexes[0]))
+        add = menu.addAction(QgsApplication.getThemeIcon('/mActionAddMap.svg'), add_text, lambda: self.addLayer(indexes[0]))
         f = add.font()
         f.setBold(True)
         add.setFont(f)
