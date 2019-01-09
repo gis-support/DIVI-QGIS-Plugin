@@ -284,7 +284,9 @@ class DiviPluginDockWidget(QDockWidget, FORM_CLASS):
                 button.setText(self.tr("Add layer as..."))
                 button.setPopupMode(QToolButton.InstantPopup)
                 menu = QMenu(button)
-                load_layer_as = partial(self.plugin.loadLayerType, item=item)
+                def load_layer_as(geom_type):
+                    self.plugin.loadLayerType(item = item, geom_type = geom_type)
+                    self.iface.messageBar().clearWidgets()
                 menu.addAction(QgsApplication.getThemeIcon('/mIconPointLayer.svg'), self.tr('Points'), lambda: load_layer_as(geom_type='MultiPoint'))
                 menu.addAction(QgsApplication.getThemeIcon('/mIconLineLayer.svg'), self.tr('Linestring'), lambda: load_layer_as(geom_type='MultiLineString'))
                 menu.addAction(QgsApplication.getThemeIcon('/mIconPolygonLayer.svg'), self.tr('Polygons'), lambda: load_layer_as(geom_type='MultiPolygon'))
