@@ -505,11 +505,11 @@ class DiviPlugin(QObject):
         if points is not None and (points_list or add_empty):
             lyr, added = register(layer=points, features=points_list)
             result.append(lyr)
-            self.ids_map[points.id()] = dict(list(zip(points.allFeatureIds(), points_ids)))
+            self.ids_map[points.id()] = dict(list(zip(added, points_ids)))
         if lines is not None and (lines_list or add_empty):
             lyr, added = register(layer=lines, features=lines_list)
             result.append(lyr)
-            self.ids_map[lines.id()] = dict(list(zip(lines.allFeatureIds(), lines_ids)))
+            self.ids_map[lines.id()] = dict(list(zip(added, lines_ids)))
         if polygons is not None and (polygons_list or add_empty):
             lyr, added = register(layer=polygons, features=polygons_list)
             result.append(lyr)
