@@ -10,7 +10,7 @@
 name=DIVI QGIS Plugin
 qgisMinimumVersion=3.0
 description=QGIS integration with DIVI system by GIS Support sp. z o.o. / Integracja QGIS z platformą DIVI firmy GIS Support sp. z o. o.
-version=2
+version=2.0
 author=Piotr Pociask, GIS Support sp. z o. o.
 email=info@gis-support.pl
 homepage=https://divi.io
@@ -46,7 +46,14 @@ repository=https://github.com/gis-support/DIVI-QGIS-Plugin
 # Recommended items:
 
 # Uncomment the following line and add your changelog:
-changelog=Fixes to some errors / Naprawione różne błędy
+changelog=
+    - Upgrade for QGIS3
+    - Fix to editing vector features
+    - Other bug fixes
+    ---
+    - Przejście na QGIS3
+    - Naprawa błędu edycji obiektów wektorowych
+    - Naprawa innych błędów
 
 # Tags are comma separated with spaces allowed
 tags=network, web, webservice,divi

@@ -1,3 +1,8 @@
+2.0
+- upgrade for QGIS3
+- fix to editing vector features
+- other bug fixes
+
 1.5
 - loading WMS and basemaps (QGIS 2.16+) layers
 - aborting download operations
