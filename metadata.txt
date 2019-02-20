@@ -10,7 +10,7 @@
 name=DIVI QGIS Plugin
 qgisMinimumVersion=3.0
 description=QGIS integration with DIVI system by GIS Support sp. z o.o. / Integracja QGIS z platformą DIVI firmy GIS Support sp. z o. o.
-version=2.0
+version=2.0.1
 author=Piotr Pociask, GIS Support sp. z o. o.
 email=info@gis-support.pl
 homepage=https://divi.io
@@ -47,13 +47,13 @@ repository=https://github.com/gis-support/DIVI-QGIS-Plugin
 
 # Uncomment the following line and add your changelog:
 changelog=
-    - Upgrade for QGIS3
-    - Fix to editing vector features
-    - Other bug fixes
+    - Fix to loading layers with ValueMap and DateTime fields
+    - Fix to loading layers with unique value symbology
+    - Fix to loading layers with custom icons symbology
     ---
-    - Przejście na QGIS3
-    - Naprawa błędu edycji obiektów wektorowych
-    - Naprawa innych błędów
+    - Naprawa wczytywania warstw z polami typu wyboru oraz daty
+    - Naprawa wczytywania warstw z symbolizacją wartości unikalnej
+    - Naprawa wczytywania warstw z ikonami użytkownika
 
 # Tags are comma separated with spaces allowed
 tags=network, web, webservice,divi
