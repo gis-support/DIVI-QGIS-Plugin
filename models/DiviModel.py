@@ -26,7 +26,8 @@ from PyQt5.QtGui import QIcon, QFont, QColor
 from qgis.core import QgsMessageLog, QgsDataSourceUri, QgsPalLayerSettings, Qgis,\
     QgsLineSymbol, QgsFillSymbol, QgsMarkerSymbol, QgsRendererRange,\
     QgsGraduatedSymbolRenderer, QgsRendererCategory, QgsCategorizedSymbolRenderer,\
-    QgsSvgMarkerSymbolLayer, QgsWkbTypes, QgsTextFormat, QgsVectorLayerSimpleLabeling 
+    QgsSvgMarkerSymbolLayer, QgsWkbTypes, QgsTextFormat, QgsVectorLayerSimpleLabeling, \
+    QgsRenderContext
 from ..utils.connector import DiviConnector
 from ..config import *
 import locale
@@ -175,7 +176,7 @@ class VectorItem(TableItem):
             externalGraphic = self.style.get('externalGraphic')
             if externalGraphic:
                 symbol = self.createSvgSymbol( self.style )
-                layer.renderer().symbols()[0].changeSymbolLayer(0, symbol)
+                layer.renderer().symbols(QgsRenderContext())[0].changeSymbolLayer(0, symbol)
             else:
                 symbol = self.createSymbol( symbolClass, self.style )
                 layer.renderer().setSymbol( symbol )
@@ -260,7 +261,7 @@ class VectorItem(TableItem):
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg>
   <g>
-    <image xlink:href="data:image/jpeg;base64,{0}" height="256" width="320" />
+    <image xlink:href="data:image/{};base64,{}" height="256" width="320" />
   </g>
 </svg>
 """
@@ -268,7 +269,7 @@ class VectorItem(TableItem):
         svgFile = '%s.svg' % name.replace('/', '_')
         svgPath = op.join(path, svgFile)
         b64response = base64.b64encode(data.read())
-        newsvg = svg.format(b64response).replace('\n','')
+        newsvg = svg.format("png", b64response.decode("utf-8")).replace('\n','')
         with open(svgPath, 'w') as f:
             f.write(newsvg)
         return svgPath.replace("\\", "/")
@@ -277,6 +278,8 @@ class VectorItem(TableItem):
     def parseValueType( value, attrType ):
         """ Converse value type """
         if attrType=='number':
+            if value is None:
+                return ''
             return float(value)
         return value
     

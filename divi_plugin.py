@@ -31,7 +31,8 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtXml import QDomDocument, QDomElement
 from qgis.core import QgsProject, Qgis, QgsVectorLayer, QgsMessageLog,\
     QgsField, QgsFeature, QgsGeometry, QgsFeatureRequest,\
-    QgsApplication, QgsRasterLayer, QgsWkbTypes
+    QgsApplication, QgsRasterLayer, QgsWkbTypes,\
+    QgsEditorWidgetSetup
 # Initialize Qt resources from file resources.py
 from . import resources
 
@@ -533,15 +534,21 @@ class DiviPlugin(QObject):
             for i, field in enumerate(fields):
                 layer.setFieldAlias(i, field['name'])
                 if field['type'] == 'dropdown':
-                    layer.setEditFormConfig(i, 'ValueMap')
-                    layer.setEditFormConfig(i, { value:value for value in field['valuelist'].split(',') })
+                    value_map = { value:value  for value in field['valuelist'].split(',') }
+                    config = {
+                        "map": value_map
+                    }
+                    editor_widget = QgsEditorWidgetSetup("ValueMap", config)
+                    layer.setEditorWidgetSetup(i, editor_widget)
                 elif field['type'] == 'calendar':
-                    layer.setEditFormConfig(i, 'DateTime')
-                    layer.setEditFormConfig(i, 
-                        {u'display_format': u'yyyy-MM-dd HH:mm:ss',
-                        u'allow_null': True,
-                        u'field_format': u'yyyy-MM-dd HH:mm:ss',
-                        u'calendar_popup': True} )
+                    config = {
+                        'display_format': 'yyyy-MM-dd HH:mm:ss',
+                        'allow_null': True,
+                        'field_format': 'yyyy-MM-dd HH:mm:ss',
+                        'calendar_popup': True
+                    }
+                    editor_widget = QgsEditorWidgetSetup("DateTime", config)
+                    layer.setEditorWidgetSetup(i, editor_widget)
         if addToMap:
             QgsProject.instance().addMapLayer(layer)
         return layer, added
